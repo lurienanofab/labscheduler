@@ -1,0 +1,11 @@
+.vs/
+bin/
+obj/
+packages/
+TestResults/
+*.suo
+*.user
+LabScheduler/Web.Debug.config
+LabScheduler/Web.Release.config
+LabScheduler/Web.Staging.config
+LNF.Web.Scheduler.Tests/App.config
