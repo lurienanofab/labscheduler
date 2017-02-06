@@ -11,7 +11,7 @@
   <lnf>
     <providers production="false">
       <context type="LNF.Impl.WebContextProvider, LNF.Impl" loginUrl="/login"/>
-      <dataAccess type="LNF.Impl.NHibernateWebDataAccess, LNF.Impl"/>
+      <dataAccess type="LNF.Impl.NHibernateWebDataAccess, LNF.Impl" showSql="false"/>
       <serialization type="LNF.Impl.Serialization.SerializationProvider, LNF.Impl"/>
       <email type="LNF.Impl.Email.EmailProvider, LNF.Impl" host="127.0.0.1" log="true"/>
       <control type="LNF.Impl.Control.Wago.WagoControl, LNF.Impl" host="http://wagosvr:7778/"/>

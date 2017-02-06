@@ -5,6 +5,7 @@ packages/
 TestResults/
 *.suo
 *.user
+LabScheduler/Web.config
 LabScheduler/Web.Debug.config
 LabScheduler/Web.Release.config
 LabScheduler/Web.Staging.config
