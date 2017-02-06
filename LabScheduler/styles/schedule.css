@@ -1,0 +1,67 @@
+﻿table.schedule-table {
+    border-collapse: collapse;
+    cursor: pointer;
+}
+
+    table.schedule-table th {
+        padding: 3px;
+        border: solid 1px #808080;
+        vertical-align: middle;
+    }
+
+        table.schedule-table th.weekday {
+            width: 150px;
+        }
+
+    table.schedule-table td {
+        padding: 3px;
+        border: solid 1px #808080;
+    }
+
+
+.tooltip {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: none;
+    z-index: 999;
+    color: #555;
+    font-size: 10.5px;
+    border-radius: 3px;
+    box-shadow: 2px 2px 5px #ddd;
+}
+
+    .tooltip .title {
+        padding: 2px 9px;
+    }
+
+    .tooltip .content {
+        padding: 5px 9px;
+    }
+
+    .tooltip.default {
+        border: solid 1px #f1d031;
+    }
+
+        .tooltip.default .title {
+            background-color: #ffffa3;
+            border-bottom: solid 1px #f1d031;
+        }
+
+        .tooltip.default .content {
+            background-color: #ffffa3;
+        }
+
+    .tooltip.window {
+        border: solid 1px #eaeaea;
+    }
+
+        .tooltip.window .title {
+            padding: 2px 9px;
+            background-color: #e1eaf5;
+            border-bottom: solid 1px #d0d9e5;
+        }
+
+        .tooltip.window .content {
+            background-color: #fcfcfc;
+        }

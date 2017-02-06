@@ -1,0 +1,31 @@
+﻿<%@ Master Language="VB" AutoEventWireup="false" CodeBehind="MasterPageBlank.master.vb" Inherits="LabScheduler.Pages.MasterPageBlank" %>
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head runat="server">
+    <title></title>
+    <style>
+        body {
+            font-family: Arial;
+            font-size: 10pt;
+            background-color: #f2f2f2;
+        }
+    </style>
+    <asp:ContentPlaceHolder ID="head" runat="server">
+    </asp:ContentPlaceHolder>
+</head>
+<body>
+    <form id="form1" runat="server">
+        <div>
+            <asp:ContentPlaceHolder ID="ContentPlaceHolder1" runat="server">
+            </asp:ContentPlaceHolder>
+        </div>
+    </form>
+    
+    <script src="<%=GetStaticUrl("lib/jquery/jquery.min.js")%>"></script>
+
+    <asp:ContentPlaceHolder ID="scripts" runat="server">
+    </asp:ContentPlaceHolder>
+</body>
+</html>

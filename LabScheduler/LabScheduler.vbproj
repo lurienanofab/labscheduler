@@ -1,0 +1,864 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>
+    </ProductVersion>
+    <SchemaVersion>
+    </SchemaVersion>
+    <ProjectGuid>{20DF9C91-18CC-498C-B7EC-CF728C89F52A}</ProjectGuid>
+    <ProjectTypeGuids>{349c5851-65df-11da-9384-00065b846f21};{F184B08F-C81C-45F6-A57F-5ABD9991F28F}</ProjectTypeGuids>
+    <OutputType>Library</OutputType>
+    <RootNamespace>LabScheduler</RootNamespace>
+    <AssemblyName>LabScheduler</AssemblyName>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <MyType>Custom</MyType>
+    <UseIISExpress>false</UseIISExpress>
+    <IISExpressSSLPort />
+    <IISExpressAnonymousAuthentication />
+    <IISExpressWindowsAuthentication />
+    <IISExpressUseClassicPipelineMode />
+    <UseGlobalApplicationHostFile />
+    <TargetFrameworkProfile />
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <DefineDebug>true</DefineDebug>
+    <DefineTrace>true</DefineTrace>
+    <OutputPath>bin\</OutputPath>
+    <DocumentationFile>LabScheduler.xml</DocumentationFile>
+    <NoWarn>
+    </NoWarn>
+    <WarningsAsErrors>41999,42016,42017,42018,42019,42020,42021,42022,42032,42036</WarningsAsErrors>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <DefineDebug>false</DefineDebug>
+    <DefineTrace>true</DefineTrace>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\</OutputPath>
+    <DocumentationFile>LabScheduler.xml</DocumentationFile>
+    <NoWarn>
+    </NoWarn>
+    <WarningsAsErrors>41999,42016,42017,42018,42019,42020,42021,42022,42032,42036</WarningsAsErrors>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Glimpse.Ado, Version=1.7.3.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Glimpse.Ado.1.7.3\lib\net45\Glimpse.Ado.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Glimpse.AspNet, Version=1.9.2.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Glimpse.AspNet.1.9.2\lib\net45\Glimpse.AspNet.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Glimpse.Core, Version=1.8.6.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Glimpse.1.8.6\lib\net45\Glimpse.Core.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Glimpse.WebForms, Version=1.1.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Glimpse.WebForms.1.1.1\lib\net45\Glimpse.WebForms.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="Microsoft.Owin, Version=3.0.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Owin.3.0.1\lib\net45\Microsoft.Owin.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.Owin.Host.SystemWeb, Version=3.0.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Owin.Host.SystemWeb.3.0.1\lib\net45\Microsoft.Owin.Host.SystemWeb.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Owin, Version=1.0.0.0, Culture=neutral, PublicKeyToken=f0ebd12fd5e55cc5, processorArchitecture=MSIL">
+      <HintPath>..\packages\Owin.1.0\lib\net40\Owin.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Net" />
+    <Reference Include="System.Runtime.Caching" />
+    <Reference Include="System.Web.DynamicData" />
+    <Reference Include="System.Web.Entity" />
+    <Reference Include="System.Web.ApplicationServices" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Web.Extensions" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Web.Services" />
+    <Reference Include="System.EnterpriseServices" />
+    <Reference Include="System.Xml.Linq" />
+  </ItemGroup>
+  <ItemGroup>
+    <Import Include="Microsoft.VisualBasic" />
+    <Import Include="System" />
+    <Import Include="System.Collections" />
+    <Import Include="System.Collections.Generic" />
+    <Import Include="System.Data" />
+    <Import Include="System.Linq" />
+    <Import Include="System.Xml.Linq" />
+    <Import Include="System.Diagnostics" />
+    <Import Include="System.Collections.Specialized" />
+    <Import Include="System.Configuration" />
+    <Import Include="System.Text" />
+    <Import Include="System.Text.RegularExpressions" />
+    <Import Include="System.Web" />
+    <Import Include="System.Web.Caching" />
+    <Import Include="System.Web.SessionState" />
+    <Import Include="System.Web.Security" />
+    <Import Include="System.Web.Profile" />
+    <Import Include="System.Web.UI" />
+    <Import Include="System.Web.UI.WebControls" />
+    <Import Include="System.Web.UI.WebControls.WebParts" />
+    <Import Include="System.Web.UI.HtmlControls" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="AdminActivities.aspx" />
+    <Content Include="AdminBuildings.aspx" />
+    <Content Include="AdminLabs.aspx" />
+    <Content Include="AdminProcessTechs.aspx" />
+    <Content Include="AdminProperties.aspx" />
+    <Content Include="AdminResources.aspx" />
+    <Content Include="ApiTest.html" />
+    <Content Include="app_offline.htm.txt" />
+    <Content Include="Building.aspx" />
+    <Content Include="CacheUtility.aspx" />
+    <Content Include="Contact.aspx" />
+    <Content Include="ErrorPage.aspx" />
+    <Content Include="GlimpseSecurityPolicy.cs" />
+    <Content Include="Global.asax" />
+    <Content Include="images\arrow_r.cur" />
+    <Content Include="images\arr_down.gif" />
+    <Content Include="images\arr_up.gif" />
+    <Content Include="images\bomb.cur" />
+    <Content Include="images\Building\Building4.png" />
+    <Content Include="images\Building\Building4_icon.png" />
+    <Content Include="images\calendar.gif" />
+    <Content Include="images\calNext.gif" />
+    <Content Include="images\calPrev.gif" />
+    <Content Include="images\cancel.gif" />
+    <Content Include="images\collapse.gif" />
+    <Content Include="images\default.png" />
+    <Content Include="images\delete.gif" />
+    <Content Include="images\deleteGrid.gif" />
+    <Content Include="images\edit.gif" />
+    <Content Include="images\edit.png" />
+    <Content Include="images\edit_future.cur" />
+    <Content Include="images\edit_past.cur" />
+    <Content Include="images\email.cur" />
+    <Content Include="images\email.gif" />
+    <Content Include="images\expand.gif" />
+    <Content Include="images\extend.gif" />
+    <Content Include="images\helpdesk-logo.jpg" />
+    <Content Include="images\im_delete.gif" />
+    <Content Include="images\im_edit.gif" />
+    <Content Include="images\Invite.gif" />
+    <Content Include="images\Lab\Lab1.png" />
+    <Content Include="images\Lab\Lab1_icon.png" />
+    <Content Include="images\Lab\Lab3.png" />
+    <Content Include="images\Lab\Lab3_icon.png" />
+    <Content Include="images\Lab\Lab4.png" />
+    <Content Include="images\Lab\Lab4_icon.png" />
+    <Content Include="images\Lab\Lab5.png" />
+    <Content Include="images\Lab\Lab5_icon.png" />
+    <Content Include="images\lnf-logo.png" />
+    <Content Include="images\menubar.gif" />
+    <Content Include="images\MoveDown.gif" />
+    <Content Include="images\MoveUp.gif" />
+    <Content Include="images\ProcessTech\ProcessTech11.png" />
+    <Content Include="images\ProcessTech\ProcessTech11_icon.png" />
+    <Content Include="images\ProcessTech\ProcessTech12.png" />
+    <Content Include="images\ProcessTech\ProcessTech12_icon.png" />
+    <Content Include="images\ProcessTech\ProcessTech13.png" />
+    <Content Include="images\ProcessTech\ProcessTech13_icon.png" />
+    <Content Include="images\ProcessTech\ProcessTech16.png" />
+    <Content Include="images\ProcessTech\ProcessTech16_icon.png" />
+    <Content Include="images\ProcessTech\ProcessTech17.png" />
+    <Content Include="images\ProcessTech\ProcessTech17_icon.png" />
+    <Content Include="images\ProcessTech\ProcessTech18.png" />
+    <Content Include="images\ProcessTech\ProcessTech18_icon.png" />
+    <Content Include="images\ProcessTech\ProcessTech19.png" />
+    <Content Include="images\ProcessTech\ProcessTech19_icon.png" />
+    <Content Include="images\ProcessTech\ProcessTech2.png" />
+    <Content Include="images\ProcessTech\ProcessTech20.png" />
+    <Content Include="images\ProcessTech\ProcessTech20_icon.png" />
+    <Content Include="images\ProcessTech\ProcessTech21.png" />
+    <Content Include="images\ProcessTech\ProcessTech21_icon.png" />
+    <Content Include="images\ProcessTech\ProcessTech2_icon.png" />
+    <Content Include="images\ProcessTech\ProcessTech3.png" />
+    <Content Include="images\ProcessTech\ProcessTech3_icon.png" />
+    <Content Include="images\ProcessTech\ProcessTech4.png" />
+    <Content Include="images\ProcessTech\ProcessTech4_icon.png" />
+    <Content Include="images\ProcessTech\ProcessTech6.png" />
+    <Content Include="images\ProcessTech\ProcessTech6_icon.png" />
+    <Content Include="images\ProcessTech\ProcessTech7.png" />
+    <Content Include="images\ProcessTech\ProcessTech7_icon.png" />
+    <Content Include="images\ProcessTech\ProcessTech8.png" />
+    <Content Include="images\ProcessTech\ProcessTech8_icon.png" />
+    <Content Include="images\ProcessTech\ProcessTech9.png" />
+    <Content Include="images\ProcessTech\ProcessTech9_icon.png" />
+    <Content Include="images\Resource\Resource000034.png" />
+    <Content Include="images\Resource\Resource000034_icon.png" />
+    <Content Include="images\Resource\Resource010010.png" />
+    <Content Include="images\Resource\Resource010010_icon.png" />
+    <Content Include="images\Resource\Resource010020.png" />
+    <Content Include="images\Resource\Resource010020_icon.png" />
+    <Content Include="images\Resource\Resource010030.png" />
+    <Content Include="images\Resource\Resource010030_icon.png" />
+    <Content Include="images\Resource\Resource011000.png" />
+    <Content Include="images\Resource\Resource011000_icon.png" />
+    <Content Include="images\Resource\Resource012020.png" />
+    <Content Include="images\Resource\Resource012020_icon.png" />
+    <Content Include="images\Resource\Resource014000.png" />
+    <Content Include="images\Resource\Resource014000_icon.png" />
+    <Content Include="images\Resource\Resource014021.png" />
+    <Content Include="images\Resource\Resource014021_icon.png" />
+    <Content Include="images\Resource\Resource014031.png" />
+    <Content Include="images\Resource\Resource014031_icon.png" />
+    <Content Include="images\Resource\Resource020000.png" />
+    <Content Include="images\Resource\Resource020000_icon.png" />
+    <Content Include="images\Resource\Resource020031.png" />
+    <Content Include="images\Resource\Resource020031_icon.png" />
+    <Content Include="images\Resource\Resource021040.png" />
+    <Content Include="images\Resource\Resource021040_icon.png" />
+    <Content Include="images\Resource\Resource030020.png" />
+    <Content Include="images\Resource\Resource030020_icon.png" />
+    <Content Include="images\Resource\Resource030050.png" />
+    <Content Include="images\Resource\Resource030050_icon.png" />
+    <Content Include="images\Resource\Resource040010.png" />
+    <Content Include="images\Resource\Resource040010_icon.png" />
+    <Content Include="images\Resource\Resource041000.png" />
+    <Content Include="images\Resource\Resource041000_icon.png" />
+    <Content Include="images\Resource\Resource041010.png" />
+    <Content Include="images\Resource\Resource041010_icon.png" />
+    <Content Include="images\Resource\Resource050020.png" />
+    <Content Include="images\Resource\Resource050020_icon.png" />
+    <Content Include="images\Resource\Resource050031.png" />
+    <Content Include="images\Resource\Resource050031_icon.png" />
+    <Content Include="images\Resource\Resource050041.png" />
+    <Content Include="images\Resource\Resource050041_icon.png" />
+    <Content Include="images\Resource\Resource050080.png" />
+    <Content Include="images\Resource\Resource050080_icon.png" />
+    <Content Include="images\Resource\Resource051000.png" />
+    <Content Include="images\Resource\Resource051000_icon.png" />
+    <Content Include="images\Resource\Resource052000.png" />
+    <Content Include="images\Resource\Resource052000_icon.png" />
+    <Content Include="images\Resource\Resource054040.png" />
+    <Content Include="images\Resource\Resource054040_icon.png" />
+    <Content Include="images\Resource\Resource056000.png" />
+    <Content Include="images\Resource\Resource056000_icon.png" />
+    <Content Include="images\Resource\Resource061040.png" />
+    <Content Include="images\Resource\Resource061040_icon.png" />
+    <Content Include="images\Resource\Resource061061.png" />
+    <Content Include="images\Resource\Resource061061_icon.png" />
+    <Content Include="images\Resource\Resource062020.png" />
+    <Content Include="images\Resource\Resource062020_icon.png" />
+    <Content Include="images\Resource\Resource062030.png" />
+    <Content Include="images\Resource\Resource062030_icon.png" />
+    <Content Include="images\Resource\Resource062040.png" />
+    <Content Include="images\Resource\Resource062040_icon.png" />
+    <Content Include="images\Resource\Resource062050.png" />
+    <Content Include="images\Resource\Resource062050_icon.png" />
+    <Content Include="images\Resource\Resource063000.png" />
+    <Content Include="images\Resource\Resource063000_icon.png" />
+    <Content Include="images\Resource\Resource063010.png" />
+    <Content Include="images\Resource\Resource063010_icon.png" />
+    <Content Include="images\Resource\Resource065001.png" />
+    <Content Include="images\Resource\Resource065001_icon.png" />
+    <Content Include="images\Resource\Resource080010.png" />
+    <Content Include="images\Resource\Resource080010_icon.png" />
+    <Content Include="images\Resource\Resource080030.png" />
+    <Content Include="images\Resource\Resource080030_icon.png" />
+    <Content Include="images\Resource\Resource081000.png" />
+    <Content Include="images\Resource\Resource081000_icon.png" />
+    <Content Include="images\Resource\Resource082001.png" />
+    <Content Include="images\Resource\Resource082001_icon.png" />
+    <Content Include="images\Resource\Resource082010.png" />
+    <Content Include="images\Resource\Resource082010_icon.png" />
+    <Content Include="images\Resource\Resource082031.png" />
+    <Content Include="images\Resource\Resource082031_icon.png" />
+    <Content Include="images\Resource\Resource084000.png" />
+    <Content Include="images\Resource\Resource084000_icon.png" />
+    <Content Include="images\Resource\Resource084030.png" />
+    <Content Include="images\Resource\Resource084030_icon.png" />
+    <Content Include="images\Resource\Resource085030.png" />
+    <Content Include="images\Resource\Resource085030_icon.png" />
+    <Content Include="images\Resource\Resource090000.png" />
+    <Content Include="images\Resource\Resource090000_icon.png" />
+    <Content Include="images\Resource\Resource091010.png" />
+    <Content Include="images\Resource\Resource091010_icon.png" />
+    <Content Include="images\Resource\Resource091060.png" />
+    <Content Include="images\Resource\Resource091060_icon.png" />
+    <Content Include="images\Resource\Resource091070.png" />
+    <Content Include="images\Resource\Resource091070_icon.png" />
+    <Content Include="images\Resource\Resource110000.png" />
+    <Content Include="images\Resource\Resource110000_icon.png" />
+    <Content Include="images\Resource\Resource110010.png" />
+    <Content Include="images\Resource\Resource110010_icon.png" />
+    <Content Include="images\Resource\Resource110020.png" />
+    <Content Include="images\Resource\Resource110020_icon.png" />
+    <Content Include="images\Resource\Resource110030.png" />
+    <Content Include="images\Resource\Resource110030_icon.png" />
+    <Content Include="images\Resource\Resource120000.png" />
+    <Content Include="images\Resource\Resource120000_icon.png" />
+    <Content Include="images\Resource\Resource120010.png" />
+    <Content Include="images\Resource\Resource120010_icon.png" />
+    <Content Include="images\Resource\Resource121000.png" />
+    <Content Include="images\Resource\Resource121000_icon.png" />
+    <Content Include="images\Resource\Resource130000.png" />
+    <Content Include="images\Resource\Resource130000_icon.png" />
+    <Content Include="images\Resource\Resource130011.png" />
+    <Content Include="images\Resource\Resource130011_icon.png" />
+    <Content Include="images\Resource\Resource131001.png" />
+    <Content Include="images\Resource\Resource131001_icon.png" />
+    <Content Include="images\Resource\Resource132001.png" />
+    <Content Include="images\Resource\Resource132001_icon.png" />
+    <Content Include="images\Resource\Resource140000.png" />
+    <Content Include="images\Resource\Resource140000_icon.png" />
+    <Content Include="images\Resource\Resource140010.png" />
+    <Content Include="images\Resource\Resource140010_icon.png" />
+    <Content Include="images\Resource\Resource140020.png" />
+    <Content Include="images\Resource\Resource140020_icon.png" />
+    <Content Include="images\Resource\Resource141031.png" />
+    <Content Include="images\Resource\Resource141031_icon.png" />
+    <Content Include="images\Resource\Resource142001.png" />
+    <Content Include="images\Resource\Resource142001_icon.png" />
+    <Content Include="images\Resource\Resource143001.png" />
+    <Content Include="images\Resource\Resource143001_icon.png" />
+    <Content Include="images\Resource\Resource160021.png" />
+    <Content Include="images\Resource\Resource160021_icon.png" />
+    <Content Include="images\Resource\Resource161000.png" />
+    <Content Include="images\Resource\Resource161000_icon.png" />
+    <Content Include="images\Resource\Resource170030.png" />
+    <Content Include="images\Resource\Resource170030_icon.png" />
+    <Content Include="images\Resource\Resource171010.png" />
+    <Content Include="images\Resource\Resource171010_icon.png" />
+    <Content Include="images\Resource\Resource180001.png" />
+    <Content Include="images\Resource\Resource180001_icon.png" />
+    <Content Include="images\SchedulerLogo.png" />
+    <Content Include="images\trafL_gr.cur" />
+    <Content Include="images\trafL_rd.cur" />
+    <Content Include="images\update.gif" />
+    <Content Include="index.aspx" />
+    <Content Include="Lab.aspx" />
+    <Content Include="NewReservationProcessInfoRedirect.aspx" />
+    <Content Include="Preference.aspx" />
+    <Content Include="ProcessTech.aspx" />
+    <Content Include="Reservation.aspx" />
+    <Content Include="ReservationCharges.aspx" />
+    <Content Include="ReservationFacilityDownTime.aspx" />
+    <Content Include="ReservationHistory.aspx" />
+    <Content Include="ReservationRunNotes.aspx" />
+    <Content Include="ResourceClientList.aspx" />
+    <Content Include="ResourceClients.aspx" />
+    <Content Include="ResourceConfig.aspx" />
+    <Content Include="ResourceContact.aspx" />
+    <Content Include="ResourceDayWeek.aspx" />
+    <Content Include="ResourceDocs.aspx" />
+    <Content Include="ResourceMaintenance.aspx" />
+    <Content Include="scripts\bootstrap-file.js" />
+    <Content Include="scripts\calendar\images\next.gif" />
+    <Content Include="scripts\calendar\images\prev.gif" />
+    <Content Include="scripts\calendar\calendar.css" />
+    <Content Include="scripts\calendar\calendar.js" />
+    <Content Include="scripts\jquery.admin.js" />
+    <Content Include="scripts\jquery.control.js" />
+    <Content Include="scripts\jquery.dateManager.js" />
+    <Content Include="scripts\jquery.facilityDownTime.js" />
+    <Content Include="scripts\jquery.helpdesk.js" />
+    <Content Include="scripts\jquery.helpdeskinfo.js" />
+    <Content Include="scripts\jquery.numerictext.js" />
+    <Content Include="scripts\jquery.preferences.js" />
+    <Content Include="scripts\jquery.reservation.js" />
+    <Content Include="scripts\jquery.reservationHistory.js" />
+    <Content Include="scripts\jquery.schedule.js" />
+    <Content Include="scripts\jquery.treeview.js" />
+    <Content Include="scripts\JScriptUI.js" />
+    <Content Include="scripts\master.js" />
+    <Content Include="scripts\overlib.js" />
+    <Content Include="CalendarController.ashx" />
+    <Content Include="ReservationController.ashx" />
+    <Content Include="ajax\utility.ashx" />
+    <Content Include="MasterPageBootstrap.Master" />
+    <Content Include="ajax\treeview.ashx" />
+    <Content Include="packages.config" />
+    <Content Include="ajax\resource.ashx" />
+    <Content Include="ajax\auth.ashx" />
+    <Content Include="scripts\resourceMaintenance.js" />
+    <None Include="scripts\_references.js" />
+    <Content Include="scripts\processinfo.js" />
+    <Content Include="scripts\querystring.js" />
+    <Content Include="scripts\jquery.reservationView.js" />
+    <Content Include="scripts\staging.js" />
+    <Content Include="scripts\typeahead.bundle.min.js" />
+    <Content Include="StartReservation.aspx" />
+    <Content Include="styles\admin.css" />
+    <Content Include="styles\bootstrap.css" />
+    <Content Include="styles\helpdesk.css" />
+    <Content Include="styles\images\arrow_r.cur" />
+    <Content Include="styles\images\bgcolor.gif" />
+    <Content Include="styles\images\bomb.cur" />
+    <Content Include="styles\images\child-collapsed.png" />
+    <Content Include="styles\images\child-expanded.png" />
+    <Content Include="styles\images\collapsed.png" />
+    <Content Include="styles\images\edit_future.cur" />
+    <Content Include="styles\images\edit_past.cur" />
+    <Content Include="styles\images\email.cur" />
+    <Content Include="styles\images\email.png" />
+    <Content Include="styles\images\expanded.png" />
+    <Content Include="styles\images\leaf.png" />
+    <Content Include="styles\images\root-collapsed.png" />
+    <Content Include="styles\images\root-expanded.png" />
+    <Content Include="styles\images\trafl_gr.bmp" />
+    <Content Include="styles\images\trafL_gr.cur" />
+    <Content Include="styles\images\trafL_rd.cur" />
+    <Content Include="styles\main.css" />
+    <Content Include="styles\resource.css" />
+    <Content Include="styles\schedule.css" />
+    <Content Include="styles\splitter.css" />
+    <Content Include="styles\tabs.css" />
+    <Content Include="styles\treeview-2.0.css" />
+    <Content Include="styles\treeview.css" />
+    <Content Include="Console.aspx" />
+    <Content Include="UserControls\ResourceTabMenu.ascx" />
+    <Content Include="Utility.aspx" />
+    <Content Include="UserControls\AdminTabMenu.ascx" />
+    <Content Include="UserControls\CalendarPopup.ascx" />
+    <Content Include="UserControls\Contact.ascx" />
+    <Content Include="UserControls\Helpdesk.ascx" />
+    <Content Include="UserControls\HelpdeskInfo.ascx" />
+    <Content Include="UserControls\NumericBox.ascx" />
+    <Content Include="UserControls\ReservationView.ascx" />
+    <Content Include="UserControls\ResourceInfo.ascx" />
+    <Content Include="UserControls\ResourceTreeView.ascx" />
+    <Content Include="UserRecurringReservation.aspx" />
+    <Content Include="UserRecurringReservationEdit.aspx" />
+    <Content Include="UserReservations.aspx" />
+    <Content Include="Web.config">
+      <SubType>Designer</SubType>
+    </Content>
+    <Content Include="Status.aspx" />
+    <None Include="Web.Staging.config">
+      <DependentUpon>Web.config</DependentUpon>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AdminActivities.aspx.designer.vb">
+      <DependentUpon>AdminActivities.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="AdminActivities.aspx.vb">
+      <DependentUpon>AdminActivities.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="AdminBuildings.aspx.designer.vb">
+      <DependentUpon>AdminBuildings.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="AdminBuildings.aspx.vb">
+      <DependentUpon>AdminBuildings.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="AdminLabs.aspx.designer.vb">
+      <DependentUpon>AdminLabs.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="AdminLabs.aspx.vb">
+      <DependentUpon>AdminLabs.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="AdminProcessTechs.aspx.designer.vb">
+      <DependentUpon>AdminProcessTechs.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="AdminProcessTechs.aspx.vb">
+      <DependentUpon>AdminProcessTechs.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="AdminProperties.aspx.designer.vb">
+      <DependentUpon>AdminProperties.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="AdminProperties.aspx.vb">
+      <DependentUpon>AdminProperties.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="AdminResources.aspx.designer.vb">
+      <DependentUpon>AdminResources.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="AdminResources.aspx.vb">
+      <DependentUpon>AdminResources.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="ajax\index.ashx.vb">
+      <DependentUpon>index.ashx</DependentUpon>
+    </Compile>
+    <Compile Include="Building.aspx.designer.vb">
+      <DependentUpon>Building.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Building.aspx.vb">
+      <DependentUpon>Building.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Contact.aspx.designer.vb">
+      <DependentUpon>Contact.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Contact.aspx.vb">
+      <DependentUpon>Contact.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="ErrorPage.aspx.designer.vb">
+      <DependentUpon>ErrorPage.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="ErrorPage.aspx.vb">
+      <DependentUpon>ErrorPage.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Global.asax.vb">
+      <DependentUpon>Global.asax</DependentUpon>
+    </Compile>
+    <Compile Include="index.aspx.designer.vb">
+      <DependentUpon>index.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="index.aspx.vb">
+      <DependentUpon>index.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Lab.aspx.designer.vb">
+      <DependentUpon>Lab.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Lab.aspx.vb">
+      <DependentUpon>Lab.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="MasterPageBlank.Master.designer.vb">
+      <DependentUpon>MasterPageBlank.Master</DependentUpon>
+    </Compile>
+    <Compile Include="MasterPageBlank.Master.vb">
+      <DependentUpon>MasterPageBlank.Master</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="MasterPageBootstrap.Master.designer.vb">
+      <DependentUpon>MasterPageBootstrap.Master</DependentUpon>
+    </Compile>
+    <Compile Include="MasterPageBootstrap.Master.vb">
+      <DependentUpon>MasterPageBootstrap.Master</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="MasterPageScheduler.Master.designer.vb">
+      <DependentUpon>MasterPageScheduler.Master</DependentUpon>
+    </Compile>
+    <Compile Include="MasterPageScheduler.Master.vb">
+      <DependentUpon>MasterPageScheduler.Master</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="My Project\AssemblyInfo.vb" />
+    <Compile Include="My Project\Application.Designer.vb">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Application.myapp</DependentUpon>
+    </Compile>
+    <Compile Include="My Project\MyExtensions\MyWebExtension.vb">
+      <VBMyExtensionTemplateID>Microsoft.VisualBasic.Web.MyExtension</VBMyExtensionTemplateID>
+      <VBMyExtensionTemplateVersion>1.0.0.0</VBMyExtensionTemplateVersion>
+    </Compile>
+    <Compile Include="My Project\Resources.Designer.vb">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="My Project\Settings.Designer.vb">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    </Compile>
+    <Compile Include="NewReservationProcessInfoRedirect.aspx.designer.vb">
+      <DependentUpon>NewReservationProcessInfoRedirect.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="NewReservationProcessInfoRedirect.aspx.vb">
+      <DependentUpon>NewReservationProcessInfoRedirect.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Preference.aspx.designer.vb">
+      <DependentUpon>Preference.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Preference.aspx.vb">
+      <DependentUpon>Preference.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="ProcessTech.aspx.designer.vb">
+      <DependentUpon>ProcessTech.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="ProcessTech.aspx.vb">
+      <DependentUpon>ProcessTech.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Reservation.aspx.designer.vb">
+      <DependentUpon>Reservation.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Reservation.aspx.vb">
+      <DependentUpon>Reservation.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="ReservationCharges.aspx.designer.vb">
+      <DependentUpon>ReservationCharges.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="ReservationCharges.aspx.vb">
+      <DependentUpon>ReservationCharges.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="ReservationFacilityDownTime.aspx.designer.vb">
+      <DependentUpon>ReservationFacilityDownTime.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="ReservationFacilityDownTime.aspx.vb">
+      <DependentUpon>ReservationFacilityDownTime.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="ReservationHistory.aspx.designer.vb">
+      <DependentUpon>ReservationHistory.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="ReservationHistory.aspx.vb">
+      <DependentUpon>ReservationHistory.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="ReservationRunNotes.aspx.designer.vb">
+      <DependentUpon>ReservationRunNotes.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="ReservationRunNotes.aspx.vb">
+      <DependentUpon>ReservationRunNotes.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="ResourceClientList.aspx.designer.vb">
+      <DependentUpon>ResourceClientList.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="ResourceClientList.aspx.vb">
+      <DependentUpon>ResourceClientList.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="ResourceConfig.aspx.designer.vb">
+      <DependentUpon>ResourceConfig.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="ResourceConfig.aspx.vb">
+      <DependentUpon>ResourceConfig.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="ResourceContact.aspx.designer.vb">
+      <DependentUpon>ResourceContact.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="ResourceContact.aspx.vb">
+      <DependentUpon>ResourceContact.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="ResourceDayWeek.aspx.designer.vb">
+      <DependentUpon>ResourceDayWeek.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="ResourceDayWeek.aspx.vb">
+      <DependentUpon>ResourceDayWeek.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="ResourceDocs.aspx.designer.vb">
+      <DependentUpon>ResourceDocs.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="ResourceDocs.aspx.vb">
+      <DependentUpon>ResourceDocs.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="StartReservation.aspx.designer.vb">
+      <DependentUpon>StartReservation.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="StartReservation.aspx.vb">
+      <DependentUpon>StartReservation.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="UserControls\AdminTabMenu.ascx.designer.vb">
+      <DependentUpon>AdminTabMenu.ascx</DependentUpon>
+    </Compile>
+    <Compile Include="UserControls\AdminTabMenu.ascx.vb">
+      <DependentUpon>AdminTabMenu.ascx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="UserControls\CalendarPopup.ascx.designer.vb">
+      <DependentUpon>CalendarPopup.ascx</DependentUpon>
+    </Compile>
+    <Compile Include="UserControls\CalendarPopup.ascx.vb">
+      <DependentUpon>CalendarPopup.ascx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="UserControls\Contact.ascx.designer.vb">
+      <DependentUpon>Contact.ascx</DependentUpon>
+    </Compile>
+    <Compile Include="UserControls\Contact.ascx.vb">
+      <DependentUpon>Contact.ascx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="UserControls\HelpdeskInfo.ascx.designer.vb">
+      <DependentUpon>HelpdeskInfo.ascx</DependentUpon>
+    </Compile>
+    <Compile Include="UserControls\HelpdeskInfo.ascx.vb">
+      <DependentUpon>HelpdeskInfo.ascx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="UserControls\NumericBox.ascx.designer.vb">
+      <DependentUpon>NumericBox.ascx</DependentUpon>
+    </Compile>
+    <Compile Include="UserControls\NumericBox.ascx.vb">
+      <DependentUpon>NumericBox.ascx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="UserControls\ReservationView.ascx.designer.vb">
+      <DependentUpon>ReservationView.ascx</DependentUpon>
+    </Compile>
+    <Compile Include="UserControls\ReservationView.ascx.vb">
+      <DependentUpon>ReservationView.ascx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="UserControls\ResourceInfo.ascx.designer.vb">
+      <DependentUpon>ResourceInfo.ascx</DependentUpon>
+    </Compile>
+    <Compile Include="UserControls\ResourceInfo.ascx.vb">
+      <DependentUpon>ResourceInfo.ascx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="UserRecurringReservation.aspx.designer.vb">
+      <DependentUpon>UserRecurringReservation.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="UserRecurringReservation.aspx.vb">
+      <DependentUpon>UserRecurringReservation.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="UserRecurringReservationEdit.aspx.designer.vb">
+      <DependentUpon>UserRecurringReservationEdit.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="UserRecurringReservationEdit.aspx.vb">
+      <DependentUpon>UserRecurringReservationEdit.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="UserReservations.aspx.designer.vb">
+      <DependentUpon>UserReservations.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="UserReservations.aspx.vb">
+      <DependentUpon>UserReservations.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="My Project\Resources.resx">
+      <Generator>VbMyResourcesResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.vb</LastGenOutput>
+      <CustomToolNamespace>My.Resources</CustomToolNamespace>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="MasterPageScheduler.Master" />
+    <Content Include="ajax\index.ashx" />
+    <Content Include="ajax\interlock.ashx" />
+    <Content Include="ajax\helpdesk.ashx" />
+    <Content Include="ajax\reservation.ashx" />
+    <Content Include="MasterPageBlank.Master" />
+    <None Include="My Project\Application.myapp">
+      <Generator>MyApplicationCodeGenerator</Generator>
+      <LastGenOutput>Application.Designer.vb</LastGenOutput>
+    </None>
+    <None Include="My Project\PublishProfiles\Staging %28Sched%29.pubxml" />
+    <None Include="My Project\PublishProfiles\Production %28Sched%29.pubxml" />
+    <None Include="My Project\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <CustomToolNamespace>My</CustomToolNamespace>
+      <LastGenOutput>Settings.Designer.vb</LastGenOutput>
+    </None>
+    <Content Include="styles\images\trafL_gr.ani" />
+    <Content Include="styles\images\trafL_rd.ani" />
+    <None Include="Web.Debug.config">
+      <DependentUpon>Web.config</DependentUpon>
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Web.Release.config">
+      <DependentUpon>Web.config</DependentUpon>
+      <SubType>Designer</SubType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\lnf\LNF.Impl\LNF.Impl.csproj">
+      <Project>{7a6cd165-0c48-4680-9a49-281688eb1cd8}</Project>
+      <Name>LNF.Impl</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\lnf\LNF.Models\LNF.Models.csproj">
+      <Project>{98c7f73d-ef9d-4a87-8b79-a1208085cfbd}</Project>
+      <Name>LNF.Models</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\lnf\LNF.Web\LNF.Web.csproj">
+      <Project>{f79683ff-e524-4107-a6e1-29579ee544e1}</Project>
+      <Name>LNF.Web</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\lnf\LNF\LNF.csproj">
+      <Project>{e3b73410-869b-4ba2-99ac-ad6708a27ade}</Project>
+      <Name>LNF</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\LabScheduler.AppCode\LabScheduler.AppCode.vbproj">
+      <Project>{204a2272-005f-48d7-8dde-e47e0379185c}</Project>
+      <Name>LabScheduler.AppCode</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\LNF.Web.Scheduler\LNF.Web.Scheduler.csproj">
+      <Project>{74c5ad4f-71fb-47ce-a2bc-aa8774774661}</Project>
+      <Name>LNF.Web.Scheduler</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup />
+  <PropertyGroup>
+    <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
+    <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
+  </PropertyGroup>
+  <PropertyGroup>
+    <OptionExplicit>On</OptionExplicit>
+  </PropertyGroup>
+  <PropertyGroup>
+    <OptionCompare>Binary</OptionCompare>
+  </PropertyGroup>
+  <PropertyGroup>
+    <OptionStrict>On</OptionStrict>
+  </PropertyGroup>
+  <PropertyGroup>
+    <OptionInfer>On</OptionInfer>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Staging|AnyCPU'">
+    <DefineTrace>true</DefineTrace>
+    <OutputPath>bin\</OutputPath>
+    <DocumentationFile>LabScheduler.xml</DocumentationFile>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <WarningsAsErrors>41999,42016,42017,42018,42019,42020,42021,42022,42032,42036</WarningsAsErrors>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.VisualBasic.targets" />
+  <Import Project="$(VSToolsPath)\WebApplications\Microsoft.WebApplication.targets" Condition="'$(VSToolsPath)' != ''" />
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v10.0\WebApplications\Microsoft.WebApplication.targets" Condition="false" />
+  <ProjectExtensions>
+    <VisualStudio>
+      <FlavorProperties GUID="{349c5851-65df-11da-9384-00065b846f21}">
+        <WebProjectProperties>
+          <UseIIS>True</UseIIS>
+          <AutoAssignPort>True</AutoAssignPort>
+          <DevelopmentServerPort>49420</DevelopmentServerPort>
+          <DevelopmentServerVPath>/</DevelopmentServerVPath>
+          <IISUrl>http://localhost/sselscheduler</IISUrl>
+          <NTLMAuthentication>False</NTLMAuthentication>
+          <UseCustomServer>False</UseCustomServer>
+          <CustomServerUrl>
+          </CustomServerUrl>
+          <SaveServerSettingsInUserFile>False</SaveServerSettingsInUserFile>
+        </WebProjectProperties>
+      </FlavorProperties>
+    </VisualStudio>
+  </ProjectExtensions>
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

@@ -1,0 +1,7 @@
+﻿.scheduler-body .reservation-view-table {
+    border-collapse: collapse;
+}
+
+    .scheduler-body .reservation-view-table td {
+        border: 1px solid #202020;
+    }

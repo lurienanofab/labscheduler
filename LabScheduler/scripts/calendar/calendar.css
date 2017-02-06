@@ -1,0 +1,89 @@
+﻿.calendar {
+    border: solid 1px #dddddd;
+    border-radius: 2px;
+    width: 270px;
+}
+
+    .calendar .calendar-header {
+        background-color: #c4dbee;
+        text-align: center;
+        border-bottom: solid 1px #dddddd;
+        position: relative;
+        height: 100%;
+    }
+
+        .calendar .calendar-header .month-prev {
+            background-image: url(images/prev.gif);
+            background-repeat: no-repeat;
+            background-position: center center;
+            position: absolute;
+            left: 0px;
+            height: 100%;
+            width: 30px;
+        }
+
+        .calendar .calendar-header .month-next {
+            background-image: url(images/next.gif);
+            background-repeat: no-repeat;
+            background-position: center center;
+            position: absolute;
+            right: 0px;
+            height: 100%;
+            width: 30px;
+        }
+
+        .calendar .calendar-header .month-text {
+            font-weight: bold;
+            padding: 5px;
+        }
+
+    .calendar .calendar-table {
+        border-collapse: collapse;
+        width: 100%;
+        table-layout: fixed;
+    }
+
+        .calendar .calendar-table > thead > tr > th {
+            text-align: center;
+            width: 14.2857%;
+            color: #003366;
+            padding-top: 3px;
+            padding-bottom: 3px;
+        }
+
+
+        .calendar .calendar-table > tbody > tr > td {
+            text-align: center;
+            padding-top: 3px;
+            padding-bottom: 3px;
+        }
+
+            .calendar .calendar-table > tbody > tr > td > a.date {
+                color: #000;
+            }
+
+            .calendar .calendar-table > tbody > tr > td.date-prev-month > a.date,
+            .calendar .calendar-table > tbody > tr > td.date-next-month > a.date {
+                color: #a9a9a9;
+            }
+
+            .calendar .calendar-table > tbody > tr > td.date-today {
+                font-weight: bold;
+            }
+
+                .calendar .calendar-table > tbody > tr > td.date-today > a.date {
+                    color: #ff0000;
+                }
+
+            .calendar .calendar-table > tbody > tr > td.date-selected {
+                background-color: #ccc;
+                font-weight: bold;
+            }
+
+                .calendar .calendar-table > tbody > tr > td.date-selected > a.date {
+                    color: #fff;
+                }
+
+.scheduler-body .left-panel .calendar {
+    width: 250px;
+}

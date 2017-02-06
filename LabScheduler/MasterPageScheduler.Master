@@ -1,0 +1,160 @@
+﻿<%@ Master Language="VB" AutoEventWireup="false" CodeBehind="MasterPageScheduler.master.vb" Inherits="LabScheduler.Pages.MasterPageScheduler" %>
+
+<%@ Register Assembly="LNF.Web" Namespace="LNF.Web.Controls" TagPrefix="lnf" %>
+<%@ Register Src="~/UserControls/ResourceTreeView.ascx" TagName="ResourceTreeView" TagPrefix="uc" %>
+<%@ Register Src="~/UserControls/ResourceInfo.ascx" TagName="ResourceInfo" TagPrefix="uc" %>
+
+<!DOCTYPE html>
+<html>
+<head runat="server">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+    <title>Welcome to Lab Scheduler</title>
+
+    <link rel="shortcut icon" href="//ssel-apps.eecs.umich.edu/static/favicon.ico" type="image/x-icon" />
+
+    <asp:ContentPlaceHolder runat="server" ID="head">
+    </asp:ContentPlaceHolder>
+
+    <link rel="stylesheet" href="//ssel-apps.eecs.umich.edu/static/styles/bootstrap/themes/lnf/bootstrap.css" />
+    <link rel="stylesheet" href="//ssel-apps.eecs.umich.edu/static/lib/bootstrap/plugins/bootstrap-datepicker/css/bootstrap-datepicker.min.css" />
+    <link rel="stylesheet" href="//ssel-apps.eecs.umich.edu/static/lib/fullcalendar/fullcalendar.min.css" />
+    <link rel="stylesheet" href="//ssel-apps.eecs.umich.edu/static/lib/fullcalendar/fullcalendar.print.css" media="print" />
+    <link rel="stylesheet" href="//ssel-apps.eecs.umich.edu/static/scripts/jquery/jquery.ajaxbutton/jquery.ajaxbutton.css" />
+    <link rel="stylesheet" href="//ssel-apps.eecs.umich.edu/static/styles/datatables.css?v=20161216" />
+    <link rel="stylesheet" href="//ssel-apps.eecs.umich.edu/static/styles/master.css" />
+    <link rel="stylesheet" href="//ssel-apps.eecs.umich.edu/static/styles/navigation.css?v=20161216" />
+    <link rel="stylesheet" href="//ssel-apps.eecs.umich.edu/static/styles/common.css" />
+    <link rel="stylesheet" href="styles/admin.css" />
+    <link rel="stylesheet" href="styles/helpdesk.css" />
+    <link rel="stylesheet" href="styles/main.css?v=20161220" />
+    <link rel="stylesheet" href="styles/resource.css" />
+    <link rel="stylesheet" href="styles/schedule.css" />
+    <link rel="stylesheet" href="styles/splitter.css" />
+    <link rel="stylesheet" href="styles/tabs.css?v=20160510" />
+    <link rel="stylesheet" href="styles/treeview.css?v=20160412" />
+    <link rel="stylesheet" href="styles/bootstrap.css?v=20161205" />
+    <link rel="stylesheet" href="scripts/calendar/calendar.css" />
+
+    <script src="scripts/overlib.js"></script>
+</head>
+<body>
+    <div id="overDiv" style="z-index: 101; visibility: hidden; position: absolute">
+    </div>
+    <form id="form1" runat="server">
+        <table class="scheduler-main">
+            <tr>
+                <td>
+                    <table class="scheduler-header">
+                        <tr>
+                            <td style="vertical-align: middle; width: 242px;">
+                                <asp:HyperLink runat="server" ID="hypHome" NavigateUrl="~/">
+                                <img src="images/SchedulerLogo.png" alt="Home" style="border: none;" />
+                                </asp:HyperLink>
+                            </td>
+                            <td style="vertical-align: middle;">
+                                <div style="padding-left: 5px;">
+                                    <asp:HyperLink runat="server" ID="hypAdmin" NavigateUrl="~/AdminActivities.aspx" Text="Administration"></asp:HyperLink>
+                                    <asp:Label ID="lblAdminSeparator" runat="server">&nbsp;&nbsp;|&nbsp;&nbsp;</asp:Label>
+                                    <asp:HyperLink runat="server" ID="hypMyReservations" NavigateUrl="~/UserReservations.aspx" Text="My Reservations"></asp:HyperLink>&nbsp;&nbsp;|&nbsp;&nbsp;
+                                    <asp:HyperLink runat="server" ID="hypReservationHistory" NavigateUrl="~/ReservationHistory.aspx" Text="Reservation History"></asp:HyperLink>&nbsp;&nbsp;|&nbsp;&nbsp;
+                                    <asp:HyperLink runat="server" ID="hypPreference" NavigateUrl="~/Preference.aspx" Text="Preferences"></asp:HyperLink>&nbsp;&nbsp;|&nbsp;&nbsp;
+                                    <asp:HyperLink runat="server" ID="hypContact" NavigateUrl="~/Contact.aspx?AdminOnly=1" Text="Contact"></asp:HyperLink>&nbsp;&nbsp;|&nbsp;&nbsp;
+                                    <asp:HyperLink runat="server" ID="hypOther" NavigateUrl="~/ReservationFacilityDownTime.aspx" Text="Facility Down Time"></asp:HyperLink>
+                                    <asp:Label ID="lblOtherSeparator" runat="server">&nbsp;&nbsp;|&nbsp;&nbsp;</asp:Label>
+                                    <a href="/sselonline" target="_top">Exit Application</a>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <table class="scheduler-body">
+                        <tr>
+                            <td class="left-panel" style="vertical-align: top; padding: 0; width: 256px;">
+                                <div style="border: 3px solid #4682B4;">
+                                    <lnf:Calendar runat="server" ID="Calendar1" CssClass="calendar" />
+                                </div>
+                                <div style="border: 3px solid #4682B4;">
+                                    <uc:ResourceTreeView runat="server" ID="ResourceTreeView1" />
+                                </div>
+                                <div style="border: 3px solid #4682B4; min-height: 250px;">
+                                    <asp:Panel ID="panelResourceInfo" runat="server" Width="250" CssClass="ScrollPanel">
+                                        <uc:ResourceInfo ID="ri1" runat="server" />
+                                    </asp:Panel>
+                                </div>
+                            </td>
+                            <td class="right-panel" style="vertical-align: top;">
+                                <table style="width: 100%; border-collapse: collapse;">
+                                    <tr style="height: 12px;">
+                                        <td class="bar"></td>
+                                    </tr>
+                                </table>
+                                <div class="content-container">
+                                    <asp:ContentPlaceHolder ID="ContentPlaceHolder1" runat="server">
+                                    </asp:ContentPlaceHolder>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </form>
+
+    <script src="//ssel-apps.eecs.umich.edu/static/lib/modernizr/modernizr.js"></script>
+    <script src="//ssel-apps.eecs.umich.edu/static/lib/moment/moment.min.js"></script>
+    <script src="//ssel-apps.eecs.umich.edu/static/lib/json2/json2.js"></script>
+    <script src="//ssel-apps.eecs.umich.edu/static/lib/jquery/jquery.min.js"></script>
+    <script src="//ssel-apps.eecs.umich.edu/static/lib/bootstrap/js/bootstrap.min.js"></script>
+    <script src="//ssel-apps.eecs.umich.edu/static/lib/bootstrap/plugins/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+    <script src="//ssel-apps.eecs.umich.edu/static/lib/datatables/js/jquery.dataTables.min.js"></script>
+    <script src="//ssel-apps.eecs.umich.edu/static/scripts/jquery/jquery.daterange.js"></script>
+    <script src="//ssel-apps.eecs.umich.edu/static/lib/jclock/jquery.jclock.js"></script>
+    <script src="//ssel-apps.eecs.umich.edu/static/lib/js-cookie/js.cookie.js"></script>
+    <script src="//ssel-apps.eecs.umich.edu/static/scripts/jquery/jquery.scrollposition.js"></script>
+    <script src="//ssel-apps.eecs.umich.edu/static/scripts/jquery/jquery.menu.js"></script>
+    <script src="//ssel-apps.eecs.umich.edu/static/scripts/jquery/jquery.ajaxbutton/jquery.ajaxbutton.js"></script>
+    <script src="//ssel-apps.eecs.umich.edu/static/lib/fullcalendar/fullcalendar.min.js"></script>
+    <script src="//ssel-apps.eecs.umich.edu/static/lib/underscore/underscore-min.js"></script>
+    <script src="//ssel-apps.eecs.umich.edu/webapi/js/client.js"></script>
+
+    <asp:ContentPlaceHolder ID="scripts" runat="server">
+    </asp:ContentPlaceHolder>
+
+    <script src="scripts/staging.js"></script>
+    <script src="scripts/querystring.js"></script>
+    <script src="scripts/jquery.admin.js"></script>
+    <script src="scripts/jquery.control.js"></script>
+    <script src="scripts/jquery.helpdesk.js"></script>
+    <script src="scripts/jquery.helpdeskinfo.js"></script>
+    <script src="scripts/jquery.numerictext.js"></script>
+    <script src="scripts/jquery.preferences.js"></script>
+    <script src="scripts/jquery.reservation.js?v=20161202"></script>
+    <script src="scripts/jquery.reservationView.js?v=20161216"></script>
+    <script src="scripts/jquery.schedule.js"></script>
+    <script src="scripts/jquery.treeview.js"></script>
+    <script src="scripts/calendar/calendar.js"></script>
+    <script src="scripts/JScriptUI.js"></script>
+    <script src="scripts/master.js"></script>
+    <script src="scripts/processinfo.js"></script>
+
+    <script>
+        var lnfapi = new LNFAPI({ "host": "https://ssel-apps.eecs.umich.edu/webapi/" });
+
+        var isStaging = '<%=ConfigurationManager.AppSettings("IsStaging")%>' === 'true';
+        $(document).staging({ "isStaging": isStaging });
+
+        $(".calendar").calendar();
+        $(".schedule").schedule();
+        $(".reservation-view").reservationView({ "path": QueryString.get("Path") });
+        $(".numeric-text").numerictext();
+
+        // fix the form action attribute
+        var action = new String($("#form1").prop("action"));
+        $("#form1").prop("action", action.replace(/%3a/g, ':'));
+    </script>
+</body>
+</html>

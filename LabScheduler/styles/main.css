@@ -1,0 +1,528 @@
+﻿/* Default CSS Stylesheet for a new Web Application project */
+HTML, BODY {
+    background-color: white;
+    font-size: 10pt;
+    font-weight: normal;
+    letter-spacing: normal;
+    text-transform: none;
+    word-spacing: normal;
+    height: 100%;
+}
+
+H1, H2, H3, H4, H5, TH, THEAD, TFOOT {
+    color: #003366;
+}
+
+H1 {
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    font-size: 18pt;
+    font-weight: 700;
+    font-style: normal;
+    text-decoration: none;
+    word-spacing: normal;
+    letter-spacing: normal;
+    text-transform: none;
+}
+
+H2 {
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    font-size: 16pt;
+    font-weight: 700;
+    font-style: normal;
+    text-decoration: none;
+    word-spacing: normal;
+    letter-spacing: normal;
+    text-transform: none;
+}
+
+H3 {
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    font-size: 14pt;
+    font-weight: 500;
+    font-style: normal;
+    text-decoration: none;
+    word-spacing: normal;
+    letter-spacing: normal;
+    text-transform: none;
+}
+
+H4 {
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    font-size: 12pt;
+    font-weight: 500;
+    text-decoration: none;
+    word-spacing: normal;
+    letter-spacing: normal;
+    text-transform: none;
+}
+
+H5, DT {
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    font-size: 11pt;
+    font-weight: 700;
+    font-style: normal;
+    text-decoration: none;
+    word-spacing: normal;
+    letter-spacing: normal;
+    text-transform: none;
+}
+
+H6 {
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    font-size: 8pt;
+    font-weight: 700;
+    font-style: normal;
+    text-decoration: none;
+    word-spacing: normal;
+    letter-spacing: normal;
+    text-transform: none;
+}
+
+TFOOT, THEAD {
+    font-size: 10pt;
+    word-spacing: normal;
+    letter-spacing: normal;
+    text-transform: none;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+TH {
+    vertical-align: baseline;
+    font-size: 10pt;
+    font-weight: bold;
+    word-spacing: normal;
+    letter-spacing: normal;
+    text-transform: none;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+TD {
+    font-size: 10pt;
+    font-family: Tahoma, Sans-Serif;
+}
+
+IMG {
+    border-style: none;
+    vertical-align: middle;
+}
+
+A:link {
+    text-decoration: none;
+    color: #006ad5;
+}
+
+A:visited {
+    color: #006ad5;
+}
+
+A:active {
+    text-decoration: none;
+    color: #006ad5;
+}
+
+A:hover {
+    text-decoration: underline;
+    color: Navy;
+}
+
+SMALL {
+    font-size: .7em;
+}
+
+BIG {
+    font-size: 1.17em;
+}
+
+BLOCKQUOTE, PRE {
+    font-family: Courier New, monospace;
+}
+
+.splitter-right-pane UL LI {
+    list-style-type: square;
+}
+
+    .splitter-right-pane UL LI LI {
+        list-style-type: disc;
+    }
+
+        .splitter-right-pane UL LI LI LI {
+            list-style-type: circle;
+        }
+
+OL LI {
+    list-style-type: decimal;
+}
+
+OL OL LI {
+    list-style-type: lower-alpha;
+}
+
+OL OL OL LI {
+    list-style-type: lower-roman;
+}
+
+.MenuLinks {
+    font-weight: bold;
+}
+
+.Button {
+    font-weight: bold;
+    background-color: #ffcc66;
+    cursor: pointer;
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+}
+
+.TextBox {
+    border: 1px #a0c6e5;
+    background-color: #dbeaf5;
+}
+
+.RadioButtonList {
+    border: 1px #a0c6e5;
+}
+
+.CheckBoxList {
+    border: 1px #a0c6e5;
+}
+
+.ScrollPanel {
+    overflow: auto;
+    vertical-align: top;
+    top: 0;
+}
+
+.Table {
+    border-collapse: collapse;
+    border-top: solid 1px #a0c6e5;
+    border-bottom: solid 1px #a0c6e5;
+    border-left: solid 1px #a0c6e5;
+    border-right: solid 1px #a0c6e5;
+}
+
+    .Table td {
+        padding: 5px;
+    }
+
+.TableHeader {
+    background-color: #A0C6E5;
+}
+
+    .TableHeader td {
+        font-weight: bold;
+    }
+
+.TableCell {
+    background-color: White;
+}
+
+.ReservTableHeader {
+    background-color: White;
+    font-weight: bold;
+    text-align: center;
+}
+
+.ReservLinkHeader {
+    color: #006ad5;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+a.ReservLinkHeader {
+    margin-left: 10px;
+    margin-right: 10px;
+    display: block;
+}
+
+    a.ReservLinkHeader:link,
+    a.ReservLinkHeader:active,
+    a.ReservLinkHeader:visited {
+        text-decoration: none;
+    }
+
+    a.ReservLinkHeader:hover {
+        text-decoration: underline;
+    }
+
+.ReservationCell {
+    background-color: White;
+    cursor: pointer;
+}
+
+.Undefined {
+    background-color: #ffffe0;
+}
+
+.Editable {
+    background-color: #add8e6;
+}
+
+.StartOrDelete {
+    background-color: #90ee90;
+    cursor: url(images/trafL_gr.cur), default;
+}
+
+.StartOnly {
+    background-color: #90ee90;
+    cursor: url(images/trafL_gr.cur), default;
+}
+
+.Endable {
+    background-color: #ff0000;
+    cursor: url(images/trafL_rd.cur), default;
+}
+
+.PastSelf {
+    background-color: #b0c4de;
+    cursor: url(images/edit_past.cur), default;
+}
+
+.Other {
+    background-color: #dda0dd;
+    cursor: url(images/email.cur), default;
+}
+
+.Invited {
+    background-color: #ff9999;
+    cursor: url(images/email.cur), default;
+}
+
+.PastOther {
+    background-color: #9370db;
+    cursor: url(images/email.cur), default;
+}
+
+.Repair {
+    background-color: #d3d3d3;
+}
+
+.NotInLab {
+    background-color: #ccff33;
+    cursor: url(images/arrow_r.cur), default;
+}
+
+.UnAuthToStart {
+    background-color: #ffcc66;
+    cursor: url(images/arrow_r.cur), default;
+}
+
+.ActiveNotEndable {
+    background-color: #ff0000;
+}
+
+.ReservDelete {
+    cursor: url(images/bomb.cur), default;
+}
+
+.ReservModify {
+    cursor: url(images/edit_future.cur), default;
+}
+
+.TreeNode {
+    font-size: 11pt;
+    font-family: Arial, Verdana;
+}
+
+.TreeNodeSelected {
+    font-size: 12pt;
+    font-family: Arial, Verdana;
+    background-color: silver;
+}
+
+.watermark-error {
+    font-weight: bold;
+    font-style: italic;
+    color: #FF6666;
+}
+
+.scheduler-main {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+    .scheduler-main > td {
+        padding: 0;
+    }
+
+.scheduler-body {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+    .scheduler-body > td {
+        padding: 0;
+    }
+
+    .scheduler-body .tab-strip {
+        border-collapse: collapse;
+    }
+
+        .scheduler-body .tab-strip td {
+            padding: 2px 4px 2px 4px;
+        }
+
+    .scheduler-body .content-container {
+        padding: 10px;
+    }
+
+        .scheduler-body .content-container .content-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: none;
+        }
+
+            /*.scheduler-body .content-container .content-table td.tabs {
+            }*/
+
+            .scheduler-body .content-container .content-table .view {
+                padding-top: 10px;
+            }
+
+.reservation-view-table td {
+    padding: 3px;
+}
+
+.ical-container {
+    padding: 5px;
+    /*border: solid 1px #AAAAAA;*/
+    margin-bottom: 10px;
+    width: 700px;
+}
+
+    .ical-container .ical-message {
+        margin-bottom: 5px;
+    }
+
+    .ical-container .ical-title {
+        margin-bottom: 5px;
+    }
+
+    .ical-container .ical-title-text {
+        float: left;
+        font-weight: bold;
+    }
+
+    .ical-container .ical-title-info {
+        float: right;
+        padding-right: 10px;
+    }
+
+/*.ical-container .ical-title-info-link {
+    }*/
+
+#listAccountSortable {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    width: 90%;
+}
+
+    #listAccountSortable li {
+        margin: 0 3px 3px 3px;
+        padding: 0.4em;
+        padding-left: 1.5em;
+        font-size: 1.4em;
+        height: 38px;
+    }
+
+        #listAccountSortable li span {
+            position: absolute;
+            margin-left: -1.3em;
+        }
+
+.debug-info-header {
+    padding: 5px;
+    background-color: #CCFFCC;
+    font-weight: bold;
+    border-bottom: 1px solid #CCCCCC;
+}
+
+.debug-info {
+    border-bottom: solid 1px #CCCCCC;
+}
+
+.debug-info-label {
+    float: left;
+    width: 500px;
+    background-color: #E5E5E5;
+}
+
+/*.debug-info-value {
+}*/
+
+.row-controls {
+    text-align: center;
+}
+
+.bar {
+    vertical-align: top;
+    border: solid 3px #4682B4;
+    background: #4682B4 url(images/bgcolor.gif) repeat-x;
+    height: 12px;
+    padding: 0;
+}
+
+.resources {
+    width: 100%;
+}
+
+/* These styles are for the tooltip. For some reason they are needed after adding bootstrap. */
+#overDiv > table {
+    background-color: #336699;
+}
+
+    #overDiv > table > tbody > tr > td {
+        padding: 1px;
+    }
+
+        #overDiv > table > tbody > tr > td > table > tbody > tr > td {
+            padding: 3px;
+        }
+
+        #overDiv > table > tbody > tr > td > table[bgcolor='#FFFFE0'] {
+            background-color: #ffffe0;
+        }
+
+        #overDiv hr{
+            margin: 5px 0 5px 0;
+        }
+
+/* These styles are for processinfo */
+.pi {
+    border: 2px solid red;
+    margin: 20px;
+}
+
+.thbottombordercolor th {
+    text-align: center;
+    font-size: 11pt;
+    vertical-align: middle;
+    padding: 10px;
+}
+
+tr.thbottombordercolor {
+    border-bottom: 1px solid red;
+    height: 50px;
+}
+
+.trbottombordercolor {
+    border-bottom: 1px solid black;
+}
+
+.btnAddRun {
+    padding: 15px;
+    padding-left: 50px;
+    padding-right: 50px;
+    margin: 0 30px 30px 230px;
+}
+
+.btnSubmitRes.tdisable {
+    cursor: not-allowed;
+    background-color: gray;
+}
+
+.imgDeleteRun {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}

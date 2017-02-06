@@ -1,0 +1,24 @@
+﻿.splitter
+{
+    height: 4000px;
+    border: none;
+}
+.splitter > div
+{
+    overflow: auto;
+}
+.treeview-container
+{
+    overflow: auto;
+}
+.vsplitbar
+{
+    width: 4px;
+    background: #BBBBBB url('//ssel-apps.eecs.umich.edu/static/images/vgrabber.gif') no-repeat scroll center;
+    border: solid 1px #A0A0A0;
+}
+.vsplitbar.active
+{
+    width: 4px;
+    background: #8080DD url('//ssel-apps.eecs.umich.edu/static/images/vgrabber.gif') no-repeat scroll center;
+}

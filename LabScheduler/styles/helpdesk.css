@@ -1,0 +1,48 @@
+﻿.helpdesk-ticket {
+    margin-bottom: 10px;
+}
+
+    .helpdesk-ticket table {
+        border-collapse: collapse;
+        table-layout: fixed;
+        width: 100%;
+    }
+
+        .helpdesk-ticket table td {
+            padding: 3px;
+            border: solid 1px #AAAAAA;
+        }
+
+            .helpdesk-ticket table td.helpdesk-label {
+                background-color: #DDDDDD;
+            }
+
+.helpdesk-info {
+    margin-bottom: 10px;
+}
+
+.helpdesk-info-output {
+    border-bottom: solid 1px #aaaaaa;
+}
+
+.helpdesk-info-message {
+    color: #808080;
+    font-weight: normal;
+    font-style: italic;
+    background-color: #FFFFFF;
+    padding: 5px;
+}
+
+.helpdesk-info-warning {
+    color: #000000;
+    font-weight: bold;
+    background-color: #FFFFFF;
+    padding: 5px;
+}
+
+.helpdesk-info-urgent {
+    color: #FF0000;
+    font-weight: bold;
+    background-color: #FFFF00;
+    padding: 5px;
+}

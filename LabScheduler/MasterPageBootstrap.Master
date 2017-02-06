@@ -1,0 +1,407 @@
+﻿<%@ Master Language="VB" AutoEventWireup="false" CodeBehind="MasterPageBootstrap.master.vb" Inherits="LabScheduler.MasterPageBootstrap" %>
+
+<%@ Register Assembly="LNF.Web" Namespace="LNF.Web.Controls" TagPrefix="lnf" %>
+<%@ Register Src="~/UserControls/ResourceTreeView.ascx" TagName="ResourceTreeView" TagPrefix="uc" %>
+
+<!DOCTYPE html>
+<html lang="en">
+<head runat="server">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <title></title>
+
+    <link rel="shortcut icon" href="//ssel-apps.eecs.umich.edu/static/favicon.ico" type="image/x-icon" />
+    <link rel="stylesheet" href="//ssel-apps.eecs.umich.edu/static/styles/bootstrap/themes/lnf/bootstrap.css?v=20161226" />
+    <link rel="stylesheet" href="//ssel-apps.eecs.umich.edu/static/lib/bootstrap/plugins/bootstrap-datepicker/css/bootstrap-datepicker.min.css?v=20161226" />
+    <link rel="stylesheet" href="//ssel-apps.eecs.umich.edu/static/lib/fullcalendar/fullcalendar.min.css?v=20161226" />
+    <link rel="stylesheet" href="//ssel-apps.eecs.umich.edu/static/lib/fullcalendar/fullcalendar.print.css?v=20161226" media="print" />
+    <link rel="stylesheet" href="//ssel-apps.eecs.umich.edu/static/scripts/jquery/jquery.ajaxbutton/jquery.ajaxbutton.css?v=20161226" />
+    <link rel="stylesheet" href="//ssel-apps.eecs.umich.edu/static/styles/datatables.css?v=20161226" />
+    <link rel="stylesheet" href="//ssel-apps.eecs.umich.edu/static/styles/master.css?v=20161226" />
+    <link rel="stylesheet" href="//ssel-apps.eecs.umich.edu/static/styles/navigation.css?v=20161226" />
+    <link rel="stylesheet" href="//ssel-apps.eecs.umich.edu/static/styles/common.css?v=20161226" />
+    <link rel="stylesheet" href="styles/admin.css?v=20161226" />
+    <link rel="stylesheet" href="styles/helpdesk.css?v=20161226" />
+    <link rel="stylesheet" href="styles/main.css?v=20161226" />
+    <link rel="stylesheet" href="styles/resource.css?v=20161226" />
+    <link rel="stylesheet" href="styles/schedule.css?v=20161226" />
+    <link rel="stylesheet" href="styles/splitter.css?v=20161226" />
+    <link rel="stylesheet" href="styles/tabs.css?v=20161226" />
+    <link rel="stylesheet" href="styles/treeview.css?v=20161226" />
+    <link rel="stylesheet" href="styles/bootstrap.css?v=20161226" />
+    <link rel="stylesheet" href="scripts/calendar/calendar.css?v=20161226" />
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <style>
+        body {
+            padding-top: 60px;
+        }
+
+        .menu-clock {
+            margin-top: 10px;
+            margin-bottom: 0;
+            text-align: right;
+        }
+
+        .lnf.navbar-default {
+            background-color: #fae69b;
+            border-color: #f8da6b;
+        }
+
+            .lnf.navbar-default .navbar-brand {
+                padding: 0;
+            }
+
+            .lnf.navbar-default .navbar-toggle:hover,
+            .lnf.navbar-default .navbar-toggle:focus {
+                background-color: #f8da6b;
+            }
+
+            .lnf.navbar-default .navbar-collapse {
+                border-top-color: #f8da6b;
+            }
+
+            .lnf.navbar-default .navbar-nav > li > a,
+            .lnf.navbar-default .navbar-nav > li > a:link,
+            .lnf.navbar-default .navbar-nav > li > a:hover,
+            .lnf.navbar-default .navbar-nav > li > a:focus,
+            .lnf.navbar-default .navbar-nav > li > a:active,
+            .lnf.navbar-default .navbar-text {
+                color: #304797;
+                font-weight: bold;
+            }
+
+            .lnf.navbar-default .navbar-nav > .open > a:link,
+            .lnf.navbar-default .navbar-nav > .open > a:hover,
+            .lnf.navbar-default .navbar-nav > .open > a:focus {
+                color: #304797;
+                font-weight: bold;
+                background-color: #f8da6b;
+            }
+
+        .lnf .dropdown-menu {
+            background-color: #f8da6b;
+            border: solid 1px #dfc460;
+        }
+
+        @media (max-width: 767px) {
+            .navbar-default .navbar-nav .open .dropdown-menu > li > a {
+                color: #304797;
+                font-weight: bold;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .navbar-text {
+                margin-left: 0px;
+                margin-right: 5px;
+            }
+        }
+    </style>
+
+    <asp:ContentPlaceHolder ID="head" runat="server">
+    </asp:ContentPlaceHolder>
+</head>
+<body>
+    <form id="form1" runat="server">
+
+        <lnf:BootstrapModal runat="server" ID="modalSelectTool" Title="Select Tool" CssClass="select-tool-modal">
+            <BodyTemplate>
+                <div class="modal-dynamic-content" style="overflow-y: scroll; max-height: 600px;">
+                </div>
+            </BodyTemplate>
+            <FooterTemplate>
+                <button type="button" class="lnf btn-default btn" data-dismiss="modal">Close</button>
+            </FooterTemplate>
+        </lnf:BootstrapModal>
+
+        <input type="hidden" runat="server" id="hidSelectedDate" class="selected-date" />
+
+        <asp:Repeater runat="server" ID="rptMenu" OnItemDataBound="rptMenu_ItemDataBound">
+            <HeaderTemplate>
+                <nav class="lnf navbar navbar-default navbar-fixed-top">
+                    <div class="container-fluid">
+                        <div class="navbar-header">
+                            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                                <span class="sr-only">Toggle navigation</span>
+                                <span class="icon-bar"></span>
+                                <span class="icon-bar"></span>
+                                <span class="icon-bar"></span>
+                            </button>
+                            <a class="navbar-brand" href="#">
+                                <img alt="LNF Scheduler" src="//ssel-apps.eecs.umich.edu/static/images/lnf-logo-trans.png" style="height: 50px;">
+                            </a>
+                            <div class="pull-right hidden-lg hidden-md hidden-sm" style="margin-right: 10px;">
+                                <p class="navbar-text menu-clock">
+                                    <asp:Literal runat="server" ID="litDisplayName"></asp:Literal><br />
+                                    <span class="clock"></span>
+                                </p>
+                            </div>
+                        </div>
+                        <div id="navbar" class="navbar-collapse collapse">
+                            <ul class="nav navbar-nav">
+            </HeaderTemplate>
+            <ItemTemplate>
+                <li runat="server" id="liParentDropdown" class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><%#Eval("MenuText")%> <span class="caret"></span></a>
+                    <asp:Repeater runat="server" ID="rptChildren">
+                        <HeaderTemplate>
+                            <ul class="dropdown-menu">
+                        </HeaderTemplate>
+                        <ItemTemplate>
+                            <li><a href='<%#GetMenuUrl(CType(Container.DataItem, LNF.Repository.Data.Menu))%>' target='<%#GetMenuTarget(CType(Container.DataItem, LNF.Repository.Data.Menu))%>'><%#Eval("MenuText")%></a></li>
+                        </ItemTemplate>
+                        <FooterTemplate>
+                            </ul>
+                        </FooterTemplate>
+                    </asp:Repeater>
+                </li>
+                <li runat="server" id="liParentLink">
+                    <a href='<%#GetMenuUrl(CType(Container.DataItem, LNF.Repository.Data.Menu))%>' target='<%#GetMenuTarget(CType(Container.DataItem, LNF.Repository.Data.Menu))%>'><%#Eval("MenuText")%></a>
+                </li>
+            </ItemTemplate>
+            <FooterTemplate>
+                </ul>
+                <!-- /.nav .navbar-nav -->
+                <ul class="nav navbar-nav navbar-right hidden-xs">
+                    <li>
+                        <p class="navbar-text menu-clock">
+                            Current User:
+                            <asp:Literal runat="server" ID="litDisplayName"></asp:Literal><br />
+                            <span class="clock"></span>
+                        </p>
+                    </li>
+                </ul>
+                </div>
+                <!-- /.navbar-collapse .collapse -->
+                </div>
+                <!-- /.container-fluid -->
+                </nav>
+            </FooterTemplate>
+        </asp:Repeater>
+
+        <!-- clock format is based on screen size -->
+        <span class="screen-size visible-xs hidden-sm hidden-md hidden-lg" data-size="xs"></span>
+        <span class="screen-size hidden-xs visible-sm hidden-md hidden-lg" data-size="sm"></span>
+        <span class="screen-size hidden-xs hidden-sm visible-md hidden-lg" data-size="md"></span>
+        <span class="screen-size hidden-xs hidden-sm hidden-md visible-lg" data-size="lg"></span>
+
+        <nav class="navbar navbar-default" style="background-color: transparent; border: none;">
+            <div class="container-fluid">
+                <!-- Brand and toggle get grouped for better mobile display -->
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand" href="/sselscheduler" style="padding: 0 5px 0 0;">
+                        <img src="images/SchedulerLogo.png" alt="Scheduler" style="border: none; height: 50px;"></a>
+                </div>
+
+                <!-- Collect the nav links, forms, and other content for toggling -->
+                <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                    <ul class="nav navbar-nav">
+                        <li runat="server" id="liAdminMenu" class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Administration <span class="caret"></span></a>
+                            <ul class="dropdown-menu">
+                                <li runat="server" id="liAdministration"><a href="AdminActivities.aspx">Administration</a></li>
+                                <li runat="server" id="liFacilityDownTime"><a href="ReservationFacilityDownTime.aspx">Facility Down Time</a></li>
+                            </ul>
+                        </li>
+                        <li><a href="UserReservations.aspx">My Reservations</a></li>
+                        <li><a href="ReservationHistory.aspx">Reservation History</a></li>
+                        <li><a href="Preference.aspx">Preferences</a></li>
+                        <li><a href="Contact.aspx?AdminOnly=1">Contact</a></li>
+                        <li><a href="/sselonline">Exit Application</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <hr />
+
+        <div class="container-fluid scheduler-body">
+            <div class="row">
+                <div class="col-md-4 col-lg-3">
+                    <div class="visible-xs visible-sm hidden-md hidden-lg">
+                        <div class="form-horizontal">
+                            <div class="form-group">
+                                <label class="col-xs-2 col-sm-1 control-label">Date</label>
+                                <div class="col-xs-10 col-sm-4">
+                                    <div class="input-group">
+                                        <input runat="server" type="text" class="form-control current-date" id="txtCurrentDate" />
+                                        <span class="input-group-btn">
+                                            <button type="button" class="lnf btn-default btn" data-toggle="modal" data-target=".select-tool-modal">Select Tool</button>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <hr />
+                    </div>
+                    <div class="hidden-xs hidden-sm visible-md visible-lg">
+                        <div class="calendar-container">
+                            <lnf:Calendar runat="server" ID="Calendar1" CssClass="calendar" />
+                        </div>
+                        <div class="treeview-container">
+                            <uc:ResourceTreeView runat="server" ID="ResourceTreeView1" />
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-8 col-lg-9">
+                    <asp:ContentPlaceHolder ID="ContentPlaceHolder1" runat="server">
+                    </asp:ContentPlaceHolder>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <script src="//ssel-apps.eecs.umich.edu/static/lib/modernizr/modernizr.js"></script>
+    <script src="//ssel-apps.eecs.umich.edu/static/lib/moment/moment.min.js"></script>
+    <script src="//ssel-apps.eecs.umich.edu/static/lib/json2/json2.js"></script>
+    <script src="//ssel-apps.eecs.umich.edu/static/lib/jquery/jquery.min.js"></script>
+    <script src="//ssel-apps.eecs.umich.edu/static/lib/bootstrap/js/bootstrap.min.js"></script>
+    <script src="//ssel-apps.eecs.umich.edu/static/lib/bootstrap/plugins/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+    <script src="//ssel-apps.eecs.umich.edu/static/lib/datatables/js/jquery.dataTables.min.js"></script>
+    <script src="//ssel-apps.eecs.umich.edu/static/scripts/jquery/jquery.daterange.js"></script>
+    <script src="//ssel-apps.eecs.umich.edu/static/lib/jclock/jquery.jclock.js"></script>
+    <script src="//ssel-apps.eecs.umich.edu/static/lib/js-cookie/js.cookie.js"></script>
+    <script src="//ssel-apps.eecs.umich.edu/static/scripts/jquery/jquery.scrollposition.js"></script>
+    <script src="//ssel-apps.eecs.umich.edu/static/scripts/jquery/jquery.menu.js"></script>
+    <script src="//ssel-apps.eecs.umich.edu/static/scripts/jquery/jquery.ajaxbutton/jquery.ajaxbutton.js"></script>
+    <script src="//ssel-apps.eecs.umich.edu/static/lib/fullcalendar/fullcalendar.min.js"></script>
+    <script src="scripts/querystring.js"></script>
+    <script src="scripts/jquery.admin.js"></script>
+    <script src="scripts/jquery.control.js"></script>
+    <script src="scripts/jquery.helpdesk.js"></script>
+    <script src="scripts/jquery.helpdeskinfo.js"></script>
+    <script src="scripts/jquery.numerictext.js"></script>
+    <script src="scripts/jquery.preferences.js"></script>
+    <script src="scripts/jquery.reservation.js?v=20161202"></script>
+    <script src="scripts/jquery.schedule.js"></script>
+    <script src="scripts/jquery.treeview.js"></script>
+    <script src="scripts/calendar/calendar.js"></script>
+    <script src="scripts/JScriptUI.js"></script>
+    <script src="scripts/overlib.js"></script>
+    <script src="scripts/master.js"></script>
+
+    <script>
+        (function ($) {
+            $.fn.clock = function (options) {
+
+                if (!moment.version) {
+                    console.log("%c ***** CLOCK ERROR: moment.js is required.", "color: #ff0000;");
+                    return;
+                }
+
+                return this.each(function () {
+                    var $this = $(this);
+
+                    var defaults = {
+                        "format": "HH:mm:ss",
+                        "interval": 1000
+                    };
+
+                    var opt = $.extend({}, defaults, $this.data(), options);
+
+                    var getFormat = function () {
+                        return (typeof opt.format == "function")
+                            ? opt.format()
+                            : opt.format || defaults.format;
+                    }
+
+                    var updateClock = function () {
+                        $this.html(moment().format(getFormat()));
+                    }
+
+                    var timer = null;
+
+                    var stop = function () {
+                        if (timer)
+                            clearInterval(timer);
+                    }
+
+                    var start = function () {
+                        stop();
+                        timer = setInterval(updateClock, opt.interval);
+                    }
+
+                    $this.on("setFormat", function (e, val) {
+                        opt.format = val;
+                    }).on("stop", function (e) {
+                        stop();
+                    }).on("start", function (e) {
+                        start();
+                    }).trigger("start");
+                });
+            };
+
+            $.fn.dialog = function (options) {
+                return this.each(function () {
+                    var $this = $(this);
+                    alert('need to change to bootstrap modal');
+                });
+            };
+        })(jQuery)
+
+        //starts the menu clock
+        var clockFormats = {
+            "xs": "hh:mm:ss A, dd MM/DD/YY",
+            "sm": "hh:mm:ss A, ddd MM/DD/YY",
+            "md": "hh:mm:ss A [on] dddd, MMMM D, YYYY",
+            "lg": "hh:mm:ss A [on] dddd, MMMM D, YYYY"
+        }
+
+        var clock = $(".clock").clock({
+            "format": function () {
+                return clockFormats[$(".screen-size:visible").data("size")];
+            }
+        });
+
+        $(".select-tool-modal").on("show.bs.modal", function (e) {
+            var modal = $(this);
+            var dynamic = modal.find(".modal-dynamic-content");
+            dynamic.load("ajax/treeview.ashx" + window.location.search, function () {
+                dynamic.find(".treeview").treeview({ autoscroll: false });
+            });
+        });
+
+        $(".current-date").datepicker({
+            "autoclose": true,
+            "todayBtn": "linked"
+        }).on("changeDate", function (e) {
+            window.location.href = "CalendarController.ashx?Command=ChangeDate&Date=" + moment(e.date).format("YYYY-MM-DD") + "&ReturnTo=" + window.location.pathname + window.location.search;
+        });
+
+        $(".sidebar-toggle").on("click", function (e) {
+            $("#wrapper").toggleClass("toggled");
+            if ($("#wrapper").hasClass("toggled")) {
+                $(this).html("&#9668;");
+            } else {
+                $(this).html("&#9658;");
+            }
+        });
+
+        function menuNav(url) {
+            var target = $(this).attr("target");
+            if (target)
+                window.open(url, target);
+            else
+                window.location.href = url;
+        }
+    </script>
+
+    <asp:ContentPlaceHolder ID="scripts" runat="server">
+    </asp:ContentPlaceHolder>
+</body>
+</html>
