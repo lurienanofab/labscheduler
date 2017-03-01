@@ -1,56 +1,71 @@
-﻿.resource-table-container
-{
+﻿/*
+  Copyright 2017 University of Michigan
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+*/
+
+.resource-table-container {
     width: 1200px;
     visibility: hidden;
 }
-.resource-table
-{
+
+.resource-table {
     width: 100%;
 }
-.resource-table .action-links-header
-{
-    width: 30px;
-}
-.resource-table .building-name-header, .resource-table .lab-name-header, .resource-table .resource-id-header, .resource-table .schedulable-header
-{
-    width: 80px;
-}
-.resource-table .process-tech-header
-{
-    width: 100px;
-}
-.resource-table .picture-header
-{
-    width: 50px;
-}
-.resource-table .action-links-item, .resource-table .schedulable-item, .resource-table .picture-item
-{
-    text-align: center;
-}
-.resource-table .resource-id-item
-{
-    text-align: right;
-}
-.tool-engineer-table
-{
+
+    .resource-table .action-links-header {
+        width: 30px;
+    }
+
+    .resource-table .building-name-header, .resource-table .lab-name-header, .resource-table .resource-id-header, .resource-table .schedulable-header {
+        width: 80px;
+    }
+
+    .resource-table .process-tech-header {
+        width: 100px;
+    }
+
+    .resource-table .picture-header {
+        width: 50px;
+    }
+
+    .resource-table .action-links-item, .resource-table .schedulable-item, .resource-table .picture-item {
+        text-align: center;
+    }
+
+    .resource-table .resource-id-item {
+        text-align: right;
+    }
+
+.tool-engineer-table {
     border-collapse: collapse;
     width: 100%;
 }
-.tool-engineer-table td
-{
-    padding: 5px;
-    border: solid 1px #4863A0;
-}
-.tool-engineer-table tr.footer td
-{
-    background-color: #CCFF99;
-}
-.tool-engineer-table td.tool-engineer-action
-{
-    width: 60px;
-    text-align: center;
-}
-.tool-engineer-table .tool-engineer-select
-{
-    width: 100%;
-}
+
+    .tool-engineer-table td {
+        padding: 5px;
+        border: solid 1px #4863A0;
+    }
+
+    .tool-engineer-table tr.footer td {
+        background-color: #CCFF99;
+    }
+
+    .tool-engineer-table td.tool-engineer-action {
+        width: 60px;
+        text-align: center;
+    }
+
+    .tool-engineer-table .tool-engineer-select {
+        width: 100%;
+    }

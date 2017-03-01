@@ -133,7 +133,6 @@
     <Content Include="CacheUtility.aspx" />
     <Content Include="Contact.aspx" />
     <Content Include="ErrorPage.aspx" />
-    <Content Include="GlimpseSecurityPolicy.cs" />
     <Content Include="Global.asax" />
     <Content Include="images\arrow_r.cur" />
     <Content Include="images\arr_down.gif" />
@@ -448,6 +447,7 @@
     <Content Include="Status.aspx" />
     <None Include="Web.Staging.config">
       <DependentUpon>Web.config</DependentUpon>
+      <SubType>Designer</SubType>
     </None>
   </ItemGroup>
   <ItemGroup>

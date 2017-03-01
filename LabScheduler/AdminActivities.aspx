@@ -1,6 +1,25 @@
-﻿<%@ Page Title="Admin: Activities" Language="vb" AutoEventWireup="false" MasterPageFile="~/MasterPageScheduler.Master" CodeBehind="AdminActivities.aspx.vb" Inherits="LabScheduler.Pages.AdminActivities" %>
+﻿<%--
+  Copyright 2017 University of Michigan
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+--%>
+
+<%@ Page Title="Admin: Activities" Language="vb" AutoEventWireup="false" MasterPageFile="~/MasterPageScheduler.Master" CodeBehind="AdminActivities.aspx.vb" Inherits="LabScheduler.Pages.AdminActivities" %>
 
 <%@ Import Namespace="LabScheduler.AppCode.DBAccess"  %>
+<%@ Import Namespace="LNF.Scheduler"  %>
+<%@ Import Namespace="LNF.Models.Scheduler"  %>
+
 <%@ Register TagPrefix="uc" TagName="AdminTabMenu" Src="~/UserControls/AdminTabMenu.ascx" %>
 
 <asp:Content ID="Content1" ContentPlaceHolderID="head" runat="server">
@@ -340,11 +359,11 @@
                                                     </tr>
                                                     <tr>
                                                         <td class="label">Account Type</td>
-                                                        <td><%#GetAccountTypeName(CType(Eval("AccountType"), ReservationAccountType))%></td>
+                                                        <td><%#GetAccountTypeName(Eval("AccountType"))%></td>
                                                     </tr>
                                                     <tr>
                                                         <td class="label">Invitee Type</td>
-                                                        <td><%#GetInviteeTypeName(CType(Eval("InviteeType"), InviteeType))%></td>
+                                                        <td><%#GetInviteeTypeName(Eval("InviteeType"))%></td>
                                                     </tr>
                                                 </table>
                                             </div>
