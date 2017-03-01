@@ -56,8 +56,8 @@
     <add key="ShowCanceledForModification" value="true"/>
     <add key="ShowMenu" value="false"/>
     <add key="OverrideIsOnKiosk" value="false"/>
-    <add key="as:AudienceId" value="xxxxxxxxxxxxxxxxxxxx"/>
-    <add key="as:AudienceSecret" value="xxxxxxxxxxxxxxxxxxxx"/>
+    <add key="as:AudienceId" value="xxxxx"/>
+    <add key="as:AudienceSecret" value="xxxxx"/>
     <add key="ApiHost" value="http://lnf-dev.eecs.umich.edu/webapi/"/>
     <add key="HandleErrors" value="false"/>
     <add key="WagoEnabled" value="true"/>
