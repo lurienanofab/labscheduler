@@ -17,7 +17,9 @@
 using LNF.Cache;
 using LNF.Models.Scheduler;
 using LNF.Scheduler;
+using System;
 using System.Configuration;
+using System.Linq;
 using System.Web;
 
 namespace LNF.Web.Scheduler
@@ -29,6 +31,9 @@ namespace LNF.Web.Scheduler
         private int _ProcessTechID;
         private int _ResourceID;
 
+        // only allow the following delimiters
+        private readonly static char[] _delimiters = { ':', ',', '-', '|', '$' };
+
         public int BuildingID { get { return _BuildingID; } }
         public int LabID { get { return _LabID; } }
         public int ProcessTechID { get { return _ProcessTechID; } }
@@ -38,7 +43,12 @@ namespace LNF.Web.Scheduler
         {
             get
             {
-                return ConfigurationManager.AppSettings["TreeView.PathDelimiter"];
+                string result = ConfigurationManager.AppSettings["TreeView.PathDelimiter"];
+
+                if (!_delimiters.Contains(char.Parse(result)))
+                    throw new InvalidOperationException(string.Format("Invalid delimiter value. Use one of the following: {0}", string.Join(", ", _delimiters)));
+
+                return result;
             }
         }
 
@@ -49,7 +59,7 @@ namespace LNF.Web.Scheduler
             if (string.IsNullOrEmpty(value))
                 return result;
 
-            string[] splitter = value.Split(new char[] { char.Parse(PathDelimiter), ',', ':', '-', '|', '~' });
+            string[] splitter = value.Split(_delimiters);
 
             if (splitter.Length == 0)
                 return result;
