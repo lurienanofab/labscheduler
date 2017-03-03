@@ -91,7 +91,7 @@ namespace LNF.Web.Scheduler
             var result = new UserState()
             {
                 ClientID = clientId,
-                Date = DateTime.Now.Date,
+                //Date = DateTime.Now.Date,
                 View = cs.GetDefaultViewOrDefault(),
                 CreatedAt = DateTime.Now,
                 ModifiedAt = DateTime.Now,

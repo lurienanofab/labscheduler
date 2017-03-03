@@ -1,4 +1,20 @@
-﻿using LNF.Cache;
+﻿/*
+  Copyright 2017 University of Michigan
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+*/
+
+using LNF.Cache;
 using LNF.Data;
 using LNF.Models.Data;
 using LNF.Models.Scheduler;
@@ -525,11 +541,11 @@ namespace LNF.Web.Scheduler
             {
                 case ViewType.DayView:
                 case ViewType.WeekView:
-                    result= string.Format("~/ResourceDayWeek.aspx?Path={0}", PathInfo.Current);
+                    result= string.Format("~/ResourceDayWeek.aspx?Path={0}", PathInfo.Current.UrlEncode());
                     separator = "&";
                     break;
                 case ViewType.ProcessTechView:
-                    result = string.Format("~/ProcessTech.aspx?Path={0}", PathInfo.Current);
+                    result = string.Format("~/ProcessTech.aspx?Path={0}", PathInfo.Current.UrlEncode());
                     separator = "&";
                     break;
                 case ViewType.UserView:
@@ -546,7 +562,7 @@ namespace LNF.Web.Scheduler
             return result;
         }
 
-        public static string GetReturnUrl(string page, PathInfo pathInfo, int reservationId)
+        public static string GetReturnUrl(string page, PathInfo pathInfo, int reservationId, DateTime date)
         {
             string result = string.Format("~/{0}", page);
 
@@ -560,9 +576,12 @@ namespace LNF.Web.Scheduler
 
             if (!pathInfo.IsEmpty())
             {
-                result += string.Format("{0}Path={1}", separator, pathInfo);
+                result += string.Format("{0}Path={1}", separator, pathInfo.UrlEncode());
                 separator = "&";
             }
+
+            result += string.Format("{0}Date={1:yyyy-MM-dd}", separator, date);
+            separator = "&";
 
             return result;
         }

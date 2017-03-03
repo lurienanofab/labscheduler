@@ -16,7 +16,7 @@
 
 <%@ Page Title="Admin: Process Techs" Language="vb" AutoEventWireup="false" MasterPageFile="~/MasterPageScheduler.Master" CodeBehind="AdminProcessTechs.aspx.vb" Inherits="LabScheduler.Pages.AdminProcessTechs" %>
 
-<%@ Register TagPrefix="uc" TagName="AdminTabMenu" Src="~/UserControls/AdminTabMenu.ascx" %>
+<%@ Register TagPrefix="lnf" Assembly="LNF.Web.Scheduler" Namespace="LNF.Web.Scheduler.Controls" %>
 
 <asp:Content ID="Content1" ContentPlaceHolderID="head" runat="server">
 </asp:Content>
@@ -25,7 +25,7 @@
     <table class="content-table">
         <tr>
             <td class="tabs">
-                <uc:AdminTabMenu runat="server" ID="AdminTabMenu1" SelectedIndex="3" />
+                <lnf:AdminTabMenu runat="server" ID="AdminTabMenu1" SelectedIndex="3" />
             </td>
         </tr>
         <tr>

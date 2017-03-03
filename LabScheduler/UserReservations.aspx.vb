@@ -17,6 +17,7 @@ Imports LNF.Feeds
 Imports LNF.Models.Data
 Imports LNF.Models.Scheduler
 Imports LNF.Scheduler
+Imports LNF.Web.Scheduler
 Imports LNF.Web.Scheduler.Content
 
 Namespace Pages
@@ -25,9 +26,7 @@ Namespace Pages
 
         Protected Sub Page_Load(sender As Object, e As EventArgs) Handles Me.Load
             If Not Page.IsPostBack Then
-                Dim userState As UserState = CacheManager.Current.CurrentUserState()
-
-                lblDate.Text = userState.Date.ToLongDateString()
+                lblDate.Text = Request.GetCurrentDate().ToLongDateString()
 
                 If CurrentUser IsNot Nothing Then
                     litCurrentUser.Text = CurrentUser.DisplayName
@@ -39,7 +38,9 @@ Namespace Pages
                     litCurrentUser.Text = "[unknown user]"
                 End If
 
-                userState.AddAction("Viewing My Reservations page.")
+                hypRecurringPage.NavigateUrl = String.Format("~/UserRecurringReservation.aspx?Date={0:yyyy-MM-dd}", Request.GetCurrentDate())
+
+                CacheManager.Current.CurrentUserState().AddAction("Viewing My Reservations page.")
             End If
 
             SetCurrentView(ViewType.UserView)

@@ -16,7 +16,7 @@
 
 <%@ Page Title="Documents" Language="vb" AutoEventWireup="false" MasterPageFile="~/MasterPageScheduler.Master" CodeBehind="ResourceDocs.aspx.vb" Inherits="LabScheduler.Pages.ResourceDocs" %>
 
-<%@ Register TagPrefix="uc" TagName="ResourceTabMenu" Src="~/UserControls/ResourceTabMenu.ascx" %>
+<%@ Register TagPrefix="lnf" Assembly="LNF.Web.Scheduler" Namespace="LNF.Web.Scheduler.Controls" %>
 
 <asp:Content ID="Content1" ContentPlaceHolderID="head" runat="server">
     <style>
@@ -27,7 +27,7 @@
 </asp:Content>
 
 <asp:Content ID="Content2" ContentPlaceHolderID="ContentPlaceHolder1" runat="server">
-    <uc:ResourceTabMenu runat="server" ID="ResourceTabMenu1" SelectedIndex="6" />
+    <lnf:ResourceTabMenu runat="server" ID="ResourceTabMenu1" SelectedIndex="6" />
     <asp:PlaceHolder runat="server" ID="phMessage"></asp:PlaceHolder>
     <div class="lnf panel panel-default">
         <div class="panel-heading">

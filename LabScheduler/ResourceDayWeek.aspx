@@ -17,13 +17,13 @@
 <%@ Page Title="Scheduler" Language="vb" AutoEventWireup="false" MasterPageFile="~/MasterPageScheduler.Master" CodeBehind="ResourceDayWeek.aspx.vb" Inherits="LabScheduler.Pages.ResourceDayWeek" EnableViewState="true" Async="true" %>
 
 <%@ Register TagPrefix="uc" TagName="ReservationView" Src="~/UserControls/ReservationView.ascx" %>
-<%@ Register TagPrefix="uc" TagName="ResourceTabMenu" Src="~/UserControls/ResourceTabMenu.ascx" %>
+<%@ Register TagPrefix="lnf" Assembly="LNF.Web.Scheduler" Namespace="LNF.Web.Scheduler.Controls" %>
 
 <asp:Content ID="Content1" ContentPlaceHolderID="head" runat="server">
 </asp:Content>
 
 <asp:Content ID="Content2" ContentPlaceHolderID="ContentPlaceHolder1" runat="server">
-    <uc:ResourceTabMenu runat="server" ID="ResourceTabMenu1" />
+    <lnf:ResourceTabMenu runat="server" ID="ResourceTabMenu1" />
 
     <div class="row" style="overflow-x: hidden;">
         <div class="col-lg-12">

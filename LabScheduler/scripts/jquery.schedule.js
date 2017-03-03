@@ -28,9 +28,10 @@
             };
 
             var getView = function () {
-                var queryString = QueryString.getJSON();
-                if (queryString.view) {
-                    var splitter = queryString.view.split("-");
+                var uri = new URI();
+                var qs = uri.query(true);
+                if (qs.view) {
+                    var splitter = qs.view.split("-");
                     switch (splitter[0]) {
                         case "week":
                             return "agendaWeek";
@@ -45,9 +46,10 @@
             };
 
             var getHourView = function () {
-                var queryString = QueryString.getJSON();
-                if (queryString.view) {
-                    var splitter = queryString.view.split("-");
+                var uri = new URI();
+                var qs = uri.query(true);
+                if (qs.view) {
+                    var splitter = qs.view.split("-");
                     if (splitter.length > 1) {
                         switch (splitter[1]) {
                             case "default":

@@ -16,8 +16,8 @@
 
 <%@ Page Title="Resource Clients" Language="C#" AutoEventWireup="true" MasterPageFile="~/MasterPageScheduler.Master" Inherits="LNF.Web.Scheduler.Pages.ResourceClients" %>
 
-<%@ Register TagPrefix="uc" TagName="ResourceTabMenu" Src="~/UserControls/ResourceTabMenu.ascx" %>
 <%@ Register TagPrefix="lnf" Namespace="LNF.Web.Controls" Assembly="LNF.Web" %>
+<%@ Register TagPrefix="lnf" Namespace="LNF.Web.Scheduler.Controls" Assembly="LNF.Web.Scheduler" %>
 
 <script runat="server">
     void Page_PreInit(object sender, EventArgs e)
@@ -98,7 +98,7 @@
         </FooterTemplate>
     </lnf:BootstrapModal>
 
-    <uc:ResourceTabMenu runat="server" ID="ResourceTabMenu1" SelectedIndex="2" />
+    <lnf:ResourceTabMenu runat="server" ID="ResourceTabMenu1" SelectedIndex="2" />
 
     <asp:PlaceHolder runat="server" ID="phAddUser">
         <div class="lnf panel panel-default">

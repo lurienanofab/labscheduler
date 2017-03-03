@@ -101,7 +101,7 @@ Partial Public Class MasterPageBootstrap
     '''Auto-generated field.
     '''To modify move field declaration from designer file to code-behind file.
     '''</remarks>
-    Protected WithEvents Calendar1 As Global.LNF.Web.Controls.Calendar
+    Protected WithEvents Calendar1 As Global.LNF.Web.Scheduler.Controls.Calendar
     
     '''<summary>
     '''ResourceTreeView1 control.

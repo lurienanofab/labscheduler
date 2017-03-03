@@ -20,7 +20,8 @@
 <%@ Import Namespace="LNF.Scheduler"  %>
 <%@ Import Namespace="LNF.Models.Scheduler"  %>
 
-<%@ Register TagPrefix="uc" TagName="AdminTabMenu" Src="~/UserControls/AdminTabMenu.ascx" %>
+
+<%@ Register TagPrefix="lnf" Assembly="LNF.Web.Scheduler" Namespace="LNF.Web.Scheduler.Controls" %>
 
 <asp:Content ID="Content1" ContentPlaceHolderID="head" runat="server">
     <style>
@@ -66,7 +67,7 @@
     <table class="content-table">
         <tr>
             <td class="tabs">
-                <uc:AdminTabMenu runat="server" ID="AdminTabMenu1" SelectedIndex="0" />
+                <lnf:AdminTabMenu runat="server" ID="AdminTabMenu1" SelectedIndex="0" />
             </td>
         </tr>
         <tr>

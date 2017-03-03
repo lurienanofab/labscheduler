@@ -16,7 +16,7 @@
 
 <%@ Page Title="Configuration" Language="vb" AutoEventWireup="false" MasterPageFile="~/MasterPageScheduler.Master" CodeBehind="ResourceConfig.aspx.vb" Inherits="LabScheduler.Pages.ResourceConfig" MaintainScrollPositionOnPostback="true" %>
 
-<%@ Register TagPrefix="uc" TagName="ResourceTabMenu" Src="~/UserControls/ResourceTabMenu.ascx" %>
+<%@ Register TagPrefix="lnf" Assembly="LNF.Web.Scheduler" Namespace="LNF.Web.Scheduler.Controls" %>
 <%@ Register TagPrefix="uc" TagName="NumericBox" Src="~/UserControls/NumericBox.ascx" %>
 
 <asp:Content ID="Content1" ContentPlaceHolderID="head" runat="server">
@@ -55,7 +55,7 @@
 </asp:Content>
 
 <asp:Content ID="Content2" ContentPlaceHolderID="ContentPlaceHolder1" runat="server">
-    <uc:ResourceTabMenu runat="server" ID="ResourceTabMenu1" SelectedIndex="4" />
+    <lnf:ResourceTabMenu runat="server" ID="ResourceTabMenu1" SelectedIndex="4" />
 
     <input type="hidden" runat="server" id="hidResourceID" class="resource-id" />
 

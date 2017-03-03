@@ -16,14 +16,14 @@
 
 <%@ Page Title="Admin: Properties" Language="vb" AutoEventWireup="false" MasterPageFile="~/MasterPageScheduler.Master" CodeBehind="AdminProperties.aspx.vb" Inherits="LabScheduler.Pages.AdminProperties" MaintainScrollPositionOnPostback="true" %>
 
-<%@ Register TagPrefix="uc" TagName="AdminTabMenu" Src="~/UserControls/AdminTabMenu.ascx" %>
+<%@ Register TagPrefix="lnf" Assembly="LNF.Web.Scheduler" Namespace="LNF.Web.Scheduler.Controls" %>
 
 <asp:Content ID="Content1" ContentPlaceHolderID="head" runat="server">
 </asp:Content>
 
 <asp:Content ID="Content2" ContentPlaceHolderID="ContentPlaceHolder1" runat="server">
 
-    <uc:AdminTabMenu runat="server" ID="AdminTabMenu1" SelectedIndex="5" />
+    <lnf:AdminTabMenu runat="server" ID="AdminTabMenu1" SelectedIndex="5" />
 
     <div class="lnf panel panel-default">
         <div class="panel-heading">

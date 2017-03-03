@@ -790,7 +790,7 @@ Namespace Pages
         Protected Sub dgProcessInfoLine_ItemCommand(source As Object, e As DataGridCommandEventArgs)
             Try
                 If ProcessInfoLineDataTable Is Nothing Then
-                    Response.Redirect(String.Format("~/ResourceConfig.aspx?Path={0}", PathInfo.Current), False)
+                    Response.Redirect(String.Format("~/ResourceConfig.aspx?Path={0}", PathInfo.Current.UrlEncode()), False)
                     Return
                 End If
 

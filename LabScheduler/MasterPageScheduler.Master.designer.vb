@@ -42,6 +42,15 @@ Namespace Pages
         Protected WithEvents hypHome As Global.System.Web.UI.WebControls.HyperLink
         
         '''<summary>
+        '''phAdmin control.
+        '''</summary>
+        '''<remarks>
+        '''Auto-generated field.
+        '''To modify move field declaration from designer file to code-behind file.
+        '''</remarks>
+        Protected WithEvents phAdmin As Global.System.Web.UI.WebControls.PlaceHolder
+        
+        '''<summary>
         '''hypAdmin control.
         '''</summary>
         '''<remarks>
@@ -49,15 +58,6 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents hypAdmin As Global.System.Web.UI.WebControls.HyperLink
-        
-        '''<summary>
-        '''lblAdminSeparator control.
-        '''</summary>
-        '''<remarks>
-        '''Auto-generated field.
-        '''To modify move field declaration from designer file to code-behind file.
-        '''</remarks>
-        Protected WithEvents lblAdminSeparator As Global.System.Web.UI.WebControls.Label
         
         '''<summary>
         '''hypMyReservations control.
@@ -96,22 +96,22 @@ Namespace Pages
         Protected WithEvents hypContact As Global.System.Web.UI.WebControls.HyperLink
         
         '''<summary>
-        '''hypOther control.
+        '''phFDT control.
         '''</summary>
         '''<remarks>
         '''Auto-generated field.
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
-        Protected WithEvents hypOther As Global.System.Web.UI.WebControls.HyperLink
+        Protected WithEvents phFDT As Global.System.Web.UI.WebControls.PlaceHolder
         
         '''<summary>
-        '''lblOtherSeparator control.
+        '''hypFDT control.
         '''</summary>
         '''<remarks>
         '''Auto-generated field.
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
-        Protected WithEvents lblOtherSeparator As Global.System.Web.UI.WebControls.Label
+        Protected WithEvents hypFDT As Global.System.Web.UI.WebControls.HyperLink
         
         '''<summary>
         '''Calendar1 control.
@@ -120,7 +120,7 @@ Namespace Pages
         '''Auto-generated field.
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
-        Protected WithEvents Calendar1 As Global.LNF.Web.Controls.Calendar
+        Protected WithEvents Calendar1 As Global.LNF.Web.Scheduler.Controls.Calendar
         
         '''<summary>
         '''ResourceTreeView1 control.

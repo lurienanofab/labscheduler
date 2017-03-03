@@ -32,7 +32,7 @@
         </tr>
         <tr>
             <td>
-                <asp:HyperLink runat="server" ID="hypRecurringPage" Visible="false" Text="Manage My Recurring Reservations" NavigateUrl="~/UserRecurringReservation.aspx"></asp:HyperLink>
+                <asp:HyperLink runat="server" ID="hypRecurringPage" Visible="false" Text="Manage My Recurring Reservations"></asp:HyperLink>
             </td>
         </tr>
         <tr>

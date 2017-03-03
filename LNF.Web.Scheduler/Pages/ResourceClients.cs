@@ -1,4 +1,20 @@
-﻿using LNF.Cache;
+﻿/*
+  Copyright 2017 University of Michigan
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+*/
+
+using LNF.Cache;
 using LNF.CommonTools;
 using LNF.Models.Data;
 using LNF.Models.Scheduler;
@@ -69,7 +85,7 @@ namespace LNF.Web.Scheduler.Pages
                 litClientListTitle.Text = string.Format("Client List for {0} [{1}]", res.ResourceName, res.ResourceID);
             }
 
-            Session["ReturnFromEmail"] = SchedulerUtility.GetReturnUrl("ResourceClients.aspx", PathInfo.Current, 0);
+            Session["ReturnFromEmail"] = SchedulerUtility.GetReturnUrl("ResourceClients.aspx", PathInfo.Current, 0, Request.GetCurrentDate());
         }
 
         private void LoadResourceClients(ResourceModel res)
@@ -348,27 +364,27 @@ namespace LNF.Web.Scheduler.Pages
                 case "dgTEs":
                     // Tool Engineers
                     litNoData = litNoTE;
-                    hypEmailToolEngineers.NavigateUrl = string.Format("~/Contact.aspx?Privs=16&Path={0}", PathInfo.Current);
+                    hypEmailToolEngineers.NavigateUrl = string.Format("~/Contact.aspx?Privs=16&Path={0}", PathInfo.Current.UrlEncode());
                     break;
                 case "dgCheckouts":
                     // Super Users
                     litNoData = litNoCheckout;
-                    hypEmailCheckouts.NavigateUrl = string.Format("~/Contact.aspx?Privs=4&Path={0}", PathInfo.Current);
+                    hypEmailCheckouts.NavigateUrl = string.Format("~/Contact.aspx?Privs=4&Path={0}", PathInfo.Current.UrlEncode());
                     break;
                 case "dgTrainers":
                     // Trainers
                     litNoData = litNoTrainer;
-                    hypEmailTrainers.NavigateUrl = string.Format("~/Contact.aspx?Privs=8&Path={0}", PathInfo.Current);
+                    hypEmailTrainers.NavigateUrl = string.Format("~/Contact.aspx?Privs=8&Path={0}", PathInfo.Current.UrlEncode());
                     break;
                 case "dgUsers":
                     // Users
                     litNoData = litNoUser;
-                    hypEmailUsers.NavigateUrl = string.Format("~/Contact.aspx?Privs=2&Path={0}", PathInfo.Current);
+                    hypEmailUsers.NavigateUrl = string.Format("~/Contact.aspx?Privs=2&Path={0}", PathInfo.Current.UrlEncode());
                     break;
             }
 
             // All
-            hypEmailAll.NavigateUrl = string.Format("~/Contact.aspx?Privs=62&Path={0}", PathInfo.Current);
+            hypEmailAll.NavigateUrl = string.Format("~/Contact.aspx?Privs=62&Path={0}", PathInfo.Current.UrlEncode());
 
             DataView dvClients = (DataView)dgClient.DataSource;
 
@@ -446,7 +462,7 @@ namespace LNF.Web.Scheduler.Pages
                     DataItemHelper di = new DataItemHelper(e.Item.DataItem);
                     HyperLink emailLink = (HyperLink)e.Item.FindControl(emailLinkName);
                     emailLink.Text = di["DisplayName"].ToString();
-                    emailLink.NavigateUrl = string.Format("~/Contact.aspx?ClientID={0}&Path={1}", di["ClientID"], PathInfo.Current);
+                    emailLink.NavigateUrl = string.Format("~/Contact.aspx?ClientID={0}&Path={1}", di["ClientID"], PathInfo.Current.UrlEncode());
                     emailLink.Attributes.Add("title", di["Email"].ToString());
 
                     if (authLevel == ClientAuthLevel.Trainer || authLevel == ClientAuthLevel.ToolEngineer)

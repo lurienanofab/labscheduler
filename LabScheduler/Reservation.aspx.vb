@@ -164,7 +164,7 @@ Namespace Pages
                 If PathInfo.Current.IsEmpty() Then
                     Response.Redirect("~", False)
                 Else
-                    Response.Redirect(String.Format("~/ResourceDayWeek.aspx?Path={0}", PathInfo.Current), False)
+                    Response.Redirect(String.Format("~/ResourceDayWeek.aspx?Path={0}", PathInfo.Current.UrlEncode()), False)
                 End If
             Else
                 result = CType(Session("ReservationSelectedTime"), Date)
@@ -269,9 +269,9 @@ Namespace Pages
 
                 Dim userState As UserState = CacheManager.Current.CurrentUserState()
 
-                txtStartDate.Text = userState.Date.ToString("MM/dd/yyyy")
+                txtStartDate.Text = Request.GetCurrentDate().ToString("MM/dd/yyyy")
 
-                Dim weekday As DayOfWeek = userState.Date.DayOfWeek
+                Dim weekday As DayOfWeek = Request.GetCurrentDate().DayOfWeek
                 RecurrenceWeekDays(weekday).Checked = True
 
                 phActivity.Visible = False
@@ -390,7 +390,7 @@ Namespace Pages
                 ' New Reservation
                 headerText = "Create Reservation for"
                 litClientName.Text = CurrentUser.DisplayName
-                litStartDate.Text = userState.Date.ToLongDateString()
+                litStartDate.Text = Request.GetCurrentDate().ToLongDateString()
                 phActivity.Visible = True
                 phActivityName.Visible = False
                 btnSubmit.Text = "Create Reservation"
@@ -400,12 +400,12 @@ Namespace Pages
                 headerText = "Modify Reservation for"
                 litClientName.Text = rsv.Client.DisplayName
                 If Not DateChanged() Then
-                    If rsv.BeginDateTime.Date <> userState.Date Then
-                        userState.SetDate(rsv.BeginDateTime.Date)
-                        userState.AddAction("Changed date to {0:yyyy-MM-dd} while loading reservation", rsv.BeginDateTime.Date)
+                    If rsv.BeginDateTime.Date <> Request.GetCurrentDate() Then
+                        'userState.SetDate(rsv.BeginDateTime.Date)
+                        'userState.AddAction("Changed date to {0:yyyy-MM-dd} while loading reservation", rsv.BeginDateTime.Date)
                     End If
                 End If
-                litStartDate.Text = userState.Date.ToLongDateString()
+                litStartDate.Text = Request.GetCurrentDate().ToLongDateString()
                 phActivity.Visible = False
                 phActivityName.Visible = True
                 litActivityName.Text = rsv.Activity.ActivityName
@@ -477,7 +477,7 @@ Namespace Pages
                 grans.Add(i)
             Next
 
-            Dim selectedDate As Date = CacheManager.Current.CurrentUserState().Date
+            Dim selectedDate As Date = Request.GetCurrentDate()
             Dim selectedTime As Date = GetReservationSelectedTime()
 
             ' Check if selectedDate is in the past
@@ -545,7 +545,7 @@ Namespace Pages
         End Sub
 
         Private Sub GetMaxDuration(datetimeModified As Boolean)
-            Dim selectedDateTime As Date = CacheManager.Current.CurrentUserState().Date
+            Dim selectedDateTime As Date = Request.GetCurrentDate()
             selectedDateTime = selectedDateTime.AddHours(Convert.ToInt32(ddlStartTimeHour.SelectedValue))
             selectedDateTime = selectedDateTime.AddMinutes(Convert.ToInt32(ddlStartTimeMin.SelectedValue))
 
@@ -594,7 +594,7 @@ Namespace Pages
         End Function
 
         Private Function GetBeginDateTime() As Date
-            Dim beginDateTime As Date = CacheManager.Current.CurrentUserState().Date.AddHours(Convert.ToInt32(ddlStartTimeHour.SelectedValue))
+            Dim beginDateTime As Date = Request.GetCurrentDate().AddHours(Convert.ToInt32(ddlStartTimeHour.SelectedValue))
             beginDateTime = beginDateTime.AddMinutes(Convert.ToInt32(ddlStartTimeMin.SelectedValue))
             Return beginDateTime
         End Function
@@ -900,7 +900,7 @@ Namespace Pages
 
             Dim userState As UserState = CacheManager.Current.CurrentUserState()
 
-            Dim inviteeRsv As IList(Of repo.Reservation) = DA.Scheduler.Reservation.SelectByClient(inviteeClientId, userState.Date.AddHours(0), userState.Date.AddHours(24), False)
+            Dim inviteeRsv As IList(Of repo.Reservation) = DA.Scheduler.Reservation.SelectByClient(inviteeClientId, Request.GetCurrentDate().AddHours(0), Request.GetCurrentDate().AddHours(24), False)
 
             Dim conflictingRsv As IList(Of repo.Reservation) = ReservationUtility.GetConflictingReservations(inviteeRsv, startDateTime, endDateTime)
 
@@ -956,7 +956,7 @@ Namespace Pages
                 'reservation as another reservation
                 Dim duration As Integer = GetCurrentDurationMinutes(activityId)
 
-                Dim startDateTime As Date = CacheManager.Current.CurrentUserState().Date
+                Dim startDateTime As Date = Request.GetCurrentDate()
                 startDateTime = startDateTime.AddHours(Integer.Parse(ddlStartTimeHour.SelectedValue))
                 startDateTime = startDateTime.AddMinutes(Integer.Parse(ddlStartTimeMin.SelectedValue))
 
@@ -1419,9 +1419,9 @@ Namespace Pages
                 If view = ViewType.UserView Then
                     redirectUrl = String.Format("~/UserReservations.aspx")
                 ElseIf view = ViewType.ProcessTechView Then
-                    redirectUrl = String.Format("~/ProcessTech.aspx?Path={0}", PathInfo.Current)
+                    redirectUrl = String.Format("~/ProcessTech.aspx?Path={0}", PathInfo.Current.UrlEncode())
                 Else 'ViewType.DayView OrElse repo.ViewType.WeekView
-                    redirectUrl = String.Format("~/ResourceDayWeek.aspx?Path={0}", PathInfo.Current)
+                    redirectUrl = String.Format("~/ResourceDayWeek.aspx?Path={0}", PathInfo.Current.UrlEncode())
                 End If
             End If
 
@@ -1519,7 +1519,7 @@ Namespace Pages
         End Function
 
         Private Function GetReservationDuration(activityId As Integer) As ReservationDuration
-            Dim beginDateTime As Date = CacheManager.Current.CurrentUserState().Date.AddHours(Convert.ToInt32(ddlStartTimeHour.SelectedValue)).AddMinutes(Convert.ToInt32(ddlStartTimeMin.SelectedValue))
+            Dim beginDateTime As Date = Request.GetCurrentDate().AddHours(Convert.ToInt32(ddlStartTimeHour.SelectedValue)).AddMinutes(Convert.ToInt32(ddlStartTimeMin.SelectedValue))
             Dim currentDurationMinutes As Integer = GetCurrentDurationMinutes(activityId)
             Return New ReservationDuration(beginDateTime, TimeSpan.FromMinutes(currentDurationMinutes))
         End Function

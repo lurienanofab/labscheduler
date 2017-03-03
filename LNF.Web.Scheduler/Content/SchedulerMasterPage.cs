@@ -8,5 +8,10 @@ namespace LNF.Web.Scheduler.Content
         {
             get { return true; }
         }
+
+        public new SchedulerPage Page
+        {
+            get { return (SchedulerPage)base.Page; }
+        }
     }
 }

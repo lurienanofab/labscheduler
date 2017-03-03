@@ -1,4 +1,20 @@
-﻿using LNF.Cache;
+﻿/*
+  Copyright 2017 University of Michigan
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+*/
+
+using LNF.Cache;
 using LNF.Models.Scheduler;
 using LNF.Scheduler;
 using LNF.Web.Scheduler.Content;
@@ -211,15 +227,15 @@ namespace LNF.Web.Scheduler.Controls
             switch (item.Type)
             {
                 case TreeItemType.Building:
-                    return VirtualPathUtility.ToAbsolute(string.Format("~/Building.aspx?Path={0}", item.Value));
+                    return VirtualPathUtility.ToAbsolute(string.Format("~/Building.aspx?Path={0}&Date={1:yyyy-MM-dd}", HttpUtility.UrlEncode(item.Value), Request.GetCurrentDate()));
                 case TreeItemType.Lab:
-                    return VirtualPathUtility.ToAbsolute(string.Format("~/Lab.aspx?Path={0}", item.Value));
+                    return VirtualPathUtility.ToAbsolute(string.Format("~/Lab.aspx?Path={0}&Date={1:yyyy-MM-dd}", HttpUtility.UrlEncode(item.Value), Request.GetCurrentDate()));
                 case TreeItemType.ProcessTech:
-                    return VirtualPathUtility.ToAbsolute(string.Format("~/ProcessTech.aspx?Path={0}", item.Value));
+                    return VirtualPathUtility.ToAbsolute(string.Format("~/ProcessTech.aspx?Path={0}&Date={1:yyyy-MM-dd}", HttpUtility.UrlEncode(item.Value), Request.GetCurrentDate()));
                 case TreeItemType.Resource:
-                    return VirtualPathUtility.ToAbsolute(string.Format("~/ResourceDayWeek.aspx?Path={0}", item.Value));
+                    return VirtualPathUtility.ToAbsolute(string.Format("~/ResourceDayWeek.aspx?Path={0}&Date={1:yyyy-MM-dd}", HttpUtility.UrlEncode(item.Value), Request.GetCurrentDate()));
                 default:
-                    return VirtualPathUtility.ToAbsolute("~");
+                    return VirtualPathUtility.ToAbsolute(string.Format("~/?Date={0:yyyy-MM-dd}", Request.GetCurrentDate()));
             }
         }
     }

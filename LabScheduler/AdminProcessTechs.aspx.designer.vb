@@ -21,7 +21,7 @@ Namespace Pages
         '''Auto-generated field.
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
-        Protected WithEvents AdminTabMenu1 As Global.LabScheduler.UserControls.AdminTabMenu
+        Protected WithEvents AdminTabMenu1 As Global.LNF.Web.Scheduler.Controls.AdminTabMenu
         
         '''<summary>
         '''pEditProcessTech control.

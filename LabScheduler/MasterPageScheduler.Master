@@ -16,7 +16,7 @@
 
 <%@ Master Language="VB" AutoEventWireup="false" CodeBehind="MasterPageScheduler.master.vb" Inherits="LabScheduler.Pages.MasterPageScheduler" %>
 
-<%@ Register Assembly="LNF.Web" Namespace="LNF.Web.Controls" TagPrefix="lnf" %>
+<%@ Register Assembly="LNF.Web.Scheduler" Namespace="LNF.Web.Scheduler.Controls" TagPrefix="lnf" %>
 <%@ Register Src="~/UserControls/ResourceTreeView.ascx" TagName="ResourceTreeView" TagPrefix="uc" %>
 <%@ Register Src="~/UserControls/ResourceInfo.ascx" TagName="ResourceInfo" TagPrefix="uc" %>
 
@@ -70,14 +70,22 @@
                             </td>
                             <td style="vertical-align: middle;">
                                 <div style="padding-left: 5px;">
-                                    <asp:HyperLink runat="server" ID="hypAdmin" NavigateUrl="~/AdminActivities.aspx" Text="Administration"></asp:HyperLink>
-                                    <asp:Label ID="lblAdminSeparator" runat="server">&nbsp;&nbsp;|&nbsp;&nbsp;</asp:Label>
-                                    <asp:HyperLink runat="server" ID="hypMyReservations" NavigateUrl="~/UserReservations.aspx" Text="My Reservations"></asp:HyperLink>&nbsp;&nbsp;|&nbsp;&nbsp;
-                                    <asp:HyperLink runat="server" ID="hypReservationHistory" NavigateUrl="~/ReservationHistory.aspx" Text="Reservation History"></asp:HyperLink>&nbsp;&nbsp;|&nbsp;&nbsp;
-                                    <asp:HyperLink runat="server" ID="hypPreference" NavigateUrl="~/Preference.aspx" Text="Preferences"></asp:HyperLink>&nbsp;&nbsp;|&nbsp;&nbsp;
-                                    <asp:HyperLink runat="server" ID="hypContact" NavigateUrl="~/Contact.aspx?AdminOnly=1" Text="Contact"></asp:HyperLink>&nbsp;&nbsp;|&nbsp;&nbsp;
-                                    <asp:HyperLink runat="server" ID="hypOther" NavigateUrl="~/ReservationFacilityDownTime.aspx" Text="Facility Down Time"></asp:HyperLink>
-                                    <asp:Label ID="lblOtherSeparator" runat="server">&nbsp;&nbsp;|&nbsp;&nbsp;</asp:Label>
+                                    <asp:PlaceHolder runat="server" ID="phAdmin">
+                                        <asp:HyperLink runat="server" ID="hypAdmin" NavigateUrl="~/AdminActivities.aspx" Text="Administration"></asp:HyperLink>
+                                        <span>|</span>
+                                    </asp:PlaceHolder>
+                                    <asp:HyperLink runat="server" ID="hypMyReservations" Text="My Reservations"></asp:HyperLink>
+                                    <span>|</span>
+                                    <asp:HyperLink runat="server" ID="hypReservationHistory" Text="Reservation History"></asp:HyperLink>
+                                    <span>|</span>
+                                    <asp:HyperLink runat="server" ID="hypPreference" Text="Preferences"></asp:HyperLink>
+                                    <span>|</span>
+                                    <asp:HyperLink runat="server" ID="hypContact" Text="Contact"></asp:HyperLink>
+                                    <span>|</span>
+                                    <asp:PlaceHolder runat="server" ID="phFDT">
+                                        <asp:HyperLink runat="server" ID="hypFDT" Text="Facility Down Time"></asp:HyperLink>
+                                        <span>|</span>
+                                    </asp:PlaceHolder>
                                     <a href="/sselonline" target="_top">Exit Application</a>
                                 </div>
                             </td>
@@ -137,11 +145,8 @@
     <script src="//ssel-apps.eecs.umich.edu/static/lib/underscore/underscore-min.js"></script>
     <script src="//ssel-apps.eecs.umich.edu/webapi/js/client.js"></script>
 
-    <asp:ContentPlaceHolder ID="scripts" runat="server">
-    </asp:ContentPlaceHolder>
-
+    <script src="scripts/URI.js"></script>
     <script src="scripts/staging.js"></script>
-    <script src="scripts/querystring.js"></script>
     <script src="scripts/jquery.admin.js"></script>
     <script src="scripts/jquery.control.js"></script>
     <script src="scripts/jquery.helpdesk.js"></script>
@@ -163,14 +168,15 @@
         var isStaging = '<%=ConfigurationManager.AppSettings("IsStaging")%>' === 'true';
         $(document).staging({ "isStaging": isStaging });
 
+        var uri = new URI();
+
         $(".calendar").calendar();
         $(".schedule").schedule();
-        $(".reservation-view").reservationView({ "path": QueryString.get("Path") });
+        $(".reservation-view").reservationView({ "path": uri.query(true).Path });
         $(".numeric-text").numerictext();
-
-        // fix the form action attribute
-        var action = new String($("#form1").prop("action"));
-        $("#form1").prop("action", action.replace(/%3a/g, ':'));
     </script>
+
+    <asp:ContentPlaceHolder ID="scripts" runat="server">
+    </asp:ContentPlaceHolder>
 </body>
 </html>

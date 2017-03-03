@@ -13,10 +13,9 @@
 'limitations under the License.
 
 Imports LNF
-Imports LNF.Cache
 Imports LNF.Models.Data
-Imports LNF.Scheduler
 Imports LNF.Web.Content
+Imports LNF.Web.Scheduler
 Imports repo = LNF.Repository.Data
 
 Public Class MasterPageBootstrap
@@ -47,9 +46,7 @@ Public Class MasterPageBootstrap
             End If
 
             ' handle the current date
-            Dim selectedDate As Date = CacheManager.Current.CurrentUserState().Date
-            Calendar1.SelectedDate = selectedDate
-            Calendar1.ReturnTo = Request.Url.PathAndQuery
+            Dim selectedDate As Date = Request.GetCurrentDate()
             txtCurrentDate.Value = selectedDate.ToString("MM/dd/yyyy")
             hidSelectedDate.Value = selectedDate.ToString("yyyy-MM-dd")
 

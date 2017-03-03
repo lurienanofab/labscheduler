@@ -13,8 +13,8 @@
 'limitations under the License.
 
 Imports LNF.Cache
-Imports LNF.Scheduler
 Imports LNF.Models.Scheduler
+Imports LNF.Scheduler
 Imports LNF.Web.Scheduler
 Imports LNF.Web.Scheduler.Content
 
@@ -26,7 +26,7 @@ Namespace Pages
             Dim pt As ProcessTechModel = PathInfo.Current.GetProcessTech()
 
             If Not Page.IsPostBack Then
-                lblDate.Text = CacheManager.Current.CurrentUserState.Date.ToLongDateString()
+                lblDate.Text = Request.GetCurrentDate().ToLongDateString()
                 LoadProcessTech(pt)
                 LoadReservationView(pt)
                 CacheManager.Current.CurrentUserState.AddAction("Viewing Process Tech page: {0}", pt.ProcessTechName)

@@ -16,7 +16,7 @@
 
 <%@ Page Title="Admin: Resources" Language="vb" AutoEventWireup="false" MasterPageFile="~/MasterPageScheduler.Master" CodeBehind="AdminResources.aspx.vb" Inherits="LabScheduler.Pages.AdminResources" %>
 
-<%@ Register TagPrefix="uc" TagName="AdminTabMenu" Src="~/UserControls/AdminTabMenu.ascx" %>
+<%@ Register TagPrefix="lnf" Assembly="LNF.Web.Scheduler" Namespace="LNF.Web.Scheduler.Controls" %>
 
 <asp:Content ID="Content1" ContentPlaceHolderID="head" runat="server">
     <link rel="stylesheet" href="styles/admin.css" />
@@ -26,7 +26,7 @@
     <table class="content-table">
         <tr>
             <td class="tabs">
-                <uc:AdminTabMenu runat="server" ID="AdminTabMenu1" SelectedIndex="4" />
+                <lnf:AdminTabMenu runat="server" ID="AdminTabMenu1" SelectedIndex="4" />
             </td>
         </tr>
         <tr>

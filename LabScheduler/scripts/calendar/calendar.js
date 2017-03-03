@@ -171,9 +171,9 @@
 
                 var link = $("<a/>", { "class": "date" });
 
-                var href = "CalendarController.ashx?Command=ChangeDate&Date=" + d.format("YYYY-MM-DD") + "&ReturnTo=" + opt.returnto;
-                var qs = window.location.search.substr(1);
-                if (qs) href += "&" + qs
+                var uri = new URI();
+                uri.setSearch("Date", d.format("YYYY-MM-DD"));
+                var href = uri.toString();
 
                 link.prop("href", href);
 

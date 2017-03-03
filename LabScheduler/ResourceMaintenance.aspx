@@ -16,13 +16,13 @@
 
 <%@ Page Language="C#" Title="Resource Maintenance" Inherits="LNF.Web.Scheduler.Pages.ResourceMaintenance" MasterPageFile="~/MasterPageScheduler.Master" Async="true" %>
 
-<%@ Register TagPrefix="uc" TagName="ResourceTabMenu" Src="~/UserControls/ResourceTabMenu.ascx" %>
+<%@ Register TagPrefix="lnf" Assembly="LNF.Web.Scheduler" Namespace="LNF.Web.Scheduler.Controls" %>
 
 <asp:Content runat="server" ID="content1" ContentPlaceHolderID="head">
 </asp:Content>
 
 <asp:Content runat="server" ID="content2" ContentPlaceHolderID="ContentPlaceHolder1">
-    <uc:ResourceTabMenu runat="server" ID="ResourceTabMenu1" SelectedIndex="5" />
+    <lnf:ResourceTabMenu runat="server" ID="ResourceTabMenu1" SelectedIndex="5" />
     <div class="lnf panel panel-default repair">
         <div class="panel-heading">
             <h3 class="panel-title">Resource Status</h3>

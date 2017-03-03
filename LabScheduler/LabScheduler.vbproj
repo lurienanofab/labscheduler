@@ -85,6 +85,10 @@
     <Reference Include="System.Drawing" />
     <Reference Include="System.Net" />
     <Reference Include="System.Runtime.Caching" />
+    <Reference Include="System.Runtime.InteropServices.RuntimeInformation, Version=4.0.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Runtime.InteropServices.RuntimeInformation.4.3.0\lib\net45\System.Runtime.InteropServices.RuntimeInformation.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System.Web.DynamicData" />
     <Reference Include="System.Web.Entity" />
     <Reference Include="System.Web.ApplicationServices" />
@@ -398,6 +402,7 @@
     <Content Include="scripts\jquery.reservationView.js" />
     <Content Include="scripts\staging.js" />
     <Content Include="scripts\typeahead.bundle.min.js" />
+    <Content Include="scripts\URI.js" />
     <Content Include="StartReservation.aspx" />
     <Content Include="styles\admin.css" />
     <Content Include="styles\bootstrap.css" />
@@ -427,9 +432,7 @@
     <Content Include="styles\treeview-2.0.css" />
     <Content Include="styles\treeview.css" />
     <Content Include="Console.aspx" />
-    <Content Include="UserControls\ResourceTabMenu.ascx" />
     <Content Include="Utility.aspx" />
-    <Content Include="UserControls\AdminTabMenu.ascx" />
     <Content Include="UserControls\CalendarPopup.ascx" />
     <Content Include="UserControls\Contact.ascx" />
     <Content Include="UserControls\Helpdesk.ascx" />
@@ -670,13 +673,6 @@
     </Compile>
     <Compile Include="StartReservation.aspx.vb">
       <DependentUpon>StartReservation.aspx</DependentUpon>
-      <SubType>ASPXCodeBehind</SubType>
-    </Compile>
-    <Compile Include="UserControls\AdminTabMenu.ascx.designer.vb">
-      <DependentUpon>AdminTabMenu.ascx</DependentUpon>
-    </Compile>
-    <Compile Include="UserControls\AdminTabMenu.ascx.vb">
-      <DependentUpon>AdminTabMenu.ascx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
     </Compile>
     <Compile Include="UserControls\CalendarPopup.ascx.designer.vb">

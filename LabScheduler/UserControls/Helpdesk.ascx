@@ -23,6 +23,7 @@
         No resource specified.
     </div>
 </asp:PlaceHolder>
+
 <asp:PlaceHolder runat="server" ID="phHelpdesk" Visible="true">
     <div class="helpdesk">
         <lnf:BootstrapModal runat="server" ID="BootstrapModal1" CssClass="ticket-dialog" Title="Ticket Details" Size="Large">

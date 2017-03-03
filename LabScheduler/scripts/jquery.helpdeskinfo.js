@@ -183,7 +183,14 @@
                             else
                                 outputError(json.message);
                         },
-                        'error': function (err) {
+                        'error': function (xhr) {
+                            var err = "";
+
+                            if (xhr.status == 404)
+                                err = "[404] Page not found: " + options.url;
+                            else
+                                err = xhr.statusText;
+
                             outputError(err);
                         }
                     });

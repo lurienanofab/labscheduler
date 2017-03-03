@@ -179,6 +179,11 @@ namespace LNF.Web.Scheduler
             return result;
         }
 
+        public string UrlEncode()
+        {
+            return HttpUtility.UrlEncode(ToString());
+        }
+
         public static PathInfo Current
         {
             get

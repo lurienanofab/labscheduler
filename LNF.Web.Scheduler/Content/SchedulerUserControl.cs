@@ -20,5 +20,10 @@ namespace LNF.Web.Scheduler.Content
         {
             return PathInfo.Current.GetResource();
         }
+
+        public new SchedulerPage Page
+        {
+            get { return (SchedulerPage)base.Page; }
+        }
     }
 }

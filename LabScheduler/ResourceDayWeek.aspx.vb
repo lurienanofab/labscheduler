@@ -74,7 +74,7 @@ Namespace Pages
                 ReservationView1.Resource = res
                 txtCalendarURL.Text = FeedGenerator.Scheduler.Reservations.GetUrl(FeedFormats.Calendar, "all", res.ResourceID.ToString(), "tool-reservations")
             Else
-                Response.Redirect(String.Format("~/ResourceClients.aspx?Path={0}", PathInfo.Current))
+                Response.Redirect(String.Format("~/ResourceClients.aspx?Path={0}", PathInfo.Current.UrlEncode()))
             End If
         End Sub
 

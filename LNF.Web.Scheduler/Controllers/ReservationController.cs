@@ -1,4 +1,20 @@
-﻿using LNF.Cache;
+﻿/*
+  Copyright 2017 University of Michigan
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+*/
+
+using LNF.Cache;
 using LNF.Data;
 using LNF.Models.Scheduler;
 using LNF.Repository;
@@ -82,7 +98,7 @@ namespace LNF.Web.Scheduler.Controllers
                             break;
                         case "NewReservation":
                             if (CanCreateNewReservation(context))
-                                redirectUrl = SchedulerUtility.GetReturnUrl("Reservation.aspx", PathInfo.Current, 0);
+                                redirectUrl = SchedulerUtility.GetReturnUrl("Reservation.aspx", PathInfo.Current, 0, GetCurrentDate(context));
                             else
                                 redirectUrl = SchedulerUtility.GetReservationViewReturnUrl(userState.View);
                             break;
@@ -91,18 +107,9 @@ namespace LNF.Web.Scheduler.Controllers
                             var res = CacheManager.Current.GetResource(rsv.Resource.ResourceID);
                             DateTime currentDate = GetCurrentDate(context);
 
-                            //2007-03-09 Fix the bug that when modifying a reservation, the Selected Date is not set
-                            //This cause the bug that when user tries to change a reservation, sometimes he would get the error
-                            //msg that someone had already taken that time slot, the reason why is the selectedtime is not set
-                            if (currentDate.Date != userState.Date)
-                            {
-                                userState.SetDate(currentDate.Date);
-                                userState.AddAction("Changed date to {0:yyyy-MM-dd} while modifying reservation", currentDate.Date);
-                            }
-
                             context.Session["ReservationSelectedTime"] = currentDate;
 
-                            redirectUrl = SchedulerUtility.GetReturnUrl("Reservation.aspx", PathInfo.Create(res), rsv.ReservationID);
+                            redirectUrl = SchedulerUtility.GetReturnUrl("Reservation.aspx", PathInfo.Create(res), rsv.ReservationID, currentDate);
                             break;
                         case "DeleteReservation":
                             rsv = GetReservation(context);
@@ -200,11 +207,11 @@ namespace LNF.Web.Scheduler.Controllers
                 case ReservationState.PastSelf:
                     if (userState.View == ViewType.DayView || userState.View == ViewType.WeekView)
                         CacheManager.Current.WeekStartDate(rsv.BeginDateTime.Date);
-                    return SchedulerUtility.GetReturnUrl("ReservationRunNotes.aspx", PathInfo.Current, rsv.ReservationID);
+                    return SchedulerUtility.GetReturnUrl("ReservationRunNotes.aspx", PathInfo.Current, rsv.ReservationID, GetCurrentDate(context));
                 case ReservationState.Other:
                 case ReservationState.Invited:
                 case ReservationState.PastOther:
-                    return SchedulerUtility.GetReturnUrl("Contact.aspx", PathInfo.Current, rsv.ReservationID);
+                    return SchedulerUtility.GetReturnUrl("Contact.aspx", PathInfo.Current, rsv.ReservationID, GetCurrentDate(context));
                 default:
                     throw new NotImplementedException(string.Format("ReservationState = {0} is not implemented", state));
             }
@@ -254,13 +261,13 @@ namespace LNF.Web.Scheduler.Controllers
 
             if (userState.View == ViewType.DayView || userState.View == ViewType.WeekView)
             {
-                if (date.Date != userState.Date)
-                {
-                    userState.SetDate(date.Date);
-                    userState.AddAction("Changed Date to {0:yyyy-MM-dd} because QueryString date and UserState date do not match", date.Date);
-                }
+                //if (date.Date != userState.Date)
+                //{
+                //    userState.SetDate(date.Date);
+                //    userState.AddAction("Changed Date to {0:yyyy-MM-dd} because QueryString date and UserState date do not match", date.Date);
+                //}
 
-                CacheManager.Current.WeekStartDate(GetWeekStartDate());
+                CacheManager.Current.WeekStartDate(GetWeekStartDate(context));
             }
 
             context.Session["ReservationSelectedTime"] = date;
@@ -288,7 +295,7 @@ namespace LNF.Web.Scheduler.Controllers
             return result;
         }
 
-        private DateTime GetWeekStartDate()
+        private DateTime GetWeekStartDate(HttpContext context)
         {
             // This makes it so whenever the date is changed by clicking the calendar, the week start date
             // (the first column in the grid) is the selected date. Not sure if this is intended behavior or not.
@@ -296,7 +303,7 @@ namespace LNF.Web.Scheduler.Controllers
             //      var dow = CacheManager.Current.CurrentUserState().Date.DayOfWeek;
             //      return CacheManager.Current.CurrentUserState().Date.AddDays(-(int)dow);
 
-            return CacheManager.Current.CurrentUserState().Date;
+            return Convert.ToDateTime(context.Request.QueryString["Date"]);
         }
     }
 }
