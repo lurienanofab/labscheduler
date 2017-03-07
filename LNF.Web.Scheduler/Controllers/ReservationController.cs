@@ -82,14 +82,14 @@ namespace LNF.Web.Scheduler.Controllers
                             break;
                         case "NewReservation":
                             if (CanCreateNewReservation(context))
-                                redirectUrl = SchedulerUtility.GetReturnUrl("Reservation.aspx", PathInfo.Current, 0, GetCurrentDate(context));
+                                redirectUrl = SchedulerUtility.GetReturnUrl("Reservation.aspx", context.Request.SelectedPath(), 0, context.Request.SelectedDate());
                             else
                                 redirectUrl = SchedulerUtility.GetReservationViewReturnUrl(userState.View);
                             break;
                         case "ModifyReservation":
                             rsv = GetReservation(context);
                             var res = CacheManager.Current.GetResource(rsv.Resource.ResourceID);
-                            DateTime currentDate = GetCurrentDate(context);
+                            DateTime currentDate = context.Request.SelectedDate();
 
                             context.Session["ReservationSelectedTime"] = currentDate;
 
@@ -191,11 +191,11 @@ namespace LNF.Web.Scheduler.Controllers
                 case ReservationState.PastSelf:
                     if (userState.View == ViewType.DayView || userState.View == ViewType.WeekView)
                         CacheManager.Current.WeekStartDate(rsv.BeginDateTime.Date);
-                    return SchedulerUtility.GetReturnUrl("ReservationRunNotes.aspx", PathInfo.Current, rsv.ReservationID, GetCurrentDate(context));
+                    return SchedulerUtility.GetReturnUrl("ReservationRunNotes.aspx", context.Request.SelectedPath(), rsv.ReservationID, context.Request.SelectedDate());
                 case ReservationState.Other:
                 case ReservationState.Invited:
                 case ReservationState.PastOther:
-                    return SchedulerUtility.GetReturnUrl("Contact.aspx", PathInfo.Current, rsv.ReservationID, GetCurrentDate(context));
+                    return SchedulerUtility.GetReturnUrl("Contact.aspx", context.Request.SelectedPath(), rsv.ReservationID, context.Request.SelectedDate());
                 default:
                     throw new NotImplementedException(string.Format("ReservationState = {0} is not implemented", state));
             }
@@ -207,7 +207,7 @@ namespace LNF.Web.Scheduler.Controllers
 
         private bool CanCreateNewReservation(HttpContext context)
         {
-            var res = PathInfo.Current.GetResource();
+            var res = context.Request.SelectedPath().GetResource();
 
             var userState = CacheManager.Current.CurrentUserState();
 
@@ -216,7 +216,7 @@ namespace LNF.Web.Scheduler.Controllers
             if (userState.View == ViewType.UserView)
                 return false;
 
-            DateTime date = GetCurrentDate(context);
+            DateTime date = context.Request.SelectedDate();
 
             // Check for past reservation date times
             if (date < DateTime.Now)
@@ -262,15 +262,6 @@ namespace LNF.Web.Scheduler.Controllers
         private int GetCurrentUserActiveClientAccountsCount()
         {
             return CacheManager.Current.CurrentUserActiveClientAccounts().Count;
-        }
-
-        private DateTime GetCurrentDate(HttpContext context)
-        {
-            DateTime result;
-            if (DateTime.TryParse(context.Request.QueryString["Date"], out result))
-                return result;
-            else
-                throw new ArgumentException("Invalid date value.", "Date");
         }
 
         private ClientAuthLevel GetAuthorization(ResourceModel res)

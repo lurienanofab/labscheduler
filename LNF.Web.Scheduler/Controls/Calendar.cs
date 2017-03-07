@@ -9,22 +9,9 @@ namespace LNF.Web.Scheduler.Controls
 {
     public class Calendar : WebControl
     {
-        public DateTime GetSelectedDate()
-        {
-            if (!string.IsNullOrEmpty(Page.Request.QueryString["Date"]))
-            {
-                DateTime result;
-                if (DateTime.TryParse(Page.Request.QueryString["Date"], out result))
-                    return result;
-            }
-
-            return DateTime.Now.Date;
-        }
-
-
         public DateTime GetSelectedMonth()
         {
-            return GetFirstOfMonth(GetSelectedDate());
+            return GetFirstOfMonth(Page.Request.SelectedDate());
         }
 
         public string[] ColumnHeaders { get; set; }
@@ -35,10 +22,10 @@ namespace LNF.Web.Scheduler.Controls
 
         public override void RenderBeginTag(HtmlTextWriter writer)
         {
-            writer.AddAttribute("data-date", GetSelectedDate().ToString("yyyy-MM-dd"));
+            writer.AddAttribute("data-date", Page.Request.SelectedDate().ToString("yyyy-MM-dd"));
             writer.AddAttribute("data-month", GetSelectedMonth().ToString("yyyy-MM-dd"));
             //writer.AddAttribute("data-returnto", ReturnTo);
-            writer.AddAttribute("data-pathinfo", PathInfo.Current.ToString());
+            writer.AddAttribute("data-pathinfo", Page.Request.SelectedPath().ToString());
             writer.AddAttribute("data-headers", string.Join(",", ColumnHeaders));
             base.RenderBeginTag(writer);
         }
@@ -143,7 +130,7 @@ namespace LNF.Web.Scheduler.Controls
             if (d == DateTime.Now.Date)
                 cell.CssClass = "date-today";
 
-            if (d == GetSelectedDate().Date)
+            if (d == Page.Request.SelectedDate().Date)
                 cell.CssClass = "date-selected";
 
             HyperLink link = new HyperLink();

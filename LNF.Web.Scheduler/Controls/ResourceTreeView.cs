@@ -9,10 +9,11 @@ using System.Linq;
 using System.Web;
 using System.Web.UI.HtmlControls;
 using System.Web.UI.WebControls;
+using System.Web.UI;
 
 namespace LNF.Web.Scheduler.Controls
 {
-    public class ResourceTreeView : SchedulerUserControl
+    public class ResourceTreeView : WebControl
     {
         #region Control Definitions
         protected HtmlInputHidden hidSelectedPath;
@@ -20,15 +21,26 @@ namespace LNF.Web.Scheduler.Controls
         protected Repeater rptBuilding;
         #endregion
 
-        private PathInfo _SelectedPath = PathInfo.Current;
+        public ResourceTreeView() : base(HtmlTextWriterTag.Div) { }
+
+        private PathInfo? _SelectedPath;
 
         public PathInfo SelectedPath
         {
-            get { return _SelectedPath; }
-            set { _SelectedPath = value; }
+            get
+            {
+                if (!_SelectedPath.HasValue)
+                    _SelectedPath = Page.Request.SelectedPath();
+
+                return _SelectedPath.Value;
+            }
+            set
+            {
+                _SelectedPath = value;
+            }
         }
 
-        protected override void OnLoad(EventArgs e)
+        protected override void CreateChildControls()
         {
             DateTime startTime = DateTime.Now;
 
@@ -211,15 +223,15 @@ namespace LNF.Web.Scheduler.Controls
             switch (item.Type)
             {
                 case TreeItemType.Building:
-                    return VirtualPathUtility.ToAbsolute(string.Format("~/Building.aspx?Path={0}&Date={1:yyyy-MM-dd}", HttpUtility.UrlEncode(item.Value), Request.GetCurrentDate()));
+                    return VirtualPathUtility.ToAbsolute(string.Format("~/Building.aspx?Path={0}&Date={1:yyyy-MM-dd}", HttpUtility.UrlEncode(item.Value), Page.Request.SelectedDate()));
                 case TreeItemType.Lab:
-                    return VirtualPathUtility.ToAbsolute(string.Format("~/Lab.aspx?Path={0}&Date={1:yyyy-MM-dd}", HttpUtility.UrlEncode(item.Value), Request.GetCurrentDate()));
+                    return VirtualPathUtility.ToAbsolute(string.Format("~/Lab.aspx?Path={0}&Date={1:yyyy-MM-dd}", HttpUtility.UrlEncode(item.Value), Page.Request.SelectedDate()));
                 case TreeItemType.ProcessTech:
-                    return VirtualPathUtility.ToAbsolute(string.Format("~/ProcessTech.aspx?Path={0}&Date={1:yyyy-MM-dd}", HttpUtility.UrlEncode(item.Value), Request.GetCurrentDate()));
+                    return VirtualPathUtility.ToAbsolute(string.Format("~/ProcessTech.aspx?Path={0}&Date={1:yyyy-MM-dd}", HttpUtility.UrlEncode(item.Value), Page.Request.SelectedDate()));
                 case TreeItemType.Resource:
-                    return VirtualPathUtility.ToAbsolute(string.Format("~/ResourceDayWeek.aspx?Path={0}&Date={1:yyyy-MM-dd}", HttpUtility.UrlEncode(item.Value), Request.GetCurrentDate()));
+                    return VirtualPathUtility.ToAbsolute(string.Format("~/ResourceDayWeek.aspx?Path={0}&Date={1:yyyy-MM-dd}", HttpUtility.UrlEncode(item.Value), Page.Request.SelectedDate()));
                 default:
-                    return VirtualPathUtility.ToAbsolute(string.Format("~/?Date={0:yyyy-MM-dd}", Request.GetCurrentDate()));
+                    return VirtualPathUtility.ToAbsolute(string.Format("~/?Date={0:yyyy-MM-dd}", Page.Request.SelectedDate()));
             }
         }
     }

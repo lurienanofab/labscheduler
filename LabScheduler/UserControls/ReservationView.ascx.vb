@@ -36,10 +36,10 @@ Namespace UserControls
 
             If CacheManager.Current.DisplayDefaultHours() Then
                 hypHourRange.Text = "Full<br>Day"
-                hypHourRange.NavigateUrl = String.Format("~/ReservationController.ashx?Command=ChangeHourRange&Range=FullDay&Path={0}&Date={1:yyyy-MM-dd}", PathInfo.Current.UrlEncode(), Request.GetCurrentDate())
+                hypHourRange.NavigateUrl = String.Format("~/ReservationController.ashx?Command=ChangeHourRange&Range=FullDay&Path={0}&Date={1:yyyy-MM-dd}", Request.SelectedPath().UrlEncode(), Request.SelectedDate())
             Else
                 hypHourRange.Text = "Default<br>Hours"
-                hypHourRange.NavigateUrl = String.Format("~/ReservationController.ashx?Command=ChangeHourRange&Range=DefaultHours&Path={0}&Date={1:yyyy-MM-dd}", PathInfo.Current.UrlEncode(), Request.GetCurrentDate())
+                hypHourRange.NavigateUrl = String.Format("~/ReservationController.ashx?Command=ChangeHourRange&Range=DefaultHours&Path={0}&Date={1:yyyy-MM-dd}", Request.SelectedPath().UrlEncode(), Request.SelectedDate())
             End If
 
             phErrorMessage.Visible = False
@@ -74,7 +74,7 @@ Namespace UserControls
                     Session("ErrorMessage") = "Missing CommandArgument: ReservationID."
                 End If
             End If
-            Response.Redirect(String.Format("~/ResourceDayWeek.aspx?Path={0}&Date={1:yyyy-MM-dd}", PathInfo.Current.UrlEncode(), Request.GetCurrentDate()), False)
+            Response.Redirect(String.Format("~/ResourceDayWeek.aspx?Path={0}&Date={1:yyyy-MM-dd}", Request.SelectedPath().UrlEncode(), Request.SelectedDate()), False)
         End Sub
 
         Private Sub HandleError()
@@ -148,15 +148,15 @@ Namespace UserControls
 
                         _reservations.SelectByResource(Resource.ResourceID, sd, ed)
                     Case ViewType.DayView
-                        sd = Request.GetCurrentDate()
+                        sd = Request.SelectedDate()
                         ed = sd.AddDays(1)
                         _reservations.SelectByResource(Resource.ResourceID, sd, ed)
                     Case ViewType.ProcessTechView
-                        sd = Request.GetCurrentDate()
+                        sd = Request.SelectedDate()
                         ed = sd.AddDays(1)
                         _reservations.SelectByProcessTech(ProcessTechID, sd, ed)
                     Case ViewType.UserView
-                        sd = Request.GetCurrentDate()
+                        sd = Request.SelectedDate()
                         ed = sd.AddDays(1)
                         _reservations.SelectByClient(CacheManager.Current.CurrentUser.ClientID, sd, ed)
                 End Select
@@ -196,7 +196,7 @@ Namespace UserControls
                         Response.Redirect("~", False)
                         Return
                     End If
-                    Dim weekStartDate As Date = Request.GetCurrentDate()
+                    Dim weekStartDate As Date = Request.SelectedDate()
                     Dim maxDay As Integer = If(View = ViewType.WeekView, 7, 1)
                     For i As Integer = 1 To maxDay
                         AddHeaderCell(Resource.ResourceID, Resource.ResourceName, weekStartDate.AddDays(i - 1))
@@ -205,7 +205,7 @@ Namespace UserControls
                 Case ViewType.ProcessTechView
                     Dim query As IList(Of ResourceModel) = CacheManager.Current.Resources().Where(Function(x) x.ProcessTechID = ProcessTechID AndAlso x.ResourceIsActive).OrderBy(Function(x) x.ResourceName).ToList()
 
-                    Dim d As Date = Request.GetCurrentDate()
+                    Dim d As Date = Request.SelectedDate()
 
                     For Each r As ResourceModel In query
                         AddHeaderCell(r.ResourceID, r.ResourceName, d)
@@ -216,13 +216,13 @@ Namespace UserControls
                 Case ViewType.UserView
                     HelpdeskInfo1.Resources = New List(Of Integer)()
 
-                    Dim query As IList(Of repo.Reservation) = GetReservations().Find(Request.GetCurrentDate(), False)
+                    Dim query As IList(Of repo.Reservation) = GetReservations().Find(Request.SelectedDate(), False)
                     Dim prevResourceId As Integer = -1
 
                     For Each res As repo.Reservation In query.OrderBy(Function(x) x.Resource.ResourceID)
                         If res.Resource.ResourceID <> prevResourceId Then
                             prevResourceId = res.Resource.ResourceID
-                            AddHeaderCell(res.Resource.ResourceID, res.Resource.ResourceName, Request.GetCurrentDate())
+                            AddHeaderCell(res.Resource.ResourceID, res.Resource.ResourceName, Request.SelectedDate())
                             HelpdeskInfo1.Resources.Add(prevResourceId)
                         End If
                     Next
@@ -253,7 +253,7 @@ Namespace UserControls
 
                 If View = ViewType.WeekView Then
                     link.Text = cellDate.ToString("dddd'<br>'MMMM d, yyyy")
-                    link.NavigateUrl = String.Format("~/ResourceDayWeek.aspx?Path={0}&Date={1:yyyy-MM-dd}", PathInfo.Current.UrlEncode(), cellDate)
+                    link.NavigateUrl = String.Format("~/ResourceDayWeek.aspx?Path={0}&Date={1:yyyy-MM-dd}", Request.SelectedPath().UrlEncode(), cellDate)
                 Else
                     Dim res As ResourceModel = CacheManager.Current.GetResource(resourceId)
                     link.Text = res.ResourceName
@@ -440,7 +440,7 @@ Namespace UserControls
                     curStartTime = columnCell.CellDate
                 Else
                     ' this happens when View = ViewType.UserView and there are no columns besides the time column
-                    curStartTime = Request.GetCurrentDate()
+                    curStartTime = Request.SelectedDate()
                 End If
 
                 ' Select Reservations for this day

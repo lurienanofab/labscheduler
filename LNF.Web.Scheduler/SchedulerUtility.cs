@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
 using System.Linq;
+using System.Web;
 using System.Web.UI.WebControls;
 
 namespace LNF.Web.Scheduler
@@ -525,16 +526,16 @@ namespace LNF.Web.Scheduler
             {
                 case ViewType.DayView:
                 case ViewType.WeekView:
-                    result= string.Format("~/ResourceDayWeek.aspx?Path={0}", PathInfo.Current.UrlEncode());
+                    result= string.Format("~/ResourceDayWeek.aspx?Path={0}&Date={1:yyyy-MM-dd}", HttpContext.Current.Request.SelectedPath().UrlEncode(), HttpContext.Current.Request.SelectedDate());
                     separator = "&";
                     break;
                 case ViewType.ProcessTechView:
-                    result = string.Format("~/ProcessTech.aspx?Path={0}", PathInfo.Current.UrlEncode());
+                    result = string.Format("~/ProcessTech.aspx?Path={0}&Date={1:yyyy-MM-dd}", HttpContext.Current.Request.SelectedPath().UrlEncode(), HttpContext.Current.Request.SelectedDate());
                     separator = "&";
                     break;
                 case ViewType.UserView:
-                    result = "~/UserReservations.aspx";
-                    separator = "?";
+                    result = string.Format("~/UserReservations.aspx?Date={0:yyyy-MM-dd}", HttpContext.Current.Request.SelectedDate());
+                    separator = "&";
                     break;
                 default:
                     throw new ArgumentException(string.Format("Invalid view: {0}", view));

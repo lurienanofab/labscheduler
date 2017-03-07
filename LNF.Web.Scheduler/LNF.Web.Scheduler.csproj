@@ -135,9 +135,7 @@
       <SubType>ASPXCodeBehind</SubType>
     </Compile>
     <Compile Include="Controls\ResourceTabMenu.cs" />
-    <Compile Include="Controls\ResourceTreeView.cs">
-      <SubType>ASPXCodeBehind</SubType>
-    </Compile>
+    <Compile Include="Controls\ResourceTreeView.cs" />
     <Compile Include="DataUtility.cs" />
     <Compile Include="FacilityDownTimeUtility.cs" />
     <Compile Include="MongoRepository.cs" />

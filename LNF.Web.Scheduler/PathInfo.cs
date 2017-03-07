@@ -1,5 +1,6 @@
 ﻿using LNF.Cache;
 using LNF.Models.Scheduler;
+using LNF.Repository.Scheduler;
 using LNF.Scheduler;
 using System;
 using System.Configuration;
@@ -123,6 +124,34 @@ namespace LNF.Web.Scheduler
 
             return result;
         }
+
+        public static PathInfo Create(Resource res)
+        {
+            PathInfo result = new PathInfo();
+
+            if (res != null)
+            {
+                result._ResourceID = res.ResourceID;
+
+                if (res.ProcessTech != null)
+                {
+                    result._ProcessTechID = res.ProcessTech.ProcessTechID;
+
+                    if (res.ProcessTech.Lab != null)
+                    {
+                        result._LabID = res.ProcessTech.Lab.LabID;
+
+                        if (res.ProcessTech.Lab.Building != null)
+                        {
+                            result._BuildingID = res.ProcessTech.Lab.Building.BuildingID;
+                        }
+                    }
+                }
+            }
+
+            return result;
+        }
+
         public BuildingModel GetBuilding()
         {
             if (BuildingID > 0)
@@ -191,22 +220,6 @@ namespace LNF.Web.Scheduler
         public string UrlEncode()
         {
             return HttpUtility.UrlEncode(ToString());
-        }
-
-        public static PathInfo Current
-        {
-            get
-            {
-                return Parse(GetCurrentPath());
-            }
-        }
-
-        public static string GetCurrentPath()
-        {
-            if (string.IsNullOrEmpty(HttpContext.Current.Request.QueryString["Path"]))
-                return string.Empty;
-            else
-                return HttpContext.Current.Request.QueryString["Path"];
         }
     }
 }

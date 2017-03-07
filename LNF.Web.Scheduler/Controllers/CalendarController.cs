@@ -31,8 +31,8 @@ namespace LNF.Web.Scheduler.Controllers
 
                     string redirectUrl = string.Format("{0}?Date={1:yyyy-MM-dd}", returnTo, date);
 
-                    if (!PathInfo.Current.IsEmpty())
-                        redirectUrl += string.Format("&Path={0}", PathInfo.Current.UrlEncode());
+                    if (!context.Request.SelectedPath().IsEmpty())
+                        redirectUrl += string.Format("&Path={0}", context.Request.SelectedPath().UrlEncode());
 
                     foreach (var key in context.Request.QueryString.AllKeys)
                     {

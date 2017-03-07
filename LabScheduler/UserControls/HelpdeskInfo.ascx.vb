@@ -30,8 +30,8 @@ Namespace UserControls
                     Next
                 End If
             Else
-                If PathInfo.Current.ResourceID > 0 Then
-                    Dim res As ResourceModel = PathInfo.Current.GetResource()
+                If Request.SelectedPath().ResourceID > 0 Then
+                    Dim res As ResourceModel = Request.SelectedPath().GetResource()
                     If res IsNot Nothing Then
                         list.Add(New With {.id = res.ResourceID, .name = res.ResourceName})
                     End If

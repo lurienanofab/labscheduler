@@ -43,12 +43,12 @@ Namespace Pages
             End If
 
             If Not IsPostBack Then
-                hypAdmin.NavigateUrl = String.Format("~/AdminActivities.aspx?Date={0:yyyy-MM-dd}", Request.GetCurrentDate())
-                hypMyReservations.NavigateUrl = String.Format("~/UserReservations.aspx?Date={0:yyyy-MM-dd}", Request.GetCurrentDate())
-                hypReservationHistory.NavigateUrl = String.Format("~/ReservationHistory.aspx?Date={0:yyyy-MM-dd}", Request.GetCurrentDate())
-                hypPreference.NavigateUrl = String.Format("~/Preference.aspx?Date={0:yyyy-MM-dd}", Request.GetCurrentDate())
-                hypContact.NavigateUrl = String.Format("~/Contact.aspx?AdminOnly=1&Date={0:yyyy-MM-dd}", Request.GetCurrentDate())
-                hypFDT.NavigateUrl = String.Format("~/ReservationFacilityDownTime.aspx&Date={0:yyyy-MM-dd}", Request.GetCurrentDate())
+                hypAdmin.NavigateUrl = String.Format("~/AdminActivities.aspx?Date={0:yyyy-MM-dd}", Request.SelectedDate())
+                hypMyReservations.NavigateUrl = String.Format("~/UserReservations.aspx?Date={0:yyyy-MM-dd}", Request.SelectedDate())
+                hypReservationHistory.NavigateUrl = String.Format("~/ReservationHistory.aspx?Date={0:yyyy-MM-dd}", Request.SelectedDate())
+                hypPreference.NavigateUrl = String.Format("~/Preference.aspx?Date={0:yyyy-MM-dd}", Request.SelectedDate())
+                hypContact.NavigateUrl = String.Format("~/Contact.aspx?AdminOnly=1&Date={0:yyyy-MM-dd}", Request.SelectedDate())
+                hypFDT.NavigateUrl = String.Format("~/ReservationFacilityDownTime.aspx&Date={0:yyyy-MM-dd}", Request.SelectedDate())
 
                 phAdmin.Visible = CacheManager.Current.CurrentUser.HasPriv(ClientPrivilege.Administrator)
                 phFDT.Visible = CacheManager.Current.CurrentUser.HasPriv(ClientPrivilege.Staff)

@@ -35,7 +35,7 @@ Namespace UserControls
         End Property
 
         Public Function GetResourceID() As Integer
-            Return PathInfo.Current.ResourceID
+            Return Request.SelectedPath().ResourceID
         End Function
 
         Public Function GetReservationID() As Integer
@@ -177,7 +177,7 @@ Namespace UserControls
 
         Private Function GetRecentReservations(resourceId As Integer) As IList(Of repo.Reservation)
             If resourceId = 0 Then
-                Return DA.Scheduler.Reservation.SelectRecent(PathInfo.Current.ResourceID)
+                Return DA.Scheduler.Reservation.SelectRecent(Request.SelectedPath().ResourceID)
             Else
                 Return DA.Scheduler.Reservation.SelectRecent(resourceId)
             End If
@@ -226,7 +226,7 @@ Namespace UserControls
                 If ddlSendTo.SelectedValue = "Administrator" Then
                     receiverAddr = Properties.Current.SchedulerEmail
                 ElseIf ddlSendTo.SelectedValue = "Tool Engineers" Then
-                    Dim res As ResourceModel = PathInfo.Current.GetResource()
+                    Dim res As ResourceModel = Request.SelectedPath().GetResource()
                     If res IsNot Nothing Then
                         Dim toolEng As IList(Of ResourceClientModel) = CacheManager.Current.ToolEngineers(res.ResourceID)
                         If toolEng.Count > 0 Then
@@ -272,7 +272,7 @@ Namespace UserControls
                 Dim body As String = String.Empty
                 Dim sb As New StringBuilder()
 
-                Dim res As ResourceModel = PathInfo.Current.GetResource()
+                Dim res As ResourceModel = Request.SelectedPath().GetResource()
 
                 If res IsNot Nothing Then
                     sb.AppendLine("Resource: " + res.ResourceName)

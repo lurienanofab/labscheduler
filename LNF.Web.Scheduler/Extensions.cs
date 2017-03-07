@@ -5,7 +5,7 @@ namespace LNF.Web.Scheduler
 {
     public static class Extensions
     {
-        public static DateTime GetCurrentDate(this HttpRequest request)
+        public static DateTime SelectedDate(this HttpRequest request)
         {
             if (!string.IsNullOrEmpty(request.QueryString["Date"]))
             {
@@ -15,6 +15,11 @@ namespace LNF.Web.Scheduler
             }
 
             return DateTime.Now.Date;
+        }
+
+        public static PathInfo SelectedPath(this HttpRequest request)
+        {
+            return PathInfo.Parse(request.QueryString["Path"]);    
         }
     }
 }

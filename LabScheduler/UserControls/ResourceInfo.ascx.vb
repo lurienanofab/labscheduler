@@ -13,13 +13,13 @@ Namespace UserControls
             Dim startTime As Date = Date.Now
 
             If Not Page.IsPostBack Then
-                If PathInfo.Current.ResourceID = 0 Then
+                If Request.SelectedPath().ResourceID = 0 Then
                     Visible = False
                     Return
                 End If
 
                 ' Resource Engineers
-                Dim res As ResourceModel = PathInfo.Current.GetResource()
+                Dim res As ResourceModel = Request.SelectedPath().GetResource()
 
                 'Session("tool-engineers") = DA.Current.Query(Of ResourceClient)() _
                 '    .Where(Function(x) x.Resource.ResourceID = res.ResourceID).ToArray() _
@@ -59,7 +59,7 @@ Namespace UserControls
 
         Private Function GetToolEngineers() As List(Of ToolEngineerItem)
             Dim result As List(Of ToolEngineerItem) = New List(Of ToolEngineerItem)()
-            Dim toolEngineers As IList(Of ResourceClientModel) = CacheManager.Current.ToolEngineers(PathInfo.Current.ResourceID)
+            Dim toolEngineers As IList(Of ResourceClientModel) = CacheManager.Current.ToolEngineers(Request.SelectedPath().ResourceID)
 
             If String.IsNullOrEmpty(hidResourceID.Value) OrElse toolEngineers Is Nothing OrElse toolEngineers.Count = 0 Then
                 'tdEngineers.InnerText = "Unknown"
@@ -108,7 +108,7 @@ Namespace UserControls
 
         Public ReadOnly Property Url As String
             Get
-                Return VirtualPathUtility.ToAbsolute(String.Format("~/Contact.aspx?ClientID={0}&Path={1}", ClientID, PathInfo.Current))
+                Return VirtualPathUtility.ToAbsolute(String.Format("~/Contact.aspx?ClientID={0}&Path={1}&Date={2:yyyy-MM-dd}", ClientID, HttpContext.Current.Request.SelectedPath(), HttpContext.Current.Request.SelectedDate()))
             End Get
         End Property
     End Class

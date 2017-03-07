@@ -9,10 +9,10 @@ Namespace Pages
         Inherits SchedulerPage
 
         Protected Sub Page_Load(sender As Object, e As EventArgs) Handles Me.Load
-            Dim pt As ProcessTechModel = PathInfo.Current.GetProcessTech()
+            Dim pt As ProcessTechModel = Request.SelectedPath().GetProcessTech()
 
             If Not Page.IsPostBack Then
-                lblDate.Text = Request.GetCurrentDate().ToLongDateString()
+                lblDate.Text = Request.SelectedDate().ToLongDateString()
                 LoadProcessTech(pt)
                 LoadReservationView(pt)
                 CacheManager.Current.CurrentUserState.AddAction("Viewing Process Tech page: {0}", pt.ProcessTechName)

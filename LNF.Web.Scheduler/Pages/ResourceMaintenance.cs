@@ -48,11 +48,11 @@ namespace LNF.Web.Scheduler.Pages
             if (Request.QueryString["Update"] == "1")
             {
                 Session["UpdateForgivenChargeOnFinOps"] = true;
-                Response.Redirect(string.Format("~/ResourceMaintenance.aspx?Path={0}", PathInfo.Current.UrlEncode()), false);
+                Response.Redirect(string.Format("~/ResourceMaintenance.aspx?Path={0}&Date={1:yyyy-MM-dd}", Request.SelectedPath().UrlEncode(), Request.SelectedDate()), false);
             }
             else if (!Page.IsPostBack)
             {
-                ResourceModel res = PathInfo.Current.GetResource();
+                ResourceModel res = Request.SelectedPath().GetResource();
                 LoadResourceStatus(res);
                 LoadInterlockState(res);
                 RegisterAsyncTask(new PageAsyncTask(() => UpdateForgivenChargeOnFinOps(res)));
@@ -175,7 +175,7 @@ namespace LNF.Web.Scheduler.Pages
         {
             litErrMsg.Text = string.Empty;
 
-            ResourceModel res = PathInfo.Current.GetResource();
+            ResourceModel res = Request.SelectedPath().GetResource();
 
             if (e.CommandName == "start")
                 StartRepair(res);
@@ -446,7 +446,7 @@ namespace LNF.Web.Scheduler.Pages
         private void RefreshAndRedirect(ResourceModel res)
         {
             // Last, reload and refresh everything to reflect the new change made
-            Response.Redirect(string.Format("~/ResourceMaintenance.aspx?Path={0}", PathInfo.Create(res)), false);
+            Response.Redirect(string.Format("~/ResourceMaintenance.aspx?Path={0}&Date={1:yyyy-MM-dd}", PathInfo.Create(res), Request.SelectedDate()), false);
         }
     }
 }

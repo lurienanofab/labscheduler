@@ -1,5 +1,4 @@
 ﻿using LNF.Models.Data;
-using LNF.Models.Scheduler;
 using LNF.Web.Content;
 
 namespace LNF.Web.Scheduler.Content
@@ -8,17 +7,12 @@ namespace LNF.Web.Scheduler.Content
     {
         public SchedulerMasterPage Master
         {
-            get { return (SchedulerMasterPage)Page.Master; }
+            get { return Page.Master; }
         }
 
         protected ClientModel CurrentUser
         {
             get { return Page.CurrentUser; }
-        }
-
-        protected ResourceModel GetCurrentResource()
-        {
-            return PathInfo.Current.GetResource();
         }
 
         public new SchedulerPage Page

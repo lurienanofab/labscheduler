@@ -70,7 +70,7 @@ Namespace Pages
 
         Public Function GetResourceUrl() As String
             Dim model As ResourceModel = CacheManager.Current.GetResource(ResourceID)
-            Return String.Format("~/ResourceDayWeek.aspx?Path={0}", PathInfo.Create(model))
+            Return String.Format("~/ResourceDayWeek.aspx?Path={0}&Date={1:yyyy-MM-dd}", PathInfo.Create(model), HttpContext.Current.Request.SelectedDate())
         End Function
 
         Public Shared Function Create(source As ReservationRecurrence) As RecurrenceItem

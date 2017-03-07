@@ -50,7 +50,7 @@ namespace LNF.Web.Scheduler.Pages
 
         protected override void OnLoad(EventArgs e)
         {
-            ResourceModel res = PathInfo.Current.GetResource();
+            ResourceModel res = Request.SelectedPath().GetResource();
 
             if (res == null)
                 Response.Redirect("~");
@@ -69,7 +69,7 @@ namespace LNF.Web.Scheduler.Pages
                 litClientListTitle.Text = string.Format("Client List for {0} [{1}]", res.ResourceName, res.ResourceID);
             }
 
-            Session["ReturnFromEmail"] = SchedulerUtility.GetReturnUrl("ResourceClients.aspx", PathInfo.Current, 0, Request.GetCurrentDate());
+            Session["ReturnFromEmail"] = SchedulerUtility.GetReturnUrl("ResourceClients.aspx", Request.SelectedPath(), 0, Request.SelectedDate());
         }
 
         private void LoadResourceClients(ResourceModel res)
@@ -273,7 +273,7 @@ namespace LNF.Web.Scheduler.Pages
         {
             litErrMsg.Text = string.Empty;
 
-            ResourceModel res = PathInfo.Current.GetResource();
+            ResourceModel res = Request.SelectedPath().GetResource();
 
             // Error Checking
             if (ddlClients.Items.Count == 0)
@@ -339,7 +339,7 @@ namespace LNF.Web.Scheduler.Pages
 
         protected void dg_DataBinding(object sender, EventArgs e)
         {
-            ResourceModel res = PathInfo.Current.GetResource();
+            ResourceModel res = Request.SelectedPath().GetResource();
 
             DataGrid dgClient = (DataGrid)sender;
             Literal litNoData = null;
@@ -348,27 +348,27 @@ namespace LNF.Web.Scheduler.Pages
                 case "dgTEs":
                     // Tool Engineers
                     litNoData = litNoTE;
-                    hypEmailToolEngineers.NavigateUrl = string.Format("~/Contact.aspx?Privs=16&Path={0}", PathInfo.Current.UrlEncode());
+                    hypEmailToolEngineers.NavigateUrl = string.Format("~/Contact.aspx?Privs=16&Path={0}&Date={1:yyyy-MM-dd}", Request.SelectedPath().UrlEncode(), Request.SelectedDate());
                     break;
                 case "dgCheckouts":
                     // Super Users
                     litNoData = litNoCheckout;
-                    hypEmailCheckouts.NavigateUrl = string.Format("~/Contact.aspx?Privs=4&Path={0}", PathInfo.Current.UrlEncode());
+                    hypEmailCheckouts.NavigateUrl = string.Format("~/Contact.aspx?Privs=4&Path={0}&Date={1:yyyy-MM-dd}", Request.SelectedPath().UrlEncode(), Request.SelectedDate());
                     break;
                 case "dgTrainers":
                     // Trainers
                     litNoData = litNoTrainer;
-                    hypEmailTrainers.NavigateUrl = string.Format("~/Contact.aspx?Privs=8&Path={0}", PathInfo.Current.UrlEncode());
+                    hypEmailTrainers.NavigateUrl = string.Format("~/Contact.aspx?Privs=8&Path={0}&Date={1:yyyy-MM-dd}", Request.SelectedPath().UrlEncode(), Request.SelectedDate());
                     break;
                 case "dgUsers":
                     // Users
                     litNoData = litNoUser;
-                    hypEmailUsers.NavigateUrl = string.Format("~/Contact.aspx?Privs=2&Path={0}", PathInfo.Current.UrlEncode());
+                    hypEmailUsers.NavigateUrl = string.Format("~/Contact.aspx?Privs=2&Path={0}&Date={1:yyyy-MM-dd}", Request.SelectedPath().UrlEncode(), Request.SelectedDate());
                     break;
             }
 
             // All
-            hypEmailAll.NavigateUrl = string.Format("~/Contact.aspx?Privs=62&Path={0}", PathInfo.Current.UrlEncode());
+            hypEmailAll.NavigateUrl = string.Format("~/Contact.aspx?Privs=62&Path={0}&Date={1:yyyy-MM-dd}", Request.SelectedPath().UrlEncode(), Request.SelectedDate());
 
             DataView dvClients = (DataView)dgClient.DataSource;
 
@@ -409,7 +409,7 @@ namespace LNF.Web.Scheduler.Pages
             {
                 try
                 {
-                    ResourceModel res = PathInfo.Current.GetResource();
+                    ResourceModel res = Request.SelectedPath().GetResource();
 
                     string emailLinkName = null;
                     string editName = null;
@@ -446,7 +446,7 @@ namespace LNF.Web.Scheduler.Pages
                     DataItemHelper di = new DataItemHelper(e.Item.DataItem);
                     HyperLink emailLink = (HyperLink)e.Item.FindControl(emailLinkName);
                     emailLink.Text = di["DisplayName"].ToString();
-                    emailLink.NavigateUrl = string.Format("~/Contact.aspx?ClientID={0}&Path={1}", di["ClientID"], PathInfo.Current.UrlEncode());
+                    emailLink.NavigateUrl = string.Format("~/Contact.aspx?ClientID={0}&Path={1}&Date={2:yyyy-MM-dd}", di["ClientID"], Request.SelectedPath().UrlEncode(), Request.SelectedDate());
                     emailLink.Attributes.Add("title", di["Email"].ToString());
 
                     if (authLevel == ClientAuthLevel.Trainer || authLevel == ClientAuthLevel.ToolEngineer)
@@ -491,7 +491,7 @@ namespace LNF.Web.Scheduler.Pages
 
         protected void dg_ItemCommand(object source, DataGridCommandEventArgs e)
         {
-            ResourceModel res = PathInfo.Current.GetResource();
+            ResourceModel res = Request.SelectedPath().GetResource();
 
             string senderId = ((DataGrid)source).ID;
 
@@ -545,7 +545,7 @@ namespace LNF.Web.Scheduler.Pages
         protected void ddlPager_SelectedIndexChanged(object sender, EventArgs e)
         {
             dgUsers.CurrentPageIndex = Convert.ToInt32(ddlPager.SelectedValue); // selectedItem should also work
-            ResourceModel res = PathInfo.Current.GetResource();
+            ResourceModel res = Request.SelectedPath().GetResource();
             LoadResourceClients(res);
         }
 
@@ -574,7 +574,7 @@ namespace LNF.Web.Scheduler.Pages
         private DataTable GetAvailClientsDataTable()
         {
             if (Session["dtAvailClients"] == null)
-                Session["dtAvailClients"] = ResourceClientData.SelectAvailClients(PathInfo.Current.ResourceID);
+                Session["dtAvailClients"] = ResourceClientData.SelectAvailClients(Request.SelectedPath().ResourceID);
             return (DataTable)Session["dtAvailClients"];
         }
 
@@ -589,13 +589,13 @@ namespace LNF.Web.Scheduler.Pages
         private DataTable GetClientsDataTable()
         {
             if (Session["dtClients"] == null)
-                Session["dtClients"] = ResourceClientData.SelectByResource(PathInfo.Current.ResourceID);
+                Session["dtClients"] = ResourceClientData.SelectByResource(Request.SelectedPath().ResourceID);
             return (DataTable)Session["dtClients"];
         }
 
         private ClientAuthLevel GetCurrentAuthLevel()
         {
-            ClientAuthLevel result = CacheManager.Current.GetAuthLevel(PathInfo.Current.ResourceID, CacheManager.Current.ClientID);
+            ClientAuthLevel result = CacheManager.Current.GetAuthLevel(Request.SelectedPath().ResourceID, CacheManager.Current.ClientID);
             return result;
         }
 

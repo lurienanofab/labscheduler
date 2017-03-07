@@ -37,7 +37,7 @@ namespace LNF.Web.Scheduler.Handlers
                         result = await ReservationManager.Start(reservationId, clientId);
                         break;
                     case "get-reservation":
-                        result = ReservationManager.GetReservation(reservationId);
+                        result = ReservationManager.GetReservation(context, reservationId);
                         break;
                     case "save-reservation-history":
                         string notes = context.Request["Notes"];
@@ -126,16 +126,16 @@ namespace LNF.Web.Scheduler.Handlers
             }
         }
 
-        public static object GetReservation(int reservationId)
+        public static object GetReservation(HttpContext context, int reservationId)
         {
             var rsv = DA.Current.Single<Reservation>(reservationId);
             if (rsv != null)
-                return CreateStartReservationItem(rsv);
+                return CreateStartReservationItem(context, rsv);
             else
                 return new { Error = true, Message = string.Format("Cannot find record for ReservationID {0}", reservationId) };
         }
 
-        public static StartReservationItem CreateStartReservationItem(Reservation rsv)
+        public static StartReservationItem CreateStartReservationItem(HttpContext context, Reservation rsv)
         {
             StartReservationItem item = new StartReservationItem();
             item.ReservationID = rsv.ReservationID;
@@ -171,7 +171,7 @@ namespace LNF.Web.Scheduler.Handlers
             var inst = ActionInstanceUtility.Find(ActionType.Interlock, rsv.Resource.ResourceID);
             item.HasInterlock = inst != null;
 
-            item.ReturnUrl = GetResourceUrl(rsv.Resource);
+            item.ReturnUrl = GetResourceUrl(context, rsv.Resource);
 
             return item;
         }
@@ -204,13 +204,9 @@ namespace LNF.Web.Scheduler.Handlers
             }
         }
 
-        public static string GetResourceUrl(Resource res)
+        public static string GetResourceUrl(HttpContext context, Resource res)
         {
-            var lab = res.ProcessTech.Lab;
-            if (lab != null)
-                return VirtualPathUtility.ToAbsolute(string.Format("~/ResourceDayWeek.aspx?Path={0}:{1}:{2}:{3}", lab.Building.BuildingID, lab.LabID, res.ProcessTech.ProcessTechID, res.ResourceID));
-            else
-                return VirtualPathUtility.ToAbsolute(string.Format("~/ResourceDayWeek.aspx?Path={0}:{1}:{2}:{3}", res.ProcessTech.Lab.Building.BuildingID, res.ProcessTech.Lab.LabID, res.ProcessTech.ProcessTechID, res.ResourceID));
+            return VirtualPathUtility.ToAbsolute(string.Format("~/ResourceDayWeek.aspx?Path={0}&Date={1:yyyy-MM-dd}", PathInfo.Create(res), context.Request.SelectedDate()));
         }
     }
 

@@ -12,7 +12,7 @@ Namespace Pages
 
         Protected Sub Page_Load(sender As Object, e As EventArgs) Handles Me.Load
             If Not Page.IsPostBack Then
-                lblDate.Text = Request.GetCurrentDate().ToLongDateString()
+                lblDate.Text = Request.SelectedDate().ToLongDateString()
 
                 If CurrentUser IsNot Nothing Then
                     litCurrentUser.Text = CurrentUser.DisplayName
@@ -24,7 +24,7 @@ Namespace Pages
                     litCurrentUser.Text = "[unknown user]"
                 End If
 
-                hypRecurringPage.NavigateUrl = String.Format("~/UserRecurringReservation.aspx?Date={0:yyyy-MM-dd}", Request.GetCurrentDate())
+                hypRecurringPage.NavigateUrl = String.Format("~/UserRecurringReservation.aspx?Date={0:yyyy-MM-dd}", Request.SelectedDate())
 
                 CacheManager.Current.CurrentUserState().AddAction("Viewing My Reservations page.")
             End If

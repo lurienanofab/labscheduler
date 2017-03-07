@@ -34,9 +34,9 @@ namespace LNF.Web.Scheduler
             result.LabName = lab.LabDisplayName;
             result.ProcessTechName = pt.ProcessTechName;
             result.ResourceName = res.ResourceName;
-            result.LabUrl = VirtualPathUtility.ToAbsolute(string.Format("~/Lab.aspx?Path={0}", PathInfo.Create(lab)));
-            result.ProcessTechUrl = VirtualPathUtility.ToAbsolute(string.Format("~/ProcessTech.aspx?Path={0}", PathInfo.Create(pt)));
-            result.ResourceUrl = VirtualPathUtility.ToAbsolute(string.Format("~/ResourceDayWeek.aspx?Path={0}", PathInfo.Create(res)));
+            result.LabUrl = VirtualPathUtility.ToAbsolute(string.Format("~/Lab.aspx?Path={0}&Date={1:yyyy-MM-dd}", PathInfo.Create(lab), HttpContext.Current.Request.SelectedDate()));
+            result.ProcessTechUrl = VirtualPathUtility.ToAbsolute(string.Format("~/ProcessTech.aspx?Path={0}&Date={1:yyyy-MM-dd}", PathInfo.Create(pt), HttpContext.Current.Request.SelectedDate()));
+            result.ResourceUrl = VirtualPathUtility.ToAbsolute(string.Format("~/ResourceDayWeek.aspx?Path={0}&Date={1:yyyy-MM-dd}", PathInfo.Create(res), HttpContext.Current.Request.SelectedDate()));
             return result;
         }
 

@@ -10,7 +10,7 @@ Namespace Pages
         Inherits SchedulerPage
 
         Protected Sub Page_Load(ByVal sender As Object, ByVal e As EventArgs) Handles Me.Load
-            LoadLab(PathInfo.Current.LabID)
+            LoadLab(Request.SelectedPath().LabID)
         End Sub
 
         Private Sub LoadLab(labId As Integer)

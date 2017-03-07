@@ -6,11 +6,11 @@ Namespace Pages
         Inherits SchedulerPage
 
         Public Sub Page_Load(ByVal sender As Object, ByVal e As EventArgs) Handles Me.Load
-            If PathInfo.Current.ResourceID = 0 Then
-                Response.Redirect("~/")
+            If Request.SelectedPath().ResourceID = 0 Then
+                Response.Redirect("~")
             End If
             If Not Page.IsPostBack Then
-                Helpdesk1.ResourceID = PathInfo.Current.ResourceID
+                Helpdesk1.ResourceID = Request.SelectedPath().ResourceID
             End If
         End Sub
 

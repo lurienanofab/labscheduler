@@ -12,7 +12,7 @@ Namespace Pages
         End Sub
 
         Private Sub LoadBuilding()
-            Dim bldg As BuildingModel = PathInfo.Current.GetBuilding()
+            Dim bldg As BuildingModel = Request.SelectedPath().GetBuilding()
             If bldg IsNot Nothing Then
                 lblBuildingName.Text = bldg.BuildingName
                 lblDescription.Text = bldg.Description

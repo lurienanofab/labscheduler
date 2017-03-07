@@ -32,7 +32,7 @@ Public Class MasterPageBootstrap
             End If
 
             ' handle the current date
-            Dim selectedDate As Date = Request.GetCurrentDate()
+            Dim selectedDate As Date = Request.SelectedDate()
             txtCurrentDate.Value = selectedDate.ToString("MM/dd/yyyy")
             hidSelectedDate.Value = selectedDate.ToString("yyyy-MM-dd")
 

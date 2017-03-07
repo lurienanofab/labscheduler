@@ -1,9 +1,11 @@
 using LNF.Cache;
-using LNF.Data;
 using LNF.Models.Data;
 using LNF.Models.Scheduler;
 using LNF.Repository.Data;
 using LNF.Scheduler;
+using System.IO;
+using System.Web;
+using System.Web.UI;
 
 namespace LNF.Web.Scheduler
 {
@@ -16,9 +18,9 @@ namespace LNF.Web.Scheduler
 
         public static readonly ClientPrivilege AdminAuthTypes = ClientPrivilege.Administrator;
 
-        public static bool CheckAccessRight(string pageName, Client currentUser)
+        public static bool CheckAccessRight(Page page, Client currentUser)
         {
-            pageName = pageName.ToLower();
+            var pageName = Path.GetFileName(page.AppRelativeVirtualPath).ToLower();
 
             if (pageName.StartsWith("admin"))
             {
@@ -32,9 +34,9 @@ namespace LNF.Web.Scheduler
                     case "resourcedocs.aspx":
                     case "resourceconfig.aspx":
                     case "resourcemaintenance.aspx":
-                        if (PathInfo.Current.ResourceID > 0)
+                        if (HttpContext.Current.Request.SelectedPath().ResourceID > 0)
                         {
-                            ClientAuthLevel authLevel = CacheManager.Current.GetAuthLevel(PathInfo.Current.ResourceID, CacheManager.Current.ClientID);
+                            ClientAuthLevel authLevel = CacheManager.Current.GetAuthLevel(page.Request.SelectedPath().ResourceID, CacheManager.Current.ClientID);
                             // So far, only Tool Engineer can see the 3 pages
                             return (authLevel & ClientAuthLevel.ToolEngineer) > 0;
                         }

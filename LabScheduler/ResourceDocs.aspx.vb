@@ -20,7 +20,7 @@ Namespace Pages
 
         Protected Sub Page_Load(ByVal sender As Object, ByVal e As System.EventArgs) Handles Me.Load
             'If user types url directly, we have to return immediately if resDB is not loaded
-            If PathInfo.Current.ResourceID = 0 Then
+            If Request.SelectedPath().ResourceID = 0 Then
                 Return
             End If
 
@@ -30,7 +30,7 @@ Namespace Pages
         End Sub
 
         Private Sub LoadDocs()
-            dtDocs = dbDocs.SelectDocs(PathInfo.Current.ResourceID)
+            dtDocs = dbDocs.SelectDocs(Request.SelectedPath().ResourceID)
             dgDocs.DataSource = dtDocs
             dgDocs.DataBind()
         End Sub
@@ -52,8 +52,8 @@ Namespace Pages
         End Sub
 
         Private Sub dgDocs_ItemCommand(ByVal source As Object, ByVal e As System.Web.UI.WebControls.DataGridCommandEventArgs) Handles dgDocs.ItemCommand
-            Dim DocID As Integer
-            Dim strExt As String, FileName As String
+            Dim docId As Integer
+            Dim fileExt As String, fileName As String
             Try
                 Select Case e.CommandName
                     Case "Add"
@@ -63,18 +63,18 @@ Namespace Pages
                         Dim fileNewDoc As HtmlInputFile = CType(e.Item.FindControl("fileNewDoc"), HtmlInputFile)
                         If String.IsNullOrEmpty(fileNewDoc.Value.Trim()) Then Throw New Exception("Please select a file to upload.")
 
-                        strExt = IO.Path.GetExtension(fileNewDoc.Value).ToLower
-                        If Not ValidFileExtensions.Contains(strExt) Then Throw New Exception("Please upload .doc and .pdf files only.")
+                        fileExt = IO.Path.GetExtension(fileNewDoc.Value).ToLower
+                        If Not ValidFileExtensions.Contains(fileExt) Then Throw New Exception("Please upload .doc and .pdf files only.")
 
-                        DocID = dbDocs.InsertDoc(PathInfo.Current.ResourceID, txbNewDocName.Text, strExt)
-                        FileName = "doc" + DocID.ToString().PadLeft(5, Char.Parse("0")) + strExt
+                        docId = dbDocs.InsertDoc(Request.SelectedPath().ResourceID, txbNewDocName.Text, fileExt)
+                        fileName = "doc" + docId.ToString().PadLeft(5, Char.Parse("0")) + fileExt
 
                         ' Upload doc to server
-                        UploadDoc(fileNewDoc, FileName)
+                        UploadDoc(fileNewDoc, fileName)
                         LoadDocs()
 
                     Case "Update"
-                        DocID = Convert.ToInt32(e.Item.Cells(0).Text)
+                        docId = Convert.ToInt32(e.Item.Cells(0).Text)
                         Dim txbDocName As TextBox = CType(e.Item.FindControl("txbDocName"), TextBox)
                         If String.IsNullOrEmpty(txbDocName.Text.Trim()) Then
                             Throw New Exception("Please enter document name.")
@@ -83,26 +83,26 @@ Namespace Pages
                         Dim fileDoc As HtmlInputFile = CType(e.Item.FindControl("fileDoc"), HtmlInputFile)
                         If Not String.IsNullOrEmpty(fileDoc.Value.Trim()) Then
                             ' Upload new doc to server
-                            strExt = Path.GetExtension(fileDoc.Value).ToLower
-                            If Not ValidFileExtensions.Contains(strExt) Then
+                            fileExt = Path.GetExtension(fileDoc.Value).ToLower
+                            If Not ValidFileExtensions.Contains(fileExt) Then
                                 Throw New Exception("Please upload .doc and .pdf files only.")
                             End If
 
-                            FileName = "doc" + DocID.ToString().PadLeft(5, Char.Parse("0")) + strExt
+                            fileName = "doc" + docId.ToString().PadLeft(5, Char.Parse("0")) + fileExt
                             DeleteDoc(e.Item.Cells(1).Text) ' Delete old doc
-                            UploadDoc(fileDoc, FileName)    ' Upload new doc
+                            UploadDoc(fileDoc, fileName)    ' Upload new doc
                         Else
-                            FileName = e.Item.Cells(1).Text
+                            fileName = e.Item.Cells(1).Text
                         End If
-                        dbDocs.UpdateDoc(DocID, txbDocName.Text, FileName)
+                        dbDocs.UpdateDoc(docId, txbDocName.Text, fileName)
 
                         dgDocs.EditItemIndex = -1
                         dgDocs.ShowFooter = True
                         LoadDocs()
 
                     Case "Delete"
-                        DocID = Convert.ToInt32(e.Item.Cells(0).Text)
-                        dbDocs.DeleteDoc(DocID)
+                        docId = Convert.ToInt32(e.Item.Cells(0).Text)
+                        dbDocs.DeleteDoc(docId)
                         DeleteDoc(e.Item.Cells(1).Text)
                         LoadDocs()
 

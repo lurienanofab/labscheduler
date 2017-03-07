@@ -43,7 +43,7 @@ Namespace Pages
         End Property
 
         Protected Sub Page_Load(ByVal sender As Object, ByVal e As EventArgs) Handles Me.Load
-            Dim res As ResourceModel = PathInfo.Current.GetResource()
+            Dim res As ResourceModel = Request.SelectedPath().GetResource()
 
             hidResourceID.Value = res.ResourceID.ToString()
 
@@ -184,7 +184,7 @@ Namespace Pages
 
 #Region " Resource Info Events and Functions "
         Private Sub ddlGranularity_SelectedIndexChanged(sender As Object, e As EventArgs) Handles ddlGranularity.SelectedIndexChanged
-            Dim res As ResourceModel = PathInfo.Current.GetResource()
+            Dim res As ResourceModel = Request.SelectedPath().GetResource()
 
             LoadOffset(res)
             LoadMinReservTime(res)
@@ -195,7 +195,7 @@ Namespace Pages
         End Sub
 
         Private Sub ddlMinReservTime_SelectedIndexChanged(sender As Object, e As EventArgs) Handles ddlMinReservTime.SelectedIndexChanged
-            Dim res As ResourceModel = PathInfo.Current.GetResource()
+            Dim res As ResourceModel = Request.SelectedPath().GetResource()
 
             LoadMaxReservTime(res)
             LoadGracePeriodHour(res)
@@ -203,12 +203,12 @@ Namespace Pages
         End Sub
 
         Private Sub ddlGracePeriodHour_SelectedIndexChanged(sender As Object, e As EventArgs) Handles ddlGracePeriodHour.SelectedIndexChanged
-            Dim res As ResourceModel = PathInfo.Current.GetResource()
+            Dim res As ResourceModel = Request.SelectedPath().GetResource()
             LoadGracePeriodMin(res)
         End Sub
 
         Private Sub btnSubmit_Click(sender As Object, e As EventArgs) Handles btnSubmit.Click
-            Dim res As ResourceModel = PathInfo.Current.GetResource()
+            Dim res As ResourceModel = Request.SelectedPath().GetResource()
 
             ' need to check ReservFence, MaxReservTime, and MaxAlloc
             ' these are displayed in hours but saved in the db in minutes
@@ -545,7 +545,7 @@ Namespace Pages
         ' ProcessInfo OnItemCommand
         Private Sub dgProcessInfo_ItemCommand(source As Object, e As DataGridCommandEventArgs) Handles dgProcessInfo.ItemCommand
             Try
-                Dim res As ResourceModel = PathInfo.Current.GetResource()
+                Dim res As ResourceModel = Request.SelectedPath().GetResource()
 
                 Select Case e.CommandName
                     Case "Expand"       ' Expand ProcessInfo row to display ProcessInfoLine datagrid
@@ -776,7 +776,7 @@ Namespace Pages
         Protected Sub dgProcessInfoLine_ItemCommand(source As Object, e As DataGridCommandEventArgs)
             Try
                 If ProcessInfoLineDataTable Is Nothing Then
-                    Response.Redirect(String.Format("~/ResourceConfig.aspx?Path={0}", PathInfo.Current.UrlEncode()), False)
+                    Response.Redirect(String.Format("~/ResourceConfig.aspx?Path={0}&Date={1:yyyy-MM-dd}", Request.SelectedPath().UrlEncode(), Request.SelectedDate()), False)
                     Return
                 End If
 
