@@ -16,42 +16,49 @@ namespace LNF.Web.Scheduler.Controls
     public class ResourceTreeView : WebControl
     {
         #region Control Definitions
-        protected HtmlInputHidden hidSelectedPath;
+
         protected HtmlInputHidden hidPathDelimiter;
         protected Repeater rptBuilding;
         #endregion
 
         public ResourceTreeView() : base(HtmlTextWriterTag.Div) { }
 
-        private PathInfo? _SelectedPath;
-
         public PathInfo SelectedPath
         {
             get
             {
-                if (!_SelectedPath.HasValue)
-                    _SelectedPath = Page.Request.SelectedPath();
+                PathInfo result;
 
-                return _SelectedPath.Value;
+                if (ViewState["SelectedPath"] == null)
+                {
+                    result = Page.Request.SelectedPath();
+                    ViewState["SelectedPath"] = result.ToString();
+                }
+                else
+                {
+                    result = PathInfo.Parse(ViewState["SelectedPath"].ToString());
+                }
+
+                return result;
             }
             set
             {
-                _SelectedPath = value;
+                ViewState["SelectedPath"] = value.ToString();
             }
         }
 
         protected override void CreateChildControls()
         {
             DateTime startTime = DateTime.Now;
-
-            if (!Page.IsPostBack)
-                LoadTree();
-
-            RequestLog.Append("ResourceTreeView.OnLoad: {0}", DateTime.Now - startTime);
+            LoadTree();
+            RequestLog.Append("ResourceTreeView.CreateChildControls: {0}", DateTime.Now - startTime);
         }
 
         private void LoadTree()
         {
+            var divTreeView = new HtmlGenericControl("div");
+            divTreeView.Attributes.Add("class", "treeview");
+
             if (SelectedPath.IsEmpty())
             {
                 // no path specified, need to use client defaults
@@ -61,17 +68,134 @@ namespace LNF.Web.Scheduler.Controls
                     SelectedPath = PathInfo.Create(lab);
             }
 
+            var hidSelectedPath = new HtmlInputHidden();
+            hidSelectedPath.Attributes.Add("class", "selected-path");
             hidSelectedPath.Value = SelectedPath.ToString();
+
+            var hidPathDelimiter = new HtmlInputHidden();
+            hidPathDelimiter.Attributes.Add("class", "path-delimiter");
             hidPathDelimiter.Value = PathInfo.PathDelimiter;
+
+            divTreeView.Controls.Add(hidSelectedPath);
+            divTreeView.Controls.Add(hidPathDelimiter);
 
             SchedulerTreeView treeView = new SchedulerTreeView();
             TreeItemCollection buildingItems = treeView.Buildings;
 
             if (buildingItems != null)
             {
-                rptBuilding.DataSource = buildingItems;
-                rptBuilding.DataBind();
+                var ul = CreateTreeView(buildingItems);
+                divTreeView.Controls.Add(ul);
             }
+
+            Controls.Add(divTreeView);
+        }
+
+        private HtmlGenericControl CreateTreeView(TreeItemCollection buildings)
+        {
+            HtmlGenericControl ulBuildings = new HtmlGenericControl("ul");
+            ulBuildings.Attributes.Add("class", "root buildings");
+
+            foreach (var bldg in buildings)
+            {
+                var liBuilding = CreateNode(bldg, "branch");
+
+                if (bldg.Children.Count > 0)
+                {
+                    var ulLabs = new HtmlGenericControl("ul");
+                    ulLabs.Attributes.Add("class", "child labs");
+
+                    foreach (var lab in bldg.Children)
+                    {
+                        var liLab = CreateNode(lab, "branch");
+
+                        if (lab.Children.Count > 0)
+                        {
+                            var ulProcTechs = new HtmlGenericControl("ul");
+                            ulProcTechs.Attributes.Add("class", "child proctechs");
+
+                            foreach(var pt in lab.Children)
+                            {
+                                var liProcTech = CreateNode(pt, "branch");
+
+                                if (pt.Children.Count > 0)
+                                {
+                                    var ulResources = new HtmlGenericControl("ul");
+                                    ulResources.Attributes.Add("class", "child resources");
+
+                                    foreach (var res in pt.Children)
+                                    {
+                                        var liResource = CreateNode(res, "leaf");
+                                        ulResources.Controls.Add(liResource);
+                                    }
+
+                                    liProcTech.Controls.Add(ulResources);
+                                }
+
+                                ulProcTechs.Controls.Add(liProcTech);
+                            }
+
+                            liLab.Controls.Add(ulProcTechs);
+                        }
+
+                        ulLabs.Controls.Add(liLab);
+                    }
+
+                    liBuilding.Controls.Add(ulLabs);
+                }
+
+                ulBuildings.Controls.Add(liBuilding);
+            }
+
+            return ulBuildings;
+        }
+
+        private HtmlGenericControl CreateNode(ITreeItem item, string current)
+        {
+            var result = new HtmlGenericControl("li");
+            result.Attributes.Add("data-id", item.ID.ToString());
+            result.Attributes.Add("data-value", item.Value);
+            result.Attributes.Add("class", GetNodeCssClass(item, current));
+
+            var divNodeText = new HtmlGenericControl("div");
+            divNodeText.Attributes.Add("class", "node-text");
+            divNodeText.Attributes.Add("title", item.ToolTip);
+
+            var tblNodeTextTable = new HtmlTable();
+            tblNodeTextTable.Attributes.Add("class", "node-text-table");
+
+            var row = new HtmlTableRow();
+            HtmlTableCell cell;
+
+            // cell #1 - click area
+            cell = new HtmlTableCell();
+            cell.Attributes.Add("class", "node-text-clickarea");
+            cell.InnerHtml = "&nbsp;";
+            row.Cells.Add(cell);
+
+            // cell #2 - image (maybe) and text
+            cell = new HtmlTableCell();
+            cell.Attributes.Add("class", item.CssClass);
+            var img = GetImage(item);
+            if (img != null) cell.Controls.Add(img);
+            var a = new HtmlAnchor();
+            a.HRef = GetNodeUrl(item);
+            a.InnerText = item.Name;
+            cell.Controls.Add(a);
+            row.Cells.Add(cell);
+
+            // Add the row
+            tblNodeTextTable.Rows.Add(row);
+
+            // Add the table
+            divNodeText.Controls.Add(tblNodeTextTable);
+
+            // Add the div
+            result.Controls.Add(divNodeText);
+
+            // at this point we only have the li without child nodes
+
+            return result;
         }
 
         protected void rptBuilding_ItemDataBound(object sender, RepeaterItemEventArgs e)
@@ -161,15 +285,19 @@ namespace LNF.Web.Scheduler.Controls
                 return false;
         }
 
-        protected string GetImage(ITreeItem item)
+        private HtmlImage GetImage(ITreeItem item)
         {
             if (ShowImages())
             {
                 string imageUrl = string.Format("/scheduler/image/{0}_icon/{1}", TreeViewUtility.TreeItemTypeToString(item.Type), item.ID);
-                return string.Format("<img src=\"{0}\" onerror=\"handleMissingImage(this);\" alt=\"icon\" />", imageUrl);
+                var result = new HtmlImage();
+                result.Src = imageUrl;
+                result.Attributes.Add("onerror", "handleMissingImage(this);");
+                result.Alt = "icon";
+                return result;
             }
             else
-                return string.Empty;
+                return null;
         }
 
         protected string GetNodeCssClass(ITreeItem item, string current)

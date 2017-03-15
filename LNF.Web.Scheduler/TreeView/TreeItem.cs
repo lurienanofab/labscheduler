@@ -9,6 +9,7 @@
         public string Name { get; protected set; }
         public string Description { get; protected set; }
         protected abstract void Load(T item);
+
         private string _Value;
 
         public virtual string Value

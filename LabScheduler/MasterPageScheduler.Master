@@ -1,7 +1,6 @@
 ﻿<%@ Master Language="VB" AutoEventWireup="false" CodeBehind="MasterPageScheduler.master.vb" Inherits="LabScheduler.Pages.MasterPageScheduler" %>
 
 <%@ Register Assembly="LNF.Web.Scheduler" Namespace="LNF.Web.Scheduler.Controls" TagPrefix="lnf" %>
-<%@ Register Src="~/UserControls/ResourceTreeView.ascx" TagName="ResourceTreeView" TagPrefix="uc" %>
 <%@ Register Src="~/UserControls/ResourceInfo.ascx" TagName="ResourceInfo" TagPrefix="uc" %>
 
 <!DOCTYPE html>
@@ -86,7 +85,7 @@
                                     <lnf:Calendar runat="server" ID="Calendar1" CssClass="calendar" />
                                 </div>
                                 <div style="border: 3px solid #4682B4;">
-                                    <uc:ResourceTreeView runat="server" ID="ResourceTreeView1" />
+                                    <lnf:ResourceTreeView runat="server" ID="ResourceTreeView1" />
                                 </div>
                                 <div style="border: 3px solid #4682B4; min-height: 250px;">
                                     <asp:Panel ID="panelResourceInfo" runat="server" Width="250" CssClass="ScrollPanel">

@@ -440,7 +440,6 @@
     <Content Include="UserControls\NumericBox.ascx" />
     <Content Include="UserControls\ReservationView.ascx" />
     <Content Include="UserControls\ResourceInfo.ascx" />
-    <Content Include="UserControls\ResourceTreeView.ascx" />
     <Content Include="UserRecurringReservation.aspx" />
     <Content Include="UserRecurringReservationEdit.aspx" />
     <Content Include="UserReservations.aspx" />

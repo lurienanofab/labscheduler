@@ -9,6 +9,8 @@
         string Name { get; }
         string Description { get; }
         string Value { get; }
+        string CssClass { get; }
+        string ToolTip { get; }
         PathInfo GetPath();
     }
 }

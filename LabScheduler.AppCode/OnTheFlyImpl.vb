@@ -1,5 +1,6 @@
 Imports System.Threading.Tasks
 Imports LNF.Cache
+Imports LNF.CommonTools
 Imports LNF.Data
 Imports LNF.Models.Data
 Imports LNF.Repository
@@ -498,8 +499,8 @@ Public Class OnTheFlyImpl
             'Error
             Dim err As New ErrorLog()
             err.Application = "OnTheFly"
-            err.Message = ex.Message
-            err.StackTrace = ex.StackTrace
+            err.Message = ex.Message.Clip(500)
+            err.StackTrace = ex.StackTrace.Clip(4000)
             err.ErrorDateTime = Date.Now
             err.ClientID = GetSwipedByClientID()
             err.PageUrl = "?"

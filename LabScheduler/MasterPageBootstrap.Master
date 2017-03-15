@@ -2,7 +2,6 @@
 
 <%@ Register Assembly="LNF.Web" Namespace="LNF.Web.Controls" TagPrefix="lnf" %>
 <%@ Register Assembly="LNF.Web.Scheduler" Namespace="LNF.Web.Scheduler.Controls" TagPrefix="lnf" %>
-<%@ Register Src="~/UserControls/ResourceTreeView.ascx" TagName="ResourceTreeView" TagPrefix="uc" %>
 
 <!DOCTYPE html>
 <html lang="en">
@@ -255,7 +254,7 @@
                             <lnf:Calendar runat="server" ID="Calendar1" CssClass="calendar" />
                         </div>
                         <div class="treeview-container">
-                            <uc:ResourceTreeView runat="server" ID="ResourceTreeView1" />
+                            <lnf:ResourceTreeView runat="server" ID="ResourceTreeView1" />
                         </div>
                     </div>
                 </div>
