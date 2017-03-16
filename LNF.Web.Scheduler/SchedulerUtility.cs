@@ -289,13 +289,13 @@ namespace LNF.Web.Scheduler
             rsv.KeepAlive = data.KeepAlive;
         }
 
-        public static ReservationState GetReservationCell(CustomTableCell rsvCell, Reservation rsv, int clientId)
+        public static ReservationState GetReservationCell(CustomTableCell rsvCell, Reservation rsv, int clientId, bool isInLab)
         {
             int reservationId = rsv.ReservationID;
             int resourceId = rsv.Resource.ResourceID;
 
             // Reservation State
-            var state = ReservationUtility.GetReservationState(reservationId, clientId);
+            var state = ReservationUtility.GetReservationState(reservationId, clientId, isInLab);
 
             // 2008-08-15 temp
             if (reservationId == -1 && state == ReservationState.Repair)

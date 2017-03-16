@@ -27,6 +27,7 @@ namespace LNF.Web.Scheduler.Handlers
 
             int reservationId;
             int clientId;
+            bool isInLab = CacheManager.Current.IsOnKiosk();
 
             if (int.TryParse(context.Request["ReservationID"], out reservationId))
             {
@@ -89,12 +90,12 @@ namespace LNF.Web.Scheduler.Handlers
             context.Response.Write(Providers.Serialization.Json.SerializeObject(result));
         }
 
-        private OnlineServices.Api.ApiClientOptions GetClientOptions(HttpContext context)
+        private ApiClientOptions GetClientOptions(HttpContext context)
         {
             var cookie = context.Request.Cookies[FormsAuthentication.FormsCookieName];
             string authToken = cookie.Value;
 
-            return new OnlineServices.Api.ApiClientOptions()
+            return new ApiClientOptions()
             {
                 AccessToken = authToken,
                 Host = new Uri(ConfigurationManager.AppSettings["ApiHost"]),
@@ -112,7 +113,8 @@ namespace LNF.Web.Scheduler.Handlers
                 var rsv = DA.Scheduler.Reservation.Single(reservationId);
                 if (rsv != null)
                 {
-                    await ReservationUtility.StartReservation(rsv, clientId);
+                    bool isInLab = CacheManager.Current.ClientInLab(rsv.Resource.ProcessTech.Lab.LabID);
+                    await ReservationUtility.StartReservation(rsv, clientId, isInLab);
                     return new { Error = false, Message = "OK" };
                 }
                 else
@@ -164,7 +166,8 @@ namespace LNF.Web.Scheduler.Handlers
                 item.StartedByClientName = string.Format("{0} {1}", CacheManager.Current.CurrentUser.FName, CacheManager.Current.CurrentUser.LName);
             }
 
-            ReservationState state = ReservationUtility.GetReservationState(rsv.ReservationID, CacheManager.Current.CurrentUser.ClientID);
+            bool isInLab = CacheManager.Current.ClientInLab(rsv.Resource.ProcessTech.Lab.LabID);
+            ReservationState state = ReservationUtility.GetReservationState(rsv.ReservationID, CacheManager.Current.CurrentUser.ClientID, isInLab);
             item.Startable = ReservationUtility.IsStartable(state);
             item.NotStartableMessage = GetNotStartableMessage(state);
 

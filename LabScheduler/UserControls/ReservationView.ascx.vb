@@ -605,7 +605,8 @@ Namespace UserControls
                                 rsvCell.ReservationID = rsv.ReservationID
 
                                 ' Reservation Cell Events
-                                Dim state As ReservationState = SchedulerUtility.GetReservationCell(rsvCell, rsv, CurrentUser.ClientID)
+                                Dim isInLab As Boolean = CacheManager.Current.ClientInLab(rsv.Resource.ProcessTech.Lab.LabID)
+                                Dim state As ReservationState = SchedulerUtility.GetReservationCell(rsvCell, rsv, CurrentUser.ClientID, isInLab)
 
                                 If IsReservationActionState(state) Then
                                     SetReservationActionCellAttributes(rsvCell, "ReservationAction", state)
@@ -676,7 +677,8 @@ Namespace UserControls
 
         Public Async Function StartReservationAsync(rsv As repo.Reservation, clientId As Integer) As Task
             Try
-                Await ReservationUtility.StartReservation(rsv, clientId)
+                Dim isInLab As Boolean = CacheManager.Current.ClientInLab(rsv.Resource.ProcessTech.Lab.LabID)
+                Await ReservationUtility.StartReservation(rsv, clientId, isInLab)
             Catch ex As Exception
                 Session("ErrorMessage") = ex.Message
             End Try

@@ -174,7 +174,8 @@ namespace LNF.Web.Scheduler.Controllers
                     }
                     else
                     {
-                        await ReservationUtility.StartReservation(rsv, CacheManager.Current.ClientID);
+                        var isInLab = CacheManager.Current.ClientInLab(rsv.Resource.ProcessTech.Lab.LabID);
+                        await ReservationUtility.StartReservation(rsv, CacheManager.Current.ClientID, isInLab);
                         userState.AddAction("Started Reservation #{0} on {1} [{2}]", rsv.ReservationID, rsv.Resource.ResourceName, rsv.Resource.ResourceID);
                     }
                     break;

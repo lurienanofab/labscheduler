@@ -1306,7 +1306,7 @@ Namespace Pages
 
                 lblConfirm.Text += "<br /> Click 'Yes' to accept reservation or 'No' to cancel scheduling."
 
-                Dim isInLab As Boolean = CacheManager.Current.KioskCheck()
+                Dim isInLab As Boolean = CacheManager.Current.IsOnKiosk()
                 Dim isEngineer As Boolean = (authLevel And ClientAuthLevel.ToolEngineer) > 0
 
                 'Dim isStartable As Boolean = (DateTime.Now > BeginDateTime.AddMinutes(-1 * resDB.MinReservTime))
@@ -1437,6 +1437,7 @@ Namespace Pages
                 Dim rsv As repo.Reservation = CreateOrModifyReservation()
 
                 Dim clientId As Integer = CurrentUser.ClientID
+                Dim isInLab As Boolean = CacheManager.Current.ClientInLab(rsv.Resource.ProcessTech.Lab.LabID)
 
                 RegisterAsyncTask(New PageAsyncTask(Function() StartReservationAsync(rsv, clientId)))
                 CacheManager.Current.CurrentUserState().AddAction("Started Reservation #{0} on {1} [{2}] by clicking the 'Yes and Start' button.", rsv.ReservationID, rsv.Resource.ResourceName, rsv.Resource.ResourceID)
@@ -1450,7 +1451,8 @@ Namespace Pages
 
         Private Async Function StartReservationAsync(rsv As repo.Reservation, clientId As Integer) As Task
             If rsv IsNot Nothing Then
-                Await ReservationUtility.StartReservation(rsv, clientId)
+                Dim isInLab As Boolean = CacheManager.Current.ClientInLab(rsv.Resource.ProcessTech.Lab.LabID)
+                Await ReservationUtility.StartReservation(rsv, clientId, isInLab)
             End If
         End Function
 

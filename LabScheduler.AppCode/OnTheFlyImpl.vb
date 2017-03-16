@@ -30,10 +30,10 @@ Public Class OnTheFlyImpl
     Private Shared otfActivity As Activity = DA.Scheduler.Activity.Single(6)
 
     Sub New(potfResource As OnTheFlyResource, pcardswipedata As String, ByVal ipaddress As String)
-        Me.otfresource = potfResource
-        Me.cardswipedata = pcardswipedata
-        Me.cardNum = ReservationOnTheFlyUtil.GetCardNumber(pcardswipedata)
-        rreq.CardNum = Me.cardNum
+        otfresource = potfResource
+        cardswipedata = pcardswipedata
+        cardNum = ReservationOnTheFlyUtil.GetCardNumber(pcardswipedata)
+        rreq.CardNum = cardNum
         rreq.IPAddress = ipaddress
         rreq.OnTheFlyName = otfresource.Resource.ResourceName
         rreq.ResourceID = otfresource.Resource.ResourceID
@@ -409,7 +409,8 @@ Public Class OnTheFlyImpl
 
         ronfly.Reservation = rsv
 
-        Await ReservationUtility.StartReservation(rsv, aclient.ClientID)
+        Dim isInLab As Boolean = KioskUtility.ClientInLab(rsv.Resource.ProcessTech.Lab.LabID, rsv.Client.ClientID, rr.IPAddress)
+        Await ReservationUtility.StartReservation(rsv, aclient.ClientID, isInLab)
 
         rr.ReservationID = rsv.ReservationID
         rr.ReservationTime = Convert.ToInt32(reservationTime)
@@ -486,6 +487,7 @@ Public Class OnTheFlyImpl
     End Sub
 
     Public Async Function Swipe() As Task   'starting point for OnTheFlyImpl
+
         Try
             Log("--SwipeStart--", cardNum)
             If _IsUserAuthorizedOnTool() Then
@@ -496,6 +498,8 @@ Public Class OnTheFlyImpl
             Log("--SwipeEnd--", cardNum)
             DA.Current.Insert(logArray)
         Catch ex As Exception
+            Fail("Swipe", ex.Message)
+
             'Error
             Dim err As New ErrorLog()
             err.Application = "OnTheFly"
@@ -505,6 +509,8 @@ Public Class OnTheFlyImpl
             err.ClientID = GetSwipedByClientID()
             err.PageUrl = "?"
             DA.Current.Insert(err)
+        Finally
+            Log("--SwipeEnd--", cardNum)
         End Try
     End Function
 

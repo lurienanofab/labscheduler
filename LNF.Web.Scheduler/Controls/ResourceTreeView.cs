@@ -1,15 +1,14 @@
 ﻿using LNF.Cache;
 using LNF.Models.Scheduler;
 using LNF.Scheduler;
-using LNF.Web.Scheduler.Content;
 using LNF.Web.Scheduler.TreeView;
 using System;
 using System.Configuration;
 using System.Linq;
 using System.Web;
+using System.Web.UI;
 using System.Web.UI.HtmlControls;
 using System.Web.UI.WebControls;
-using System.Web.UI;
 
 namespace LNF.Web.Scheduler.Controls
 {
