@@ -65,6 +65,8 @@
     <add key="UseStartReservationPage" value="false"/>
     <add key="LogDirectory" value="C:\log"/>
     <add key="StaticHost" value="http://lnf-dev.eecs.umich.edu/static/"/>
+    <add key="AfterHoursName" value="A" />
+    <add key="AfterHoursBuddyCalendarUrl" value="https://calendar.google.com/calendar/embed?src=lnf.umich.edu_0r8i90tksqtv0lm7e66olv3ri4@group.calendar.google.com&amp;ctz=America/New_York&amp;pli=1" />
     <add key="nhibernate-logger" value="NHibernate.Glimpse.LoggerFactory, NHibernate.Glimpse"/>
     <add key="NHibernate.Glimpse.Loggers" value="command"/>
     <!-- all loggers

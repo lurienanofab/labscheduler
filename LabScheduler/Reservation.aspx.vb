@@ -123,6 +123,7 @@ Namespace Pages
             Dim clientId As Integer
 
             If rsv Is Nothing Then
+                If res Is Nothing Then Response.Redirect("~")
                 reservationId = 0
                 resourceId = res.ResourceID
                 activityId = Integer.Parse(ddlActivity.SelectedValue)
@@ -1286,25 +1287,36 @@ Namespace Pages
                 End Try
 
                 ' Display Submit Confirmation
-                lblConfirm.Text = "You are about to reserve resource " + res.ResourceName + "<br />from " + rd.BeginDateTime.ToString() + " to " + rd.EndDateTime.ToString() + ".<br />"
+                lblConfirm.Text = String.Format("You are about to reserve resource {0}<br/>from {1} to {2}.", res.ResourceName, rd.BeginDateTime, rd.EndDateTime)
 
                 If Not _overwriteReservations Is Nothing Then
-                    lblConfirm.Text += "<b>There are other reservations made during this time.<br />By accepting this confirmation, you will overwrite the other reservations.<br /></b>"
+                    lblConfirm.Text += "<br/><br/><b>There are other reservations made during this time.<br/>By accepting this confirmation, you will overwrite the other reservations.</b>"
                 End If
 
                 If isLabCleanTime Then
-                    lblConfirm.Text += "<br /><span style='color:#ff0000;font-size:larger'>**Warning: Your reservation overlaps with lab clean time(8:30am to 9:30am).  You can still continue, but you should not be inside the lab during that time**</span><br /><br />"
+                    lblConfirm.Text += "<br/><br/><span style=""color:#ff0000; font-size:larger"">**Warning: Your reservation overlaps with lab clean time (8:30am to 9:30am). You can still continue, but you should not be inside the lab during that time**</span>"
                 End If
 
-                lblConfirm.Text += "The estimated cost of this activity will be " + dblCostStr
+                lblConfirm.Text += String.Format("<br/><br/>The estimated cost of this activity will be {0}.", dblCostStr)
 
                 Dim processInfoEnum As IList(Of repo.ProcessInfo) = DA.Current.Query(Of repo.ProcessInfo)().Where(Function(x) x.Resource.ResourceID = res.ResourceID).ToList()
 
                 If processInfoEnum.Count > 0 Then
-                    lblConfirm.Text += "<br /> Additional precious metal charges may apply."
+                    lblConfirm.Text += "<br/>Additional precious metal charges may apply."
                 End If
 
-                lblConfirm.Text += "<br /> Click 'Yes' to accept reservation or 'No' to cancel scheduling."
+                If rd.IsAfterHours() Then
+                    If KioskUtility.IsKiosk() Then
+                        ' do not show the link on kiosks
+                        lblConfirm.Text += "<br/><br/>This reservation occurs during after-hours.<br/>Please add an event to the After-Hours Buddy Calendar for this reservation."
+                    Else
+                        Dim calendarUrl As String = ConfigurationManager.AppSettings("AfterHoursBuddyCalendarUrl")
+                        If String.IsNullOrEmpty(calendarUrl) Then Throw New Exception("Missing appSetting: AfterHoursBuddyCalendarUrl")
+                        lblConfirm.Text += String.Format("<br/><br/>This reservation occurs during after-hours.<br/>Please add an event to the <a href=""{0}"" target=""_blank"">After-Hours Buddy Calendar</a> for this reservation.", calendarUrl)
+                    End If
+                End If
+
+                lblConfirm.Text += "<br/><br/>Click 'Yes' to accept reservation or 'No' to cancel scheduling."
 
                 Dim isInLab As Boolean = CacheManager.Current.IsOnKiosk()
                 Dim isEngineer As Boolean = (authLevel And ClientAuthLevel.ToolEngineer) > 0
@@ -1490,7 +1502,7 @@ Namespace Pages
                 End If
             End If
 
-                Return result
+            Return result
         End Function
 
         Public Function GetReservationData() As SchedulerUtility.ReservationData
