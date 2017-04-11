@@ -57,12 +57,6 @@ Namespace Pages
 
         Private _RecurrenceWeekDays As Dictionary(Of DayOfWeek, HtmlInputRadioButton)
 
-        Public Shadows ReadOnly Property Master As MasterPageScheduler
-            Get
-                Return CType(Page.Master, MasterPageScheduler)
-            End Get
-        End Property
-
         Public ReadOnly Property RecurrenceWeekDays As Dictionary(Of DayOfWeek, HtmlInputRadioButton)
             Get
                 If _RecurrenceWeekDays Is Nothing Then
@@ -543,6 +537,8 @@ Namespace Pages
             Dim reservationId As Integer = If(rsv Is Nothing, 0, rsv.ReservationID)
 
             Dim maxDuration As TimeSpan = DA.Scheduler.Reservation.GetTimeUntilNextReservation(res.ResourceID, reservationId, client.ClientID, selectedDateTime)
+
+            chkIsRecurring.Checked = rsv.IsRecurring()
 
             If maxDuration.TotalMinutes <= 0 Then ' this means that the reservable time is limited by max schedulable
                 LoadDuration(-1 * maxDuration.TotalMinutes, True)

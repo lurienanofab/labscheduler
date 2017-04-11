@@ -13,6 +13,12 @@ namespace LNF.Web.Scheduler.Content
             get { return (SchedulerMasterPage)Page.Master; }
         }
 
+        //Public Shadows ReadOnly Property Master As MasterPageScheduler
+        //Get
+        //        Return CType(Page.Master, MasterPageScheduler)
+        //    End Get
+        //End Property
+
         public override ClientPrivilege AuthTypes
         {
             get { return PageSecurity.DefaultAuthTypes; }
