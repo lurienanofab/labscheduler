@@ -410,7 +410,7 @@ namespace LNF.Web.Scheduler.Pages
                 rsv.Delete(CurrentUser.ClientID); // added this back, the previous line was commmented without explanation
 
                 // Email User after everything is done.
-                EmailUtility.EmailOnForgiveCharge(rsv, 100, true);
+                EmailUtility.EmailOnForgiveCharge(rsv, 100, true, CurrentUser.ClientID);
 
                 // Make the change to two ToolData tables.
                 // The session variable is set now and then checked for on the next page load.

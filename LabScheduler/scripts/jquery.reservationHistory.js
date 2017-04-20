@@ -7,7 +7,7 @@
                 $('.message', $this).html('');
                 $('.controls input', $this).prop('disabled', true);
 
-                var opt = $.extend({}, { "url": null }, options, $this.data());
+                var opt = $.extend({}, { "url": null, "clientId": 0 }, options, $this.data());
 
                 var getReservationId = function () {
                     var input = $(".reservation-id", $this);
@@ -73,11 +73,17 @@
                         return null;
                 }
 
+                var getClientId = function () {
+                    // the ClientID of the user making the change
+                    return opt.clientId;
+                }
+
                 var id = getReservationId();
                 var accountId = getReservationAccountId();
                 var forgivenPct = getReservationForgiven();
                 var emailClient = getEmailClient();
                 var notes = getReservationNotes();
+                var clientId = getClientId();
 
                 $(".working-history", $this).show();
 
@@ -91,6 +97,7 @@
                     "url": opt.url + '/' + id + '/save-history',
                     "type": "POST",
                     "data": {
+                        "ClientID": clientId,
                         "Notes": notes,
                         "AccountID": accountId,
                         "ForgivenPercentage": forgivenPct,

@@ -11,8 +11,18 @@ Option Strict On
 Option Explicit On
 
 Namespace Pages
+    
     Partial Public Class ReservationHistory
-
+        
+        '''<summary>
+        '''divReservationHistory control.
+        '''</summary>
+        '''<remarks>
+        '''Auto-generated field.
+        '''To modify move field declaration from designer file to code-behind file.
+        '''</remarks>
+        Protected WithEvents divReservationHistory As Global.System.Web.UI.HtmlControls.HtmlGenericControl
+        
         '''<summary>
         '''hidClientID control.
         '''</summary>
@@ -21,7 +31,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents hidClientID As Global.System.Web.UI.HtmlControls.HtmlInputHidden
-
+        
         '''<summary>
         '''trUser control.
         '''</summary>
@@ -30,7 +40,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents trUser As Global.System.Web.UI.HtmlControls.HtmlTableRow
-
+        
         '''<summary>
         '''ddlClients control.
         '''</summary>
@@ -39,7 +49,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents ddlClients As Global.System.Web.UI.WebControls.DropDownList
-
+        
         '''<summary>
         '''ddlRange control.
         '''</summary>
@@ -48,7 +58,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents ddlRange As Global.System.Web.UI.WebControls.DropDownList
-
+        
         '''<summary>
         '''txtStartDate control.
         '''</summary>
@@ -57,7 +67,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents txtStartDate As Global.System.Web.UI.WebControls.TextBox
-
+        
         '''<summary>
         '''txtEndDate control.
         '''</summary>
@@ -66,7 +76,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents txtEndDate As Global.System.Web.UI.WebControls.TextBox
-
+        
         '''<summary>
         '''btnSearchHistory control.
         '''</summary>
@@ -75,7 +85,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents btnSearchHistory As Global.System.Web.UI.WebControls.Button
-
+        
         '''<summary>
         '''panEditHistory control.
         '''</summary>
@@ -84,7 +94,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents panEditHistory As Global.System.Web.UI.WebControls.Panel
-
+        
         '''<summary>
         '''hidSelectedClientID control.
         '''</summary>
@@ -93,7 +103,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents hidSelectedClientID As Global.System.Web.UI.HtmlControls.HtmlInputHidden
-
+        
         '''<summary>
         '''hidEditReservationID control.
         '''</summary>
@@ -102,7 +112,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents hidEditReservationID As Global.System.Web.UI.HtmlControls.HtmlInputHidden
-
+        
         '''<summary>
         '''hidStartDate control.
         '''</summary>
@@ -111,7 +121,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents hidStartDate As Global.System.Web.UI.HtmlControls.HtmlInputHidden
-
+        
         '''<summary>
         '''hidEndDate control.
         '''</summary>
@@ -120,7 +130,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents hidEndDate As Global.System.Web.UI.HtmlControls.HtmlInputHidden
-
+        
         '''<summary>
         '''litResourceName control.
         '''</summary>
@@ -129,7 +139,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents litResourceName As Global.System.Web.UI.WebControls.Literal
-
+        
         '''<summary>
         '''litReservationID control.
         '''</summary>
@@ -138,7 +148,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents litReservationID As Global.System.Web.UI.WebControls.Literal
-
+        
         '''<summary>
         '''litActivityName control.
         '''</summary>
@@ -147,7 +157,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents litActivityName As Global.System.Web.UI.WebControls.Literal
-
+        
         '''<summary>
         '''litIsStarted control.
         '''</summary>
@@ -156,7 +166,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents litIsStarted As Global.System.Web.UI.WebControls.Literal
-
+        
         '''<summary>
         '''litIsCanceled control.
         '''</summary>
@@ -165,7 +175,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents litIsCanceled As Global.System.Web.UI.WebControls.Literal
-
+        
         '''<summary>
         '''trInvitees control.
         '''</summary>
@@ -174,7 +184,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents trInvitees As Global.System.Web.UI.HtmlControls.HtmlTableRow
-
+        
         '''<summary>
         '''litInvitees control.
         '''</summary>
@@ -183,7 +193,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents litInvitees As Global.System.Web.UI.WebControls.Literal
-
+        
         '''<summary>
         '''litCurrentAccount control.
         '''</summary>
@@ -192,7 +202,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents litCurrentAccount As Global.System.Web.UI.WebControls.Literal
-
+        
         '''<summary>
         '''trAccount control.
         '''</summary>
@@ -201,7 +211,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents trAccount As Global.System.Web.UI.HtmlControls.HtmlTableRow
-
+        
         '''<summary>
         '''ddlEditReservationAccount control.
         '''</summary>
@@ -210,7 +220,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents ddlEditReservationAccount As Global.System.Web.UI.WebControls.DropDownList
-
+        
         '''<summary>
         '''litEditReservationAccountMessage control.
         '''</summary>
@@ -219,7 +229,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents litEditReservationAccountMessage As Global.System.Web.UI.WebControls.Literal
-
+        
         '''<summary>
         '''litReservedBeginDateTime control.
         '''</summary>
@@ -228,7 +238,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents litReservedBeginDateTime As Global.System.Web.UI.WebControls.Literal
-
+        
         '''<summary>
         '''litReservedEndDateTime control.
         '''</summary>
@@ -237,7 +247,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents litReservedEndDateTime As Global.System.Web.UI.WebControls.Literal
-
+        
         '''<summary>
         '''litReservedRegularDuration control.
         '''</summary>
@@ -246,7 +256,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents litReservedRegularDuration As Global.System.Web.UI.WebControls.Literal
-
+        
         '''<summary>
         '''litActualBeginDateTime control.
         '''</summary>
@@ -255,7 +265,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents litActualBeginDateTime As Global.System.Web.UI.WebControls.Literal
-
+        
         '''<summary>
         '''litActualEndDateTime control.
         '''</summary>
@@ -264,7 +274,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents litActualEndDateTime As Global.System.Web.UI.WebControls.Literal
-
+        
         '''<summary>
         '''litActualRegularDuration control.
         '''</summary>
@@ -273,7 +283,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents litActualRegularDuration As Global.System.Web.UI.WebControls.Literal
-
+        
         '''<summary>
         '''litActualOvertimeDuration control.
         '''</summary>
@@ -282,7 +292,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents litActualOvertimeDuration As Global.System.Web.UI.WebControls.Literal
-
+        
         '''<summary>
         '''litChargeableBeginDateTime control.
         '''</summary>
@@ -291,7 +301,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents litChargeableBeginDateTime As Global.System.Web.UI.WebControls.Literal
-
+        
         '''<summary>
         '''litChargeableEndDateTime control.
         '''</summary>
@@ -300,7 +310,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents litChargeableEndDateTime As Global.System.Web.UI.WebControls.Literal
-
+        
         '''<summary>
         '''litChargeableRegularDuration control.
         '''</summary>
@@ -309,7 +319,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents litChargeableRegularDuration As Global.System.Web.UI.WebControls.Literal
-
+        
         '''<summary>
         '''litChargeableOvertimeDuration control.
         '''</summary>
@@ -318,7 +328,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents litChargeableOvertimeDuration As Global.System.Web.UI.WebControls.Literal
-
+        
         '''<summary>
         '''litForgiveAmount control.
         '''</summary>
@@ -327,7 +337,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents litForgiveAmount As Global.System.Web.UI.WebControls.Literal
-
+        
         '''<summary>
         '''trForgiveForm control.
         '''</summary>
@@ -336,7 +346,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents trForgiveForm As Global.System.Web.UI.HtmlControls.HtmlTableRow
-
+        
         '''<summary>
         '''txtForgiveAmount control.
         '''</summary>
@@ -345,7 +355,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents txtForgiveAmount As Global.System.Web.UI.WebControls.TextBox
-
+        
         '''<summary>
         '''panNotes control.
         '''</summary>
@@ -354,7 +364,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents panNotes As Global.System.Web.UI.WebControls.Panel
-
+        
         '''<summary>
         '''txtNotes control.
         '''</summary>
@@ -363,7 +373,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents txtNotes As Global.System.Web.UI.WebControls.TextBox
-
+        
         '''<summary>
         '''litNotes control.
         '''</summary>
@@ -372,7 +382,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents litNotes As Global.System.Web.UI.WebControls.Literal
-
+        
         '''<summary>
         '''chkEmailClient control.
         '''</summary>
@@ -381,7 +391,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents chkEmailClient As Global.System.Web.UI.WebControls.CheckBox
-
+        
         '''<summary>
         '''btnEditSave control.
         '''</summary>
@@ -390,7 +400,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents btnEditSave As Global.System.Web.UI.HtmlControls.HtmlInputButton
-
+        
         '''<summary>
         '''btnEditCancel control.
         '''</summary>
@@ -399,7 +409,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents btnEditCancel As Global.System.Web.UI.WebControls.Button
-
+        
         '''<summary>
         '''litEditMessage control.
         '''</summary>
@@ -408,7 +418,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents litEditMessage As Global.System.Web.UI.WebControls.Literal
-
+        
         '''<summary>
         '''panHistory control.
         '''</summary>
@@ -417,7 +427,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents panHistory As Global.System.Web.UI.WebControls.Panel
-
+        
         '''<summary>
         '''panCanForgiveNotice control.
         '''</summary>
@@ -426,7 +436,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents panCanForgiveNotice As Global.System.Web.UI.WebControls.Panel
-
+        
         '''<summary>
         '''rptHistory control.
         '''</summary>
@@ -435,7 +445,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents rptHistory As Global.System.Web.UI.WebControls.Repeater
-
+        
         '''<summary>
         '''litShowCanceledForModificationMessage control.
         '''</summary>
@@ -444,7 +454,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents litShowCanceledForModificationMessage As Global.System.Web.UI.WebControls.Literal
-
+        
         '''<summary>
         '''lblNoData control.
         '''</summary>
@@ -453,7 +463,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents lblNoData As Global.System.Web.UI.WebControls.Label
-
+        
         '''<summary>
         '''litDebug control.
         '''</summary>

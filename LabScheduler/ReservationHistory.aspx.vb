@@ -33,24 +33,35 @@ Namespace Pages
                 If _EditReservation Is Nothing OrElse _EditReservation.ReservationID.ToString() <> hidEditReservationID.Value Then
                     Dim reservationId As Integer
                     If Integer.TryParse(hidEditReservationID.Value, reservationId) Then
-                        _EditReservation = DA.Scheduler.Reservation.Single(reservationId)
+                        If reservationId > 0 Then
+                            _EditReservation = DA.Scheduler.Reservation.Single(reservationId)
+                        Else
+                            _EditReservation = Nothing
+                        End If
+
                     End If
                 End If
+
                 Return _EditReservation
             End Get
         End Property
 
         Protected Sub Page_Load(sender As Object, e As EventArgs) Handles Me.Load
+            divReservationHistory.Attributes("data-client-id") = CacheManager.Current.ClientID.ToString()
+
+            Dim reservationId As Integer
+
+            If Not String.IsNullOrEmpty(Request.QueryString("ReservationID")) Then
+                If Not Integer.TryParse(Request.QueryString("ReservationID"), reservationId) Then
+                    reservationId = 0
+                End If
+            End If
+
+            hidEditReservationID.Value = reservationId.ToString()
+
             If Not Page.IsPostBack Then
                 LoadClients()
-                Dim reservationId As Integer
-                If Not String.IsNullOrEmpty(Request.QueryString("ReservationID")) Then
-                    If Not Integer.TryParse(Request.QueryString("ReservationID"), reservationId) Then
-                        reservationId = 0
-                    End If
-                End If
                 If reservationId <> 0 Then
-                    hidEditReservationID.Value = reservationId.ToString()
                     LoadEditForm()
                 Else
                     LoadReservationHistory()
@@ -60,32 +71,76 @@ Namespace Pages
 
         Private Sub LoadClients()
             Dim dtClients As DataTable = ResourceClientData.SelectReservHistoryClient(CurrentUser.ClientID)
+
             ddlClients.DataSource = dtClients
             ddlClients.DataBind()
+
             If dtClients.Rows.Count > 0 Then
                 trUser.Visible = True
+
                 If EditReservation IsNot Nothing Then
                     Session("SelectedClientID") = EditReservation.Client.ClientID.ToString()
                 End If
-                ddlClients.SelectedValue = If(Session("SelectedClientID") Is Nothing, CurrentUser.ClientID.ToString(), Session("SelectedClientID").ToString())
-                Session("SelectedClientID") = Nothing
+
+                If Session("SelectedClientID") Is Nothing Then
+                    ddlClients.SelectedValue = CurrentUser.ClientID.ToString()
+                Else
+                    ddlClients.SelectedValue = Session("SelectedClientID").ToString()
+                End If
             Else
                 trUser.Visible = False
             End If
-            Select Case ddlRange.SelectedValue
-                Case "0" '30 days
-                    txtEndDate.Text = Date.Now.Date.ToString("MM/dd/yyyy")
-                    txtStartDate.Text = Date.Now.Date.AddDays(-30).ToString("MM/dd/yyyy")
-                Case "1" '3 months
-                    txtEndDate.Text = Date.Now.Date.ToString("MM/dd/yyyy")
-                    txtStartDate.Text = Date.Now.Date.AddMonths(-3).ToString("MM/dd/yyyy")
-                Case "2" '1 year
-                    txtEndDate.Text = Date.Now.Date.ToString("MM/dd/yyyy")
-                    txtStartDate.Text = Date.Now.Date.AddYears(-1).ToString("MM/dd/yyyy")
-                Case "3" 'All
-                    txtEndDate.Text = String.Empty
-                    txtStartDate.Text = String.Empty
+
+            Dim range As Integer
+            Dim sd, ed As Date?
+
+            If Session("SelectedRange") Is Nothing Then
+                range = Integer.Parse(ddlRange.SelectedValue)
+            Else
+                range = Convert.ToInt32(Session("SelectedRange"))
+                ddlRange.SelectedValue = range.ToString()
+            End If
+
+            Select Case range
+                Case 0 '30 days
+                    ed = Date.Now.Date
+                    sd = Date.Now.Date.AddDays(-30)
+                Case 1 '3 months
+                    ed = Date.Now.Date
+                    sd = Date.Now.Date.AddMonths(-3)
+                Case 2 '1 year
+                    ed = Date.Now.Date
+                    sd = Date.Now.Date.AddYears(-1)
+                Case 3 'All
+                    ed = Nothing
+                    sd = Nothing
             End Select
+
+            If Session("SelectedStartDate") Is Nothing OrElse String.IsNullOrEmpty(Session("SelectedStartDate").ToString()) Then
+                If sd.HasValue Then
+                    txtStartDate.Text = sd.Value.ToString("MM/dd/yyyy")
+                Else
+                    txtStartDate.Text = String.Empty
+                End If
+            Else
+                sd = Convert.ToDateTime(Session("SelectedStartDate"))
+                txtStartDate.Text = sd.Value.ToString("MM/dd/yyyy")
+            End If
+
+            If Session("SelectedEndDate") Is Nothing OrElse String.IsNullOrEmpty(Session("SelectedEndDate").ToString()) Then
+                If ed.HasValue Then
+                    txtEndDate.Text = ed.Value.ToString("MM/dd/yyyy")
+                Else
+                    txtEndDate.Text = String.Empty
+                End If
+            Else
+                ed = Convert.ToDateTime(Session("SelectedEndDate"))
+                txtEndDate.Text = ed.Value.ToString("MM/dd/yyyy")
+            End If
+
+            Session("SelectedRange") = ddlRange.SelectedValue
+            Session("SelectedStartDate") = txtStartDate.Text
+            Session("SelectedEndDate") = txtEndDate.Text
         End Sub
 
         Private Sub LoadReservationHistory()
@@ -94,7 +149,14 @@ Namespace Pages
             Dim sd As Date = ReservationHistoryUtility.GetStartDate(txtStartDate.Text)
             Dim ed As Date = ReservationHistoryUtility.GetEndDate(txtEndDate.Text)
 
-            rptHistory.DataSource = ReservationHistoryUtility.GetReservationHistoryData(GetClient(), sd, ed, includeCanceledForModification).OrderByDescending(Function(x) x.BeginDateTime).ToList()
+            Dim client As ClientModel = GetClient()
+
+            Session("SelectedClientID") = client.ClientID
+            Session("SelectedRange") = Integer.Parse(ddlRange.SelectedValue)
+            Session("SelectedStartDate") = If(String.IsNullOrEmpty(txtStartDate.Text), Nothing, Date.Parse(txtStartDate.Text))
+            Session("SelectedEndDate") = If(String.IsNullOrEmpty(txtEndDate.Text), Nothing, Date.Parse(txtEndDate.Text))
+
+            rptHistory.DataSource = ReservationHistoryUtility.GetReservationHistoryData(client, sd, ed, includeCanceledForModification).OrderByDescending(Function(x) x.BeginDateTime).ToList()
             rptHistory.DataBind()
 
             ' Display datagrid
@@ -134,7 +196,7 @@ Namespace Pages
         End Function
 
         Private Sub ShowAlert(message As String)
-            Page.ClientScript.RegisterStartupScript(Me.GetType(), "alert_" + Guid.NewGuid().ToString(), String.Format("alert('{0}');", message), True)
+            Page.ClientScript.RegisterStartupScript([GetType](), "alert_" + Guid.NewGuid().ToString(), String.Format("alert('{0}');", message), True)
         End Sub
 
         Private Sub LoadEditForm()
@@ -142,8 +204,8 @@ Namespace Pages
             Dim canChangeAcct As Boolean = ReservationHistoryUtility.ReservationAccountCanBeChanged(CurrentUser, EditReservation, Date.Now)
             Dim canChangeNotes As Boolean = ReservationHistoryUtility.ReservationNotesCanBeChanged(CurrentUser, EditReservation)
 
-            Dim sd As DateTime = EditReservation.ChargeBeginDateTime().FirstOfMonth()
-            Dim ed As DateTime = EditReservation.ChargeEndDateTime().FirstOfMonth().AddMonths(1)
+            Dim sd As Date = EditReservation.ChargeBeginDateTime().FirstOfMonth()
+            Dim ed As Date = EditReservation.ChargeEndDateTime().FirstOfMonth().AddMonths(1)
 
             hidSelectedClientID.Value = ddlClients.SelectedValue
             hidEditReservationID.Value = EditReservation.ReservationID.ToString()

@@ -57,7 +57,7 @@
 </asp:Content>
 
 <asp:Content ID="Content2" ContentPlaceHolderID="ContentPlaceHolder1" runat="server">
-    <div class="reservation-history" data-url="/scheduler/api/reservation">
+    <div runat="server" id="divReservationHistory" class="reservation-history" data-url="/scheduler/api/reservation" data-client-id="0">
         <input type="hidden" runat="server" id="hidClientID" class="client-id" />
         <table class="content-table">
             <tr>
@@ -364,7 +364,7 @@
 
 <asp:Content ID="Content3" ContentPlaceHolderID="scripts" runat="server">
     <script src="scripts/jquery.dateManager.js?v=20161115"></script>
-    <script src="scripts/jquery.reservationHistory.js?v=20161115"></script>
+    <script src="scripts/jquery.reservationHistory.js?v=20170420"></script>
     <script>
         $(".date-manager").dateManager();
         $(".reservation-history").reservationHistory();
