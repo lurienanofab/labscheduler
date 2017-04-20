@@ -339,7 +339,7 @@
                                                         <%#Eval("ForgiveAmount")%>%
                                                     </td>
                                                     <td style="text-align: center; white-space: nowrap;">
-                                                        <asp:LinkButton runat="server" ID="btnEditReservation" Text="Edit" OnCommand="ReservationHistory_Command" CommandName="edit" CommandArgument='<%#Eval("ReservationID")%>'></asp:LinkButton>
+                                                        <asp:HyperLink runat="server" ID="hypEditReservation" Text="Edit" NavigateUrl='<%#GetEditUrl(Container.DataItem)%>'></asp:HyperLink>
                                                         <asp:Image runat="server" ID="imgCanBeForgiven" ImageUrl='<%#GetStaticUrl("images/flag-green.png")%>' AlternateText="green flag" Visible='<%#IsBeforeForgiveCutoff(Convert.ToInt32(Eval("ReservationID")))%>'></asp:Image>
                                                     </td>
                                                 </tr>

@@ -534,11 +534,14 @@ Namespace Pages
             Dim rsv As repo.Reservation = GetCurrentReservation()
             Dim client As ClientModel = GetCurrentClient()
 
-            Dim reservationId As Integer = If(rsv Is Nothing, 0, rsv.ReservationID)
+            Dim reservationId As Integer = 0
+
+            If rsv IsNot Nothing Then
+                reservationId = rsv.ReservationID
+                chkIsRecurring.Checked = rsv.IsRecurring()
+            End If
 
             Dim maxDuration As TimeSpan = DA.Scheduler.Reservation.GetTimeUntilNextReservation(res.ResourceID, reservationId, client.ClientID, selectedDateTime)
-
-            chkIsRecurring.Checked = rsv.IsRecurring()
 
             If maxDuration.TotalMinutes <= 0 Then ' this means that the reservable time is limited by max schedulable
                 LoadDuration(-1 * maxDuration.TotalMinutes, True)

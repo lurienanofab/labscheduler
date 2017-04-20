@@ -48,7 +48,7 @@ Namespace Pages
                 hypReservationHistory.NavigateUrl = String.Format("~/ReservationHistory.aspx?Date={0:yyyy-MM-dd}", Request.SelectedDate())
                 hypPreference.NavigateUrl = String.Format("~/Preference.aspx?Date={0:yyyy-MM-dd}", Request.SelectedDate())
                 hypContact.NavigateUrl = String.Format("~/Contact.aspx?AdminOnly=1&Date={0:yyyy-MM-dd}", Request.SelectedDate())
-                hypFDT.NavigateUrl = String.Format("~/ReservationFacilityDownTime.aspx&Date={0:yyyy-MM-dd}", Request.SelectedDate())
+                hypFDT.NavigateUrl = String.Format("~/ReservationFacilityDownTime.aspx?Date={0:yyyy-MM-dd}", Request.SelectedDate())
 
                 phAdmin.Visible = CacheManager.Current.CurrentUser.HasPriv(ClientPrivilege.Administrator)
                 phFDT.Visible = CacheManager.Current.CurrentUser.HasPriv(ClientPrivilege.Staff)

@@ -274,5 +274,9 @@ Namespace Pages
                 Return String.Empty
             End If
         End Function
+
+        Protected Function GetEditUrl(item As ReservationHistoryItem) As String
+            Return String.Format("~/ReservationHistory.aspx?Date={0:yyyy-MM-dd}&ReservationID={1}", Request.SelectedDate(), item.ReservationID)
+        End Function
     End Class
 End Namespace
