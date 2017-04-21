@@ -401,10 +401,9 @@ Namespace UserControls
             'but we must have at least 2 columns (1 header and 1 regular data column) in order to process propery and display properly
             Dim iter As Integer = tblSchedule.Rows(0).Cells.Count
 
-            'Read from RecurrenceRes table 
-            'Dim rre As New RecurringReservationEntities
-            'Dim recurringRes As IEnumerable(Of EntityModels.ReservationRecurrence) = Nothing
+            'Read from ReservationRecurrence table 
             Dim recurringRes As IList(Of repo.ReservationRecurrence) = Nothing
+
             Select Case View
                 Case ViewType.DayView, ViewType.WeekView
                     recurringRes = ReservationRecurrenceUtility.SelectByResource(Resource.ResourceID).OrderBy(Function(x) x.Resource.ResourceID).ToList()
@@ -414,8 +413,8 @@ Namespace UserControls
                 Case ViewType.UserView
                     recurringRes = ReservationRecurrenceUtility.SelectByClient(CacheManager.Current.CurrentUser.ClientID).OrderBy(Function(x) x.Resource.ResourceID).ToList()
                     ' iter = 1 means today there is no reservation on any this tool at this time
-                    ' iter is the number of columns, so 1 means there is only one column (index 0) which is the time. Therefore when the table was built
-                    ' there were no columns to add for each tool in the My Reservations view. 
+                    ' iter is the number of columns, so 1 means there is only one column (index 0) which is the time.
+                    ' Therefore when the table was built there were no columns to add for each tool in the My Reservations view. 
                     If iter = 1 Then iter = 2
             End Select
 
@@ -459,9 +458,9 @@ Namespace UserControls
 
                 'Check if the recurrence res is already existing in reservation table
                 For Each row As DataRow In dtRecurRsv.Rows
-                    Dim rows() As DataRow = dtRegRsvToday.Select(String.Format("RecurrenceID = {0}", row("RecurrenceID")))
+                    Dim recurrenceId As Integer = row.Field(Of Integer)("RecurrenceID")
+                    Dim rows() As DataRow = dtRegRsvToday.Select(String.Format("RecurrenceID = {0}", recurrenceId))
                     If rows.Length = 0 Then
-
                         Dim resourceId As Integer = Convert.ToInt32(row("ResourceID"))
                         Dim clientId As Integer = Convert.ToInt32(row("ClientID"))
                         Dim createdOn As Date = Convert.ToDateTime(row("CreatedOn"))
@@ -495,7 +494,7 @@ Namespace UserControls
                             rsv.AutoEnd = Convert.ToBoolean(row("AutoEnd"))
                             rsv.HasProcessInfo = False
                             rsv.HasInvitees = False
-                            rsv.RecurrenceID = Convert.ToInt32(row("RecurrenceID"))
+                            rsv.RecurrenceID = recurrenceId
                             rsv.Activity = DA.Scheduler.Activity.Single(Convert.ToInt32(row("ActivityID")))
                             rsv.KeepAlive = Convert.ToBoolean(row("KeepAlive"))
                             rsv.Notes = row("Notes").ToString()
@@ -503,6 +502,12 @@ Namespace UserControls
                             ' Insert Reservation Info
                             rsv.Insert(CurrentUser.ClientID)
                             reservations.Add(rsv)
+
+                            ' Check for process info
+                            RecurringReservationTransform.CopyProcessInfo(recurrenceId, rsv)
+
+                            ' Check for invitees
+                            RecurringReservationTransform.CopyInvitees(recurrenceId, rsv)
 
                             'the strategy to solve the problem of new record of new tool display is solved by
                             ' as long as we have new data added, we already re-draw the whole Scheduler HTML table

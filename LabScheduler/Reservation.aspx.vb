@@ -202,7 +202,8 @@ Namespace Pages
 
                     activityId = Integer.Parse(ddlActivity.SelectedValue)
 
-                    phIsRecurring.Visible = True
+                    'Recurring reservation setup
+                    LoadRecurringReservation()
                 Else
                     'modify reservation
                     RequestLog.Append("     Modify Reservation")
@@ -218,9 +219,6 @@ Namespace Pages
 
                 LoadInvitees()
                 RequestLog.Append("     LoadInvitees: {0}", Date.Now - startTime)
-
-                'Recurring reservation setup
-                LoadRecurringReservation()
             Else
                 'PostBack = True, this is an event handler postback
                 _currentAccount = ddlAccount.SelectedValue
@@ -241,6 +239,7 @@ Namespace Pages
         End Sub
 
         Private Sub LoadRecurringReservation()
+
             If chkIsRecurring.Checked Then
                 chkIsRecurring.Checked = True
 
@@ -1064,62 +1063,65 @@ Namespace Pages
                     Dim rrDuration As Double = 0
                     Dim rrStartDate As Date
                     If Double.TryParse(txtDuration.Text, rrDuration) Then
-                        If Date.TryParse(txtStartDate.Text, rrStartDate) Then
-                            Dim rr As New repo.ReservationRecurrence()
-                            Dim patId As Integer = If(rdoRecurringPatternWeekly.Checked, 1, 2)
-                            rr.Pattern = DA.Current.Single(Of repo.RecurrencePattern)(patId)
-                            rr.Resource = DA.Scheduler.Resource.Single(res.ResourceID)
-                            rr.Client = client
-                            rr.Account = Properties.Current.LabAccount 'Currently only supports general lab account
-                            rr.BeginTime = rd.BeginDateTime
-                            rr.Duration = rrDuration
-                            rr.EndTime = rd.EndDateTime
-                            rr.BeginDate = rrStartDate
-                            rr.CreatedOn = Date.Now
-                            rr.AutoEnd = chkAutoEnd.Checked
-                            rr.IsActive = True
-                            rr.Activity = Properties.Current.Activities.ScheduledMaintenance
-                            rr.AutoEnd = chkAutoEnd.Checked
-                            rr.KeepAlive = chkKeepAlive.Checked
-                            rr.Notes = txtNotes.Text
+                        If reservationId = 0 Then
+                            ' new recurring reservation
+                            If Date.TryParse(txtStartDate.Text, rrStartDate) Then
+                                Dim rr As New repo.ReservationRecurrence()
+                                Dim patId As Integer = If(rdoRecurringPatternWeekly.Checked, 1, 2)
+                                rr.Pattern = DA.Current.Single(Of repo.RecurrencePattern)(patId)
+                                rr.Resource = DA.Scheduler.Resource.Single(res.ResourceID)
+                                rr.Client = client
+                                rr.Account = Properties.Current.LabAccount 'Currently only supports general lab account
+                                rr.BeginTime = rd.BeginDateTime
+                                rr.Duration = rrDuration
+                                rr.EndTime = rd.EndDateTime
+                                rr.BeginDate = rrStartDate
+                                rr.CreatedOn = Date.Now
+                                rr.AutoEnd = chkAutoEnd.Checked
+                                rr.IsActive = True
+                                rr.Activity = Properties.Current.Activities.ScheduledMaintenance
+                                rr.AutoEnd = chkAutoEnd.Checked
+                                rr.KeepAlive = chkKeepAlive.Checked
+                                rr.Notes = txtNotes.Text
 
-                            If rdoRecurringRangeEndBy.Checked Then
-                                Dim rrEndDate As Date
-                                If Date.TryParse(txtEndDate.Value, rrEndDate) Then
-                                    rr.EndDate = rrEndDate
-                                Else
-                                    chkIsRecurring.Checked = True
-                                    ShowDurationText()
-                                    ShowReservationAlert("Invalid end date.")
-                                    Exit Sub
+                                If rdoRecurringRangeEndBy.Checked Then
+                                    Dim rrEndDate As Date
+                                    If Date.TryParse(txtEndDate.Value, rrEndDate) Then
+                                        rr.EndDate = rrEndDate
+                                    Else
+                                        chkIsRecurring.Checked = True
+                                        ShowDurationText()
+                                        ShowReservationAlert("Invalid end date.")
+                                        Exit Sub
+                                    End If
                                 End If
-                            End If
 
-                            If rdoRecurringPatternWeekly.Checked Then
-                                rr.PatternParam1 = RecurrenceWeekDays.First(Function(x) x.Value.Checked).Key
-                            ElseIf rdoRecurringPatternMonthly.Checked Then
-                                rr.PatternParam1 = Convert.ToInt32(ddlMonthly1.SelectedValue)
-                                rr.PatternParam2 = Convert.ToInt32(ddlMonthly2.SelectedValue)
-                            End If
+                                If rdoRecurringPatternWeekly.Checked Then
+                                    rr.PatternParam1 = RecurrenceWeekDays.First(Function(x) x.Value.Checked).Key
+                                ElseIf rdoRecurringPatternMonthly.Checked Then
+                                    rr.PatternParam1 = Convert.ToInt32(ddlMonthly1.SelectedValue)
+                                    rr.PatternParam2 = Convert.ToInt32(ddlMonthly2.SelectedValue)
+                                End If
 
-                            Try
-                                DA.Current.Insert(rr)
-                            Catch ex As Exception
-                                Dim errmsg As String = If(ex.InnerException IsNot Nothing, ex.InnerException.Message, ex.Message)
-                                ShowReservationAlert(String.Format("Error in saving Recurring Reservation: {0}", errmsg))
+                                Try
+                                    DA.Current.Insert(rr)
+                                    Response.Redirect("~/UserReservations.aspx", False)
+                                    Exit Sub
+                                Catch ex As Exception
+                                    Dim errmsg As String = If(ex.InnerException IsNot Nothing, ex.InnerException.Message, ex.Message)
+                                    ShowReservationAlert(String.Format("Error in saving Recurring Reservation: {0}", errmsg))
+                                    Exit Sub
+                                End Try
+                            Else
+                                ShowReservationAlert("Error in saving Recurring Reservation: Invalid StartDate.")
                                 Exit Sub
-                            End Try
-                        Else
-                            ShowReservationAlert("Error in saving Recurring Reservation: Invalid StartDate.")
-                            Exit Sub
+                            End If
                         End If
+                        ' if reservationId != 0 then continue modifying existing reservation
                     Else
                         ShowReservationAlert("Error in saving Recurring Reservation: Invalid Duration.")
                         Exit Sub
                     End If
-
-                    Response.Redirect("~/UserReservations.aspx", False)
-                    Exit Sub
                 End If
 
                 ' Ensure that there are accounts from which to select

@@ -68,7 +68,7 @@ namespace LNF.Web.Scheduler
                 if (insert)
                 {
                     result.InsertForModification(rsv.ReservationID, data.ClientID);
-                    rsv.AppendNotes(string.Format("Canceled for modification. New ReservationID: {0}", rsv.ReservationID));
+                    rsv.AppendNotes(string.Format("Canceled for modification. New ReservationID: {0}", result.ReservationID));
                 }
                 else
                     result.Update(data.ClientID);
@@ -188,6 +188,7 @@ namespace LNF.Web.Scheduler
                 result.ApplyLateChargePenalty = rsv.ApplyLateChargePenalty;
                 result.IsStarted = rsv.IsStarted;
                 result.IsUnloaded = rsv.IsUnloaded;
+                result.RecurrenceID = rsv.RecurrenceID;
                 result.OriginalBeginDateTime = originalBeginDateTime;
                 result.OriginalEndDateTime = originalEndDateTime;
                 result.OriginalModifiedOn = originalModifiedOn;
