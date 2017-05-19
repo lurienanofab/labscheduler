@@ -87,7 +87,6 @@ $('.ical-title-info-link').click(function (event) {
 
 $('.helpdesk-info').helpdeskinfo();
 $('.helpdesk').helpdesk();
-$('.preferences').preferences();
 $('.interlock-state').control();
 $('.numeric-text').numerictext();
 

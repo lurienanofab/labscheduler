@@ -15,24 +15,6 @@ Namespace Pages
     Partial Public Class UserRecurringReservationEdit
         
         '''<summary>
-        '''divRecurrenceDetail control.
-        '''</summary>
-        '''<remarks>
-        '''Auto-generated field.
-        '''To modify move field declaration from designer file to code-behind file.
-        '''</remarks>
-        Protected WithEvents divRecurrenceDetail As Global.System.Web.UI.HtmlControls.HtmlGenericControl
-        
-        '''<summary>
-        '''hidClientID control.
-        '''</summary>
-        '''<remarks>
-        '''Auto-generated field.
-        '''To modify move field declaration from designer file to code-behind file.
-        '''</remarks>
-        Protected WithEvents hidClientID As Global.System.Web.UI.HtmlControls.HtmlInputHidden
-        
-        '''<summary>
         '''rptRecurrence control.
         '''</summary>
         '''<remarks>
@@ -49,5 +31,32 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents litMessage As Global.System.Web.UI.WebControls.Literal
+        
+        '''<summary>
+        '''btnSave control.
+        '''</summary>
+        '''<remarks>
+        '''Auto-generated field.
+        '''To modify move field declaration from designer file to code-behind file.
+        '''</remarks>
+        Protected WithEvents btnSave As Global.System.Web.UI.WebControls.Button
+        
+        '''<summary>
+        '''hypCancel control.
+        '''</summary>
+        '''<remarks>
+        '''Auto-generated field.
+        '''To modify move field declaration from designer file to code-behind file.
+        '''</remarks>
+        Protected WithEvents hypCancel As Global.System.Web.UI.WebControls.HyperLink
+        
+        '''<summary>
+        '''rptExistingReservations control.
+        '''</summary>
+        '''<remarks>
+        '''Auto-generated field.
+        '''To modify move field declaration from designer file to code-behind file.
+        '''</remarks>
+        Protected WithEvents rptExistingReservations As Global.System.Web.UI.WebControls.Repeater
     End Class
 End Namespace

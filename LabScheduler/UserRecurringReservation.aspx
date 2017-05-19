@@ -42,7 +42,7 @@
                             <asp:ImageButton runat="server" ID="imgbtnDel" ImageUrl="~/images/im_delete.gif" AlternateText="Delete" ToolTip="Delete" CommandName="Delete" CommandArgument='<%#Bind("RecurrenceID")%>' OnCommand="RecurringReservations_Command" OnClientClick="return confirm('Are you sure you want to delete this record?');" />
                         </td>
                         <td style="text-align: center;">
-                            <asp:ImageButton runat="server" ID="imgbtnEdit" ImageUrl="~/images/im_edit.gif" AlternateText="Edit" ToolTip="Edit" CommandName="Edit" CommandArgument='<%#Bind("RecurrenceID")%>' OnCommand="RecurringReservations_Command" />
+                            <asp:HyperLink runat="server" ID="hypEdit" ImageUrl="~/images/im_edit.gif" ToolTip="Edit" NavigateUrl='<%#GetEditUrl(Container.DataItem)%>'></asp:HyperLink>
                         </td>
                     </tr>
                 </ItemTemplate>

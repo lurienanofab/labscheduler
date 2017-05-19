@@ -1,4 +1,4 @@
-﻿<%@ Page Title="" Language="vb" AutoEventWireup="false" MasterPageFile="~/MasterPageScheduler.Master" CodeBehind="index.aspx.vb" Inherits="LabScheduler.Pages.Index" %>
+﻿<%@ Page Title="Welcome to Lab Scheduler" Language="vb" AutoEventWireup="false" MasterPageFile="~/MasterPageScheduler.Master" CodeBehind="index.aspx.vb" Inherits="LabScheduler.Pages.Index" %>
 
 <asp:Content ID="Content1" ContentPlaceHolderID="head" runat="server">
 </asp:Content>

@@ -300,4 +300,8 @@
 
 <asp:Content ID="Content3" ContentPlaceHolderID="scripts" runat="server">
     <script src="//ssel-apps.eecs.umich.edu/static/lib/jquery-ui/jquery-ui.min.js"></script>
+    <script src="scripts/jquery.preferences.js"></script>
+    <script>
+        $('.preferences').preferences();
+    </script>
 </asp:Content>

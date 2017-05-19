@@ -46,6 +46,10 @@ Namespace Pages
             rptRecurringReservations.DataSource = reservations
             rptRecurringReservations.DataBind()
         End Sub
+
+        Protected Function GetEditUrl(item As RecurrenceItem) As String
+            Return String.Format("~/UserRecurringReservationEdit.aspx?Date={0:yyyy-MM-dd}&RecurrenceID={1}", Request.SelectedDate(), item.RecurrenceID)
+        End Function
     End Class
 
     Public Class RecurrenceItem

@@ -294,7 +294,7 @@
                                     <div class="radio">
                                         <label>
                                             <input type="radio" runat="server" id="rdoRecurringRangeEndBy" name="RecurringRange" class="endby-radio" />
-                                            End By:
+                                            <span>End By:</span>
                                             <input type="text" runat="server" id="txtEndDate" class="endby-textbox bs-datepicker form-control" disabled style="display: unset; width: unset;" />
                                         </label>
                                     </div>
@@ -422,7 +422,7 @@
 </asp:Content>
 
 <asp:Content ID="Content3" ContentPlaceHolderID="scripts" runat="server">
-    <script src="https://ssel-apps.eecs.umich.edu/static/lib/bootstrap/plugins/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+    <script src="//ssel-apps.eecs.umich.edu/static/lib/bootstrap/plugins/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
 
     <script>
         $('.reservation').reservation();

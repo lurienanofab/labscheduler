@@ -1,14 +1,49 @@
 ﻿<%@ Master Language="VB" AutoEventWireup="false" CodeBehind="MasterPageScheduler.master.vb" Inherits="LabScheduler.Pages.MasterPageScheduler" %>
 
+<%@ Import Namespace="LNF.Cache" %>
+<%@ Import Namespace="System.IO" %>
+<%@ Import Namespace="System.Net" %>
+
 <%@ Register Assembly="LNF.Web.Scheduler" Namespace="LNF.Web.Scheduler.Controls" TagPrefix="lnf" %>
 <%@ Register Src="~/UserControls/ResourceInfo.ascx" TagName="ResourceInfo" TagPrefix="uc" %>
+
+<script runat="server">
+    Sub Page_Init(sender As Object, e As EventArgs) Handles Me.Init
+        Dim postData As String = String.Format("v=1&t=pageview&tid=UA-23459384-2&uid={0}&dl={1}&dt={2}", CacheManager.Current.CurrentUser.UserName, Uri.EscapeDataString(Request.Url.ToString()), Uri.EscapeDataString(Page.Title))
+
+        Dim req As HttpWebRequest = CType(WebRequest.Create("http://www.google-analytics.com/collect"), HttpWebRequest)
+
+        Dim respContent As String
+
+        req.Method = "POST"
+        req.ContentType = "application/x-www-form-urlencoded"
+        req.ContentLength = Encoding.UTF8.GetByteCount(postData)
+        req.UserAgent = Request.UserAgent
+
+        Using writer As New StreamWriter(req.GetRequestStream())
+            writer.Write(postData)
+            writer.Close()
+        End Using
+
+        Using resp As HttpWebResponse = req.GetResponse()
+            Using reader As New StreamReader(resp.GetResponseStream())
+                respContent = reader.ReadToEnd()
+                reader.Close()
+            End Using
+
+            resp.Close()
+        End Using
+
+        litTest.Text = postData + Environment.NewLine + respContent
+    End Sub
+</script>
 
 <!DOCTYPE html>
 <html>
 <head runat="server">
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 
-    <title>Welcome to Lab Scheduler</title>
+    <title></title>
 
     <link rel="shortcut icon" href="//ssel-apps.eecs.umich.edu/static/favicon.ico" type="image/x-icon" />
 
@@ -109,6 +144,10 @@
                 </td>
             </tr>
         </table>
+
+        <!--
+            <asp:Literal runat="server" ID="litTest"></asp:Literal>
+        -->
     </form>
 
     <script src="//ssel-apps.eecs.umich.edu/static/lib/modernizr/modernizr.js"></script>
@@ -135,14 +174,13 @@
     <script src="scripts/jquery.helpdesk.js"></script>
     <script src="scripts/jquery.helpdeskinfo.js"></script>
     <script src="scripts/jquery.numerictext.js"></script>
-    <script src="scripts/jquery.preferences.js"></script>
     <script src="scripts/jquery.reservation.js?v=20161202"></script>
     <script src="scripts/jquery.reservationView.js?v=20161216"></script>
     <script src="scripts/jquery.schedule.js"></script>
     <script src="scripts/jquery.treeview.js"></script>
     <script src="scripts/calendar/calendar.js"></script>
     <script src="scripts/JScriptUI.js"></script>
-    <script src="scripts/master.js"></script>
+    <script src="scripts/master.js?v=20170505"></script>
     <script src="scripts/processinfo.js"></script>
 
     <script>

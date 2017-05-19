@@ -5,6 +5,12 @@
 <%@ Register TagPrefix="uc" TagName="HelpdeskInfo" Src="~/UserControls/HelpdeskInfo.ascx" %>
 
 <asp:Content ID="Content1" ContentPlaceHolderID="head" runat="server">
+    <style>
+        .manage-recurring {
+            display: block;
+            margin-bottom: 5px;
+        }
+    </style>
 </asp:Content>
 
 <asp:Content ID="Content2" ContentPlaceHolderID="ContentPlaceHolder1" runat="server">
@@ -16,7 +22,7 @@
         </tr>
         <tr>
             <td>
-                <asp:HyperLink runat="server" ID="hypRecurringPage" Visible="false" Text="Manage My Recurring Reservations"></asp:HyperLink>
+                <asp:HyperLink runat="server" ID="hypRecurringPage" Visible="false" Text="Manage My Recurring Reservations" CssClass="manage-recurring"></asp:HyperLink>
             </td>
         </tr>
         <tr>

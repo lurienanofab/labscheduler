@@ -159,6 +159,15 @@ Namespace Pages
         Protected WithEvents ContentPlaceHolder1 As Global.System.Web.UI.WebControls.ContentPlaceHolder
         
         '''<summary>
+        '''litTest control.
+        '''</summary>
+        '''<remarks>
+        '''Auto-generated field.
+        '''To modify move field declaration from designer file to code-behind file.
+        '''</remarks>
+        Protected WithEvents litTest As Global.System.Web.UI.WebControls.Literal
+        
+        '''<summary>
         '''scripts control.
         '''</summary>
         '''<remarks>
