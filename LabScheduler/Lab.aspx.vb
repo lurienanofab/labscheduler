@@ -18,7 +18,7 @@ Namespace Pages
             If lab IsNot Nothing Then
                 lblLabPath.Text = lab.BuildingName + " > "
                 lblLabName.Text = lab.LabDisplayName
-                lblDescription.Text = lab.Description
+                lblDescription.Text = lab.LabDescription
                 UploadFileUtility.DisplayImage(imgPicture, "Lab", lab.LabID.ToString())
             End If
 

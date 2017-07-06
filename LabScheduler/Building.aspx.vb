@@ -15,7 +15,7 @@ Namespace Pages
             Dim bldg As BuildingModel = Request.SelectedPath().GetBuilding()
             If bldg IsNot Nothing Then
                 lblBuildingName.Text = bldg.BuildingName
-                lblDescription.Text = bldg.Description
+                lblDescription.Text = bldg.BuildingDescription
                 UploadFileUtility.DisplayImage(imgPicture, "Building", bldg.BuildingID.ToString())
             End If
 

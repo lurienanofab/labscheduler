@@ -277,7 +277,8 @@ Namespace Pages
                 res.UnloadTime = TimeSpan.FromMinutes(unloadMinutes)
                 'res.IPAddress = txtIPAddress.Text
                 'res.OTFSchedTime = otfSchedTime
-                res.Description = txtDesc.Text
+                res.ResourceDescription = txtDesc.Text
+                res.WikiPageUrl = txtWikiPageUrl.Text
                 If res.GracePeriod = TimeSpan.Zero Then ServerJScript.JSAlert(Page, "Warning: You have set grace period to 0 for this resource.")
                 UploadFileUtility.UploadImage(fileIcon, "Resource", res.ResourceID.ToString().PadLeft(6, Char.Parse("0")))
                 ResourceUtility.EngineerUpdate(res)
@@ -297,7 +298,7 @@ Namespace Pages
                 Session("ErrorMessage") = ex.Message
             End Try
 
-            Response.Redirect("~/ResourceConfig.aspx")
+            Response.Redirect(String.Format("~/ResourceConfig.aspx?Path={0}&Date={1:yyyy-MM-dd}", Request.SelectedPath(), Request.SelectedDate()))
         End Sub
 
         Private Sub LoadMinReservTime(res As ResourceModel)
@@ -327,8 +328,10 @@ Namespace Pages
         End Sub
 
         Private Sub LoadMaxReservTime(res As ResourceModel)
+            '                                                                             1               2   3    6   12   24   days
+            Dim maxReservTimeList As Integer() = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 18, 24, 30, 36, 42, 48, 72, 144, 288, 576} 'hours
 
-            Dim maxReservTimeList() As Integer = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 18, 24, 30, 36, 42, 48} 'hours
+            ' the max is 576 because the max granularity is now 1440 (1440 * 24 / 60 = 576)
 
             Dim granularity As Integer = Convert.ToInt32(ddlGranularity.SelectedValue)
             Dim maxValue As Integer = Convert.ToInt32(granularity * 24 / 60)
@@ -465,7 +468,8 @@ Namespace Pages
             LoadGracePeriodHour(res)
             LoadGracePeriodMin(res)
             'LoadOTFSchedTime(res)
-            txtDesc.Text = res.Description
+            txtDesc.Text = res.ResourceDescription
+            txtWikiPageUrl.Text = res.WikiPageUrl
             UploadFileUtility.DisplayIcon(imgIcon, "Resource", res.ResourceID.ToString("000000"))
             phIcon.Visible = imgIcon.Visible
         End Sub

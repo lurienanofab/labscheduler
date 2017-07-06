@@ -22,7 +22,7 @@ namespace LNF.Web.Scheduler.TreeView
         {
             ID = item.ResourceID;
             Name = item.ResourceName;
-            Description = item.Description;
+            Description = item.ResourceDescription;
             IsSchedulable = item.IsSchedulable;
             State = item.State;
             StateNotes = item.StateNotes;

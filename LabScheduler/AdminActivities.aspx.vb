@@ -177,7 +177,7 @@ Namespace Pages
                     lblErrMsg.Text = "Error: Please enter user authorizations."
                     Return False
                 End If
-                activity.InviteeType = Convert.ToInt32(ddlInviteeType.SelectedValue)
+                activity.InviteeType = CType(Convert.ToInt32(ddlInviteeType.SelectedValue), ActivityInviteeType)
                 Dim inviteeAuth As Integer = 0
                 If CType(activity.InviteeType, ActivityInviteeType) <> ActivityInviteeType.None Then
                     inviteeAuth = AuthLevelUtility.GetAuthLevelValue(rptInviteeAuth.Items, "chkAuthLevel")

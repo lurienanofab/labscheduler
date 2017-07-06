@@ -18,7 +18,7 @@ namespace LNF.Web.Scheduler.TreeView
         {
             ID = item.ProcessTechID;
             Name = item.ProcessTechName;
-            Description = item.Description;
+            Description = item.ProcessTechDescription;
             var resources = CacheManager.Current.Resources(x => x.ResourceIsActive && x.ProcessTechID == item.ProcessTechID).ToList();
             Children = new TreeItemCollection(resources.Select(x => new ResourceTreeItem(x, this)));
         }

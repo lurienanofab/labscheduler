@@ -16,7 +16,7 @@ namespace LNF.Web.Scheduler.TreeView
         {
             ID = item.LabID;
             Name = item.LabDisplayName;
-            Description = item.Description;
+            Description = item.LabDescription;
             var procTechs = CacheManager.Current.ProcessTechs().Where(x => x.ProcessTechIsActive && x.LabID == item.LabID).ToList();
             Children = new TreeItemCollection(procTechs.Select(x => new ProcessTechTreeItem(x, this)));
         }

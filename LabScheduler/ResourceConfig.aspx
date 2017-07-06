@@ -91,6 +91,7 @@
                                 <asp:ListItem Value="120">120</asp:ListItem>
                                 <asp:ListItem Value="180">180</asp:ListItem>
                                 <asp:ListItem Value="240">240</asp:ListItem>
+                                <asp:ListItem Value="1440">1440</asp:ListItem>
                             </asp:DropDownList>
                             <div class="input-group-addon" style="width: 60px; text-align: left;">min</div>
                         </div>
@@ -204,6 +205,12 @@
                     <label class="col-sm-2 control-label">Description</label>
                     <div class="col-sm-4">
                         <asp:TextBox runat="server" ID="txtDesc" Columns="40" Rows="5" TextMode="MultiLine" CssClass="form-control"></asp:TextBox>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">Wiki Page URL</label>
+                    <div class="col-sm-4">
+                        <asp:TextBox runat="server" ID="txtWikiPageUrl" CssClass="form-control"></asp:TextBox>
                     </div>
                 </div>
                 <div class="form-group">

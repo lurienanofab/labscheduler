@@ -79,7 +79,7 @@ Namespace Pages
                 chkActive.Checked = r.ResourceIsActive
                 imgPic.ImageUrl = String.Format("{0}/images/Resource/Resource{1}_icon.png", VirtualPathUtility.ToAbsolute("~"), ResourceID.ToString().PadLeft(6, Char.Parse("0")))
                 imgPic.Visible = True
-                txtDesc.Text = r.Description
+                txtDesc.Text = r.ResourceDescription
                 txtHelpdeskEmail.Text = r.HelpdeskEmail
                 'Dim emailGroup As IEmailGroup = Providers.Email.GroupUtility.RetrieveGroup(r)
                 'If emailGroup.Empty Then

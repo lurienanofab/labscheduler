@@ -43,15 +43,15 @@
 
   <appSettings>
     <add key="IsStaging" value="false"/>
-    <add key="SchedulerEmail" value="lnf-scheduler@umich.edu"/>
+    <add key="SchedulerEmail" value="xxxxx"/>
     <add key="EmailContentAuditAdmin" value=""/>
     <add key="EmailForgivenCharge" value="xxxxx"/>
     <add key="MaxForgivenDay" value="3"/>
-    <add key="HelpdeskUrl" value="http://lnf.umich.edu/helpdesk"/>
+    <add key="HelpdeskUrl" value="xxxxx"/>
     <add key="HelpdeskApiKey" value="xxxxx"/>
-    <add key="AppServer" value="http://lnf-dev.eecs.umich.edu/"/>
-    <add key="DocServer" value="http://lnf-dev.eecs.umich.edu/"/>
-    <add key="DocStore" value="C:\Inetpub\wwwroot\"/>
+    <add key="AppServer" value="xxxxx"/>
+    <add key="DocServer" value="xxxxx"/>
+    <add key="DocStore" value="xxxxx"/>
     <add key="TreeView.ShowImages" value="false"/>
     <add key="TreeView.PathDelimiter" value=":"/>
     <add key="ShowCanceledForModification" value="true"/>
@@ -59,20 +59,20 @@
     <add key="OverrideIsOnKiosk" value="false"/>
     <add key="as:AudienceId" value="xxxxx"/>
     <add key="as:AudienceSecret" value="xxxxx"/>
-    <add key="ApiHost" value="http://lnf-dev.eecs.umich.edu/webapi/"/>
+    <add key="ApiHost" value="xxxxx"/>
     <add key="HandleErrors" value="false"/>
     <add key="WagoEnabled" value="true"/>
     <add key="UseStartReservationPage" value="false"/>
-    <add key="LogDirectory" value="C:\log"/>
-    <add key="StaticHost" value="http://lnf-dev.eecs.umich.edu/static/"/>
+    <add key="LogDirectory" value="xxxxx"/>
+    <add key="StaticHost" value="xxxxx"/>
     <add key="AfterHoursName" value="A" />
-    <add key="AfterHoursBuddyCalendarUrl" value="https://calendar.google.com/calendar/embed?src=lnf.umich.edu_0r8i90tksqtv0lm7e66olv3ri4@group.calendar.google.com&amp;ctz=America/New_York&amp;pli=1" />
+    <add key="AfterHoursBuddyCalendarUrl" value="xxxxx" />
     <add key="nhibernate-logger" value="NHibernate.Glimpse.LoggerFactory, NHibernate.Glimpse"/>
     <add key="NHibernate.Glimpse.Loggers" value="command"/>
     <!-- all loggers
         <add key="NHibernate.Glimpse.Loggers" value="command,connection,flush,load,transaction"/>
     -->
-    <add key="MongoConnectionString" value="mongodb://xxxxx:xxxxx@localhost"/>
+    <add key="MongoConnectionString" value="xxxxx"/>
     <add key="ValidationSettings:UnobtrusiveValidationMode" value="None"/>
   </appSettings>
 
