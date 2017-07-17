@@ -244,7 +244,8 @@ a.ReservLinkHeader {
         text-decoration: underline;
     }
 
-.ReservationCell {
+.ReservationCell,
+.reservation-action[data-command='NewReservation'] {
     background-color: White;
     cursor: pointer;
 }
@@ -484,9 +485,9 @@ a.ReservLinkHeader {
             background-color: #ffffe0;
         }
 
-        #overDiv hr{
-            margin: 5px 0 5px 0;
-        }
+#overDiv hr {
+    margin: 5px 0 5px 0;
+}
 
 /* These styles are for processinfo */
 .pi {

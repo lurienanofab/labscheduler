@@ -22,7 +22,7 @@
                     ReservationID: parseInt(cell.data("reservation-id")), //0 for new reservations
                     Date: cell.data("date"), //every cell has one
                     State: cell.data("state"),
-                    Path: opts.path
+                    Path: cell.data("path") || opts.path
                 };
 
                 var valid = true;

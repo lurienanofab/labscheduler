@@ -1418,7 +1418,10 @@ Namespace Pages
                 If view = ViewType.UserView Then
                     redirectUrl = String.Format("~/UserReservations.aspx?Date={0:yyyy-MM-dd}", Request.SelectedDate())
                 ElseIf view = ViewType.ProcessTechView Then
-                    redirectUrl = String.Format("~/ProcessTech.aspx?Path={0}&Date={1:yyyy-MM-dd}", Request.SelectedPath().UrlEncode(), Request.SelectedDate())
+                    ' When we come from ProcessTech.aspx the full path is used (to avoid a null object error). When returning we just want the ProcessTech path.
+                    Dim pt As ProcessTechModel = Request.SelectedPath().GetProcessTech()
+                    Dim path As PathInfo = PathInfo.Create(pt)
+                    redirectUrl = String.Format("~/ProcessTech.aspx?Path={0}&Date={1:yyyy-MM-dd}", path.UrlEncode(), Request.SelectedDate())
                 Else 'ViewType.DayView OrElse repo.ViewType.WeekView
                     redirectUrl = String.Format("~/ResourceDayWeek.aspx?Path={0}&Date={1:yyyy-MM-dd}", Request.SelectedPath().UrlEncode(), Request.SelectedDate())
                 End If

@@ -649,11 +649,13 @@ Namespace UserControls
         End Sub
 
         Private Sub SetReservationActionCellAttributes(cell As CustomTableCell, command As String, state As ReservationState)
+            Dim res As ResourceModel = CacheManager.Current.GetResource(cell.ResourceID)
             cell.CssClass = (cell.CssClass + " reservation-action").Trim()
             cell.Attributes.Add("data-command", command)
             cell.Attributes.Add("data-reservation-id", cell.ReservationID.ToString())
-            cell.Attributes.Add("data-Date", cell.CellDate.ToString("yyyy-MM-dd'T'HH:mm:ss"))
+            cell.Attributes.Add("data-date", cell.CellDate.ToString("yyyy-MM-dd'T'HH:mm:ss"))
             cell.Attributes.Add("data-state", state.ToString())
+            cell.Attributes.Add("data-path", PathInfo.Create(res).ToString())
             cell.AutoPostBack = False
         End Sub
 #End Region

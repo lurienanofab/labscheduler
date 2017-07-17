@@ -59,7 +59,7 @@
     <link rel="stylesheet" href="//ssel-apps.eecs.umich.edu/static/styles/common.css" />
     <link rel="stylesheet" href="styles/admin.css" />
     <link rel="stylesheet" href="styles/helpdesk.css" />
-    <link rel="stylesheet" href="styles/main.css?v=20161220" />
+    <link rel="stylesheet" href="styles/main.css?v=20170717" />
     <link rel="stylesheet" href="styles/resource.css" />
     <link rel="stylesheet" href="styles/schedule.css" />
     <link rel="stylesheet" href="styles/splitter.css" />
@@ -169,7 +169,7 @@
     <script src="scripts/jquery.helpdeskinfo.js"></script>
     <script src="scripts/jquery.numerictext.js"></script>
     <script src="scripts/jquery.reservation.js?v=20161202"></script>
-    <script src="scripts/jquery.reservationView.js?v=20161216"></script>
+    <script src="scripts/jquery.reservationView.js?v=20170717"></script>
     <script src="scripts/jquery.schedule.js"></script>
     <script src="scripts/jquery.treeview.js"></script>
     <script src="scripts/calendar/calendar.js"></script>

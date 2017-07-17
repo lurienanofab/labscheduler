@@ -18,8 +18,10 @@
         </tr>
         <tr>
             <td>
-                <b>Date:
-                    <asp:Label runat="server" ID="lblDate"></asp:Label></b>
+                <b>
+                    <span>Date:</span>
+                    <asp:Label runat="server" ID="lblDate"></asp:Label>
+                </b>
             </td>
         </tr>
         <tr>
