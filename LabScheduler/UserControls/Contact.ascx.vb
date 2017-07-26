@@ -81,6 +81,21 @@ Namespace UserControls
             Return result
         End Function
 
+        Private Function GetEmailFromReservation(rsv As repo.Reservation) As String
+            Dim result As String = rsv.Client.AccountEmail(rsv.Account.AccountID)
+
+            If String.IsNullOrEmpty(result) Then
+                ' this happens with remote reservations because the user is not associated with the account
+                result = rsv.Client.PrimaryEmail()
+            End If
+
+            If String.IsNullOrEmpty(result) Then
+                Throw New Exception(String.Format("Cannot find an email for {0} [{1}]", rsv.Client.DisplayName, rsv.Client.ClientID))
+            End If
+
+            Return result
+        End Function
+
         Protected Sub Page_Load(sender As Object, e As EventArgs) Handles Me.Load
             If Not IsPostBack Then
                 Dim showCancel = True
@@ -104,7 +119,7 @@ Namespace UserControls
                     ElseIf reservationId > 0 Then
                         Dim rsv As repo.Reservation = DA.Current.Single(Of repo.Reservation)(reservationId)
                         If rsv IsNot Nothing Then
-                            SetSendTo(rsv.Client.DisplayName, rsv.Client.AccountEmail(rsv.Account.AccountID))
+                            SetSendTo(rsv.Client.DisplayName, GetEmailFromReservation(rsv))
                         Else
                             Throw New Exception(String.Format("Cannot find Reservation with ReservationID = {0}", reservationId))
                         End If
@@ -216,7 +231,7 @@ Namespace UserControls
             ElseIf reservationId > 0 Then
                 Dim rsv As repo.Reservation = DA.Current.Single(Of repo.Reservation)(reservationId)
                 If rsv IsNot Nothing Then
-                    receiverAddr = rsv.Client.AccountEmail(rsv.Account.AccountID)
+                    receiverAddr = GetEmailFromReservation(rsv)
                 Else
                     Throw New Exception(String.Format("Cannot find Reservation with ReservationID = {0}", reservationId))
                 End If
