@@ -487,7 +487,7 @@ namespace LNF.Web.Scheduler
                 DA.Current.Insert(new[]{
                     new Cost()
                     {
-                        ChargeType = DA.Current.Single<ChargeType>(5),
+                        ChargeTypeID = 5,
                         TableNameOrDescription = "ToolCost",
                         RecordID = r.ResourceID,
                         AcctPer = "Hourly",
@@ -497,7 +497,7 @@ namespace LNF.Web.Scheduler
                     },
                     new Cost()
                     {
-                        ChargeType = DA.Current.Single<ChargeType>(15),
+                        ChargeTypeID = 15,
                         TableNameOrDescription = "ToolCost",
                         RecordID = r.ResourceID,
                         AcctPer = "Hourly",
@@ -507,7 +507,7 @@ namespace LNF.Web.Scheduler
                     },
                     new Cost()
                     {
-                        ChargeType = DA.Current.Single<ChargeType>(25),
+                        ChargeTypeID = 25,
                         TableNameOrDescription = "ToolCost",
                         RecordID = r.ResourceID,
                         AcctPer = "Hourly",
