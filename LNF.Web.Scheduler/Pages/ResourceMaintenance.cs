@@ -251,9 +251,10 @@ namespace LNF.Web.Scheduler.Pages
                         }
                         else
                         {
-                            // We have to disable all those reservations that have been activated by setting isActive to 0.  
-                            // The catch here is that we must compare the "Actual" usage time with the repair time because if the user ends the reservation before the repair starts, we still 
-                            // have to charge the user for that reservation
+                            // We have to disable all those reservations that have been activated by setting IsActive to 0.  
+                            // The catch here is that we must compare the "Actual" usage time with the repair time because
+                            // if the user ends the reservation before the repair starts, we still  have to charge the user
+                            // for that reservation
                         }
                     }
 
