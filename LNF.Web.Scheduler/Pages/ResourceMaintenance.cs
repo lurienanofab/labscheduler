@@ -206,7 +206,7 @@ namespace LNF.Web.Scheduler.Pages
                     }
 
                     // Determine BeginDateTime for repair reservation
-                    DateTime beginDatetime, endDateTime;
+                    DateTime beginDateTime, endDateTime;
                     DateTime actualBeginDateTime = DateTime.Now;
                     DateTime actualEndDateTime = DateTime.Now;
 
@@ -224,7 +224,7 @@ namespace LNF.Web.Scheduler.Pages
                     //    actualBeginDateTime = lastRepairEndTime.Value.AddSeconds(1);
                     //}
 
-                    beginDatetime = res.GetNextGranularity(actualBeginDateTime, NextGranDir.Previous);
+                    beginDateTime = res.GetNextGranularity(actualBeginDateTime, NextGranDir.Previous);
 
                     if (!string.IsNullOrEmpty(txtRepairTime.Text))
                         actualEndDateTime = actualEndDateTime.AddMinutes(Convert.ToDouble(txtRepairTime.Text) * (rdoRepairTimeUnitMinutes.Checked ? 1.0 : 60.0));
@@ -240,7 +240,7 @@ namespace LNF.Web.Scheduler.Pages
                     }
 
                     // Find and Remove any un-started reservations made during time of repair
-                    IList<Reservation> unstartedReservations = DA.Scheduler.Reservation.SelectByResource(res.ResourceID, beginDatetime, endDateTime, false);
+                    IList<Reservation> unstartedReservations = DA.Scheduler.Reservation.SelectByResource(res.ResourceID, beginDateTime, endDateTime, false);
                     foreach (Reservation unstartedRsv in unstartedReservations)
                     {
                         // If the reservation has not begun
@@ -260,7 +260,14 @@ namespace LNF.Web.Scheduler.Pages
                     // 2009-05-21 Make the old reservations that were covered by the repair to be forgiven
                     // Get all the past active reservations that were covered by this specific repair period
                     // [2013-05-20 jg] We also need cancelled reservations so booking fee is forgiven
-                    IList<Reservation> query = ReservationUtility.SelectHistoryToForgiveForRepair(res.ResourceID, actualBeginDateTime, DateTime.Now);
+                    //IList<Reservation> query = ReservationUtility.SelectHistoryToForgiveForRepair(res.ResourceID, actualBeginDateTime, DateTime.Now);
+
+                    // [2017-08-24 jg] Changing to beginDateTime and endDateTime so that any existing reservations in the entire repair range are forgiven.
+                    //      The previous date range only covered reservations scheduled to start between the actualBeginDateTime (the time the repair began
+                    //      without going to the previous granularity) and the current time. The range is now between the repair begin (to previous granularity)
+                    //      to repair end (to next granularity).
+                    IList<Reservation> query = ReservationUtility.SelectHistoryToForgiveForRepair(res.ResourceID, beginDateTime, endDateTime);
+
                     ForgiveReservationsForRepair(query, actualBeginDateTime);
 
                     // Remove invitees and process info that might be in the session
@@ -268,7 +275,7 @@ namespace LNF.Web.Scheduler.Pages
                     CacheManager.Current.RemoveSessionValue("ReservationProcessInfos");
 
                     // Insert the new repair reservation
-                    DA.Scheduler.Reservation.InsertRepair(res.ResourceID, CurrentUser.ClientID, beginDatetime, endDateTime, actualBeginDateTime, txtNotes.Text, CurrentUser.ClientID);
+                    DA.Scheduler.Reservation.InsertRepair(res.ResourceID, CurrentUser.ClientID, beginDateTime, endDateTime, actualBeginDateTime, txtNotes.Text, CurrentUser.ClientID);
 
                     // Set the state into resource table and session object
                     ResourceUtility.UpdateState(res.ResourceID, ResourceState.Offline, string.Empty);
