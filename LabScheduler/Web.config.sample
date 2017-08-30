@@ -77,11 +77,11 @@
   </appSettings>
 
   <connectionStrings>
-    <add name="cnSselData" connectionString="Server=xxxxx;Database=xxxxx;User Id=xxxxx;Password=xxxxx;Max Pool Size=500"/>
-    <add name="cnSselControl" connectionString="Server=xxxxx;Database=xxxxx;User Id=xxxxx;Password=xxxxx;Max Pool Size=500"/>
-    <add name="cnSselScheduler" connectionString="Server=xxxxx;Database=xxxxx;User Id=xxxxx;Password=xxxxx;Max Pool Size=500"/>
-    <add name="SchedulerEntities" connectionString="metadata=res://*;provider=System.Data.SqlClient;provider connection string=&quot;Data Source=xxxxx;Initial Catalog=xxxxx;Integrated Security=True;MultipleActiveResultSets=True&quot;" providerName="System.Data.EntityClient"/>
-    <add name="RecurringReservationEntities" connectionString="metadata=res://*;provider=System.Data.SqlClient;provider connection string=&quot;Server=xxxxx;Database=xxxxx;User Id=xxxxx;Password=xxxxx;MultipleActiveResultSets=True&quot;" providerName="System.Data.EntityClient"/>
+    <add name="cnSselData" connectionString="*****"/>
+    <add name="cnSselControl" connectionString="*****"/>
+    <add name="cnSselScheduler" connectionString="*****"/>
+    <add name="SchedulerEntities" connectionString="*****" providerName="System.Data.EntityClient"/>
+    <add name="RecurringReservationEntities" connectionString="*****" providerName="System.Data.EntityClient"/>
   </connectionStrings>
 
   <system.web>
