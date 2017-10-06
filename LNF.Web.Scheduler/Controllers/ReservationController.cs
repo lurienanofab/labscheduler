@@ -53,7 +53,7 @@ namespace LNF.Web.Scheduler.Controllers
 
             string redirectUrl;
 
-            var userState = CacheManager.Current.CurrentUserState();
+            var currentView = CacheManager.Current.CurrentViewType();
 
             try
             {
@@ -71,20 +71,19 @@ namespace LNF.Web.Scheduler.Controllers
                     {
                         case "ChangeHourRange":
                             string range = context.Request.QueryString["Range"];
+
                             if (range == "FullDay")
                                 CacheManager.Current.DisplayDefaultHours(false);
                             else
                                 CacheManager.Current.DisplayDefaultHours(true);
 
-                            userState.AddAction("Changed hour range to {0}", range);
-
-                            redirectUrl = SchedulerUtility.GetReservationViewReturnUrl(userState.View);
+                            redirectUrl = SchedulerUtility.GetReservationViewReturnUrl(currentView);
                             break;
                         case "NewReservation":
                             if (CanCreateNewReservation(context))
                                 redirectUrl = SchedulerUtility.GetReturnUrl("Reservation.aspx", context.Request.SelectedPath(), 0, context.Request.SelectedDate());
                             else
-                                redirectUrl = SchedulerUtility.GetReservationViewReturnUrl(userState.View);
+                                redirectUrl = SchedulerUtility.GetReservationViewReturnUrl(currentView);
                             break;
                         case "ModifyReservation":
                             rsv = GetReservation(context);
@@ -98,8 +97,8 @@ namespace LNF.Web.Scheduler.Controllers
                         case "DeleteReservation":
                             rsv = GetReservation(context);
                             ReservationUtility.DeleteReservation(rsv.ReservationID);
-                            userState.AddAction("Deleted Reservation #{0} on {1} [{2}]", rsv.ReservationID, rsv.Resource.ResourceName, rsv.Resource.ResourceID);
-                            redirectUrl = SchedulerUtility.GetReservationViewReturnUrl(userState.View);
+
+                            redirectUrl = SchedulerUtility.GetReservationViewReturnUrl(currentView);
                             break;
                         default:
                             throw new NotImplementedException(string.Format("Command not implemented: {0}", command));
@@ -112,7 +111,7 @@ namespace LNF.Web.Scheduler.Controllers
 
                 try
                 {
-                    redirectUrl = SchedulerUtility.GetReservationViewReturnUrl(userState.View);
+                    redirectUrl = SchedulerUtility.GetReservationViewReturnUrl(currentView);
                 }
                 catch
                 {
@@ -150,10 +149,11 @@ namespace LNF.Web.Scheduler.Controllers
 
             Reservation rsv = GetReservation(context);
             ReservationState state = GetReservationState(context);
-            var userState = CacheManager.Current.CurrentUserState();
 
             bool confirm = false;
             int reservationId = 0;
+
+            var currentView = CacheManager.Current.CurrentViewType();
 
             switch (state)
             {
@@ -176,7 +176,6 @@ namespace LNF.Web.Scheduler.Controllers
                     {
                         var isInLab = CacheManager.Current.ClientInLab(rsv.Resource.ProcessTech.Lab.LabID);
                         await ReservationUtility.StartReservation(rsv, CacheManager.Current.ClientID, isInLab);
-                        userState.AddAction("Started Reservation #{0} on {1} [{2}]", rsv.ReservationID, rsv.Resource.ResourceName, rsv.Resource.ResourceID);
                     }
                     break;
                 case ReservationState.Endable:
@@ -184,13 +183,12 @@ namespace LNF.Web.Scheduler.Controllers
                     if (state == ReservationState.Endable)
                     { 
                         await ReservationUtility.EndReservation(rsv.ReservationID);
-                        userState.AddAction("Ended Reservation #{0} on {1} [{2}]", rsv.ReservationID, rsv.Resource.ResourceName, rsv.Resource.ResourceID);
                     }
                     else
                         throw new InvalidOperationException(string.Format("ReservationID {0} state is {1}, not Endable. ActualBeginDateTime: {2}", rsv.ReservationID, state, rsv.ActualBeginDateTime.HasValue ? rsv.ActualBeginDateTime.Value.ToString("yyyy-MM-dd HH:mm:ss") : "null"));
                     break;
                 case ReservationState.PastSelf:
-                    if (userState.View == ViewType.DayView || userState.View == ViewType.WeekView)
+                    if (currentView == ViewType.DayView || currentView == ViewType.WeekView)
                         CacheManager.Current.WeekStartDate(rsv.BeginDateTime.Date);
                     return SchedulerUtility.GetReturnUrl("ReservationRunNotes.aspx", context.Request.SelectedPath(), rsv.ReservationID, context.Request.SelectedDate());
                 case ReservationState.Other:
@@ -201,7 +199,7 @@ namespace LNF.Web.Scheduler.Controllers
                     throw new NotImplementedException(string.Format("ReservationState = {0} is not implemented", state));
             }
 
-            string result = SchedulerUtility.GetReservationViewReturnUrl(userState.View, confirm, reservationId);
+            string result = SchedulerUtility.GetReservationViewReturnUrl(currentView, confirm, reservationId);
 
             return result;
         }
@@ -210,11 +208,11 @@ namespace LNF.Web.Scheduler.Controllers
         {
             var res = context.Request.SelectedPath().GetResource();
 
-            var userState = CacheManager.Current.CurrentUserState();
+            var currentView = CacheManager.Current.CurrentViewType();
 
             // copied from the old EmptyCell_Click event handler in ReservationView.ascx.vb
 
-            if (userState.View == ViewType.UserView)
+            if (currentView == ViewType.UserView)
                 return false;
 
             DateTime date = context.Request.SelectedDate();
@@ -244,7 +242,7 @@ namespace LNF.Web.Scheduler.Controllers
                 }
             }
 
-            if (userState.View == ViewType.DayView || userState.View == ViewType.WeekView)
+            if (currentView == ViewType.DayView || currentView == ViewType.WeekView)
             {
                 //if (date.Date != userState.Date)
                 //{

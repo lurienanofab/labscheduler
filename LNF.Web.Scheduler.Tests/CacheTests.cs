@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using LNF.Impl.Cache;
+using System.Net;
 
 namespace LNF.Web.Scheduler.Tests
 {

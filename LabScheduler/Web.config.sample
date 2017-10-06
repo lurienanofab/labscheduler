@@ -72,7 +72,6 @@
     <!-- all loggers
         <add key="NHibernate.Glimpse.Loggers" value="command,connection,flush,load,transaction"/>
     -->
-    <add key="MongoConnectionString" value="xxxxx"/>
     <add key="ValidationSettings:UnobtrusiveValidationMode" value="None"/>
   </appSettings>
 

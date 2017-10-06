@@ -247,8 +247,6 @@ Namespace Pages
 
                 phRecurringReservation.Visible = True
 
-                Dim userState As UserState = CacheManager.Current.CurrentUserState()
-
                 txtStartDate.Text = Request.SelectedDate().ToString("MM/dd/yyyy")
 
                 Dim weekday As DayOfWeek = Request.SelectedDate().DayOfWeek
@@ -363,8 +361,6 @@ Namespace Pages
 
         Private Sub LoadReservationInfo(rsv As repo.Reservation)
             Dim headerText = String.Empty
-
-            Dim userState As UserState = CacheManager.Current.CurrentUserState()
 
             If rsv Is Nothing Then
                 ' New Reservation
@@ -882,8 +878,6 @@ Namespace Pages
 
         Private Function InviteeReservationsBetween(inviteeClientId As Integer, startDateTime As Date, duration As Integer) As IList(Of repo.Reservation)
             Dim endDateTime As Date = startDateTime.AddMinutes(duration)
-
-            Dim userState As UserState = CacheManager.Current.CurrentUserState()
 
             Dim inviteeRsv As IList(Of repo.Reservation) = DA.Scheduler.Reservation.SelectByClient(inviteeClientId, Request.SelectedDate().AddHours(0), Request.SelectedDate().AddHours(24), False)
 
@@ -1456,7 +1450,6 @@ Namespace Pages
                 Dim isInLab As Boolean = CacheManager.Current.ClientInLab(rsv.Resource.ProcessTech.Lab.LabID)
 
                 RegisterAsyncTask(New PageAsyncTask(Function() StartReservationAsync(rsv, clientId)))
-                CacheManager.Current.CurrentUserState().AddAction("Started Reservation #{0} on {1} [{2}] by clicking the 'Yes and Start' button.", rsv.ReservationID, rsv.Resource.ResourceName, rsv.Resource.ResourceID)
             Catch ex As Exception
                 Session("ErrorMessage") = ex.Message
             End Try
@@ -1492,18 +1485,10 @@ Namespace Pages
                 OverwriteReservations()
             End If
 
-            Dim userState As UserState = CacheManager.Current.CurrentUserState()
-
             If rsv Is Nothing Then
                 result = SchedulerUtility.CreateNewReservation(GetReservationData())
-                userState.AddAction("Created Reservation #{0} on {1} [{2}]", result.ReservationID, result.Resource.ResourceName, result.Resource.ResourceID)
             Else
                 result = SchedulerUtility.ModifyExistingReservation(rsv, GetReservationData())
-                If result.ReservationID <> rsv.ReservationID Then
-                    userState.AddAction("Modified Reservation #{0} on {1} [{2}]. The new ReservationID is {3}", rsv.ReservationID, rsv.Resource.ResourceName, rsv.Resource.ResourceID, result.ReservationID)
-                Else
-                    userState.AddAction("Modified Reservation #{0} on {1} [{2}]", rsv.ReservationID, rsv.Resource.ResourceName, rsv.Resource.ResourceID)
-                End If
             End If
 
             Return result

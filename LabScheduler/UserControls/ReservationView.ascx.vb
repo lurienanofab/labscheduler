@@ -129,8 +129,6 @@ Namespace UserControls
             If _reservations Is Nothing Then
                 _reservations = New ReservationCollection()
 
-                Dim userState As UserState = CacheManager.Current.CurrentUserState()
-
                 Dim sd, ed As Date
 
                 Select Case View
@@ -186,8 +184,6 @@ Namespace UserControls
         Private Sub LoadHeaders()
             tblSchedule.Visible = True
             lblNoData.Visible = False
-
-            Dim userState As UserState = CacheManager.Current.CurrentUserState()
 
             Select Case View
                 Case ViewType.DayView, ViewType.WeekView

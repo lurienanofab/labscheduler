@@ -34,7 +34,7 @@ namespace LNF.Web.Scheduler.Content
         /// </summary>
         public ViewType GetCurrentView()
         {
-            return CacheManager.Current.CurrentUserState().View;
+            return CacheManager.Current.CurrentViewType();
         }
 
         /// <summary>
@@ -42,12 +42,7 @@ namespace LNF.Web.Scheduler.Content
         /// </summary>
         public void SetCurrentView(ViewType value)
         {
-            var userState = CacheManager.Current.CurrentUserState();
-            if (userState.View != value)
-            {
-                userState.SetView(value);
-                userState.AddAction("Changed view to {0}", value);
-            }
+            CacheManager.Current.CurrentViewType(value);
         }
     }
 }

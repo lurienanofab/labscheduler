@@ -15,7 +15,6 @@ Namespace Pages
                 lblDate.Text = Request.SelectedDate().ToLongDateString()
                 LoadProcessTech(pt)
                 LoadReservationView(pt)
-                CacheManager.Current.CurrentUserState.AddAction("Viewing Process Tech page: {0}", pt.ProcessTechName)
             Else
                 rvReserv.ProcessTechID = pt.ProcessTechID
                 rvReserv.LabID = pt.LabID

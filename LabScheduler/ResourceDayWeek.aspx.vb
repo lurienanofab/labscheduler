@@ -19,8 +19,6 @@ Namespace Pages
                 Else
                     Response.Redirect("~")
                 End If
-
-                CacheManager.Current.CurrentUserState().AddAction("Viewing Resource page: {0} [{1}]", res.ResourceName, res.ResourceID)
             Else
                 If res IsNot Nothing Then
                     ReservationView1.Resource = res

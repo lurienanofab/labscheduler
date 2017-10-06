@@ -78,11 +78,6 @@ Namespace Pages
             ddlGranularityTool.DataSource = resources.OrderBy(Function(x) x.ResourceName)
             ddlGranularityTool.DataBind()
         End Sub
-
-        Private Sub LoadGranularityValues()
-            Dim values As Integer() = PropertiesManager.GetGranularityValues(Convert.ToInt32(ddlGranularityTool.SelectedValue))
-            txtGranularityValues.Text = String.Join(",", values)
-        End Sub
 #End Region
 
 #Region " Kiosk DataGrid Events "

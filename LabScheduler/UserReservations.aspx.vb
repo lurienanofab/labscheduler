@@ -25,8 +25,6 @@ Namespace Pages
                 End If
 
                 hypRecurringPage.NavigateUrl = String.Format("~/UserRecurringReservation.aspx?Date={0:yyyy-MM-dd}", Request.SelectedDate())
-
-                CacheManager.Current.CurrentUserState().AddAction("Viewing My Reservations page.")
             End If
 
             SetCurrentView(ViewType.UserView)

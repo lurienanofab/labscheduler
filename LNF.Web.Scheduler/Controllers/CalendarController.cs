@@ -27,8 +27,6 @@ namespace LNF.Web.Scheduler.Controllers
 
                     DateTime date = DateTime.Parse(context.Request.QueryString["Date"]);
 
-                    CacheManager.Current.CurrentUserState().AddAction("Changed Date to {0:yyyy-MM-dd}", date);
-
                     string redirectUrl = string.Format("{0}?Date={1:yyyy-MM-dd}", returnTo, date);
 
                     if (!context.Request.SelectedPath().IsEmpty())
