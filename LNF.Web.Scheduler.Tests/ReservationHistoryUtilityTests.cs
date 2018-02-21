@@ -5,7 +5,8 @@ using LNF.Models.Scheduler;
 using LNF.Repository;
 using LNF.Repository.Scheduler;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using OnlineServices.Api;
+using OnlineServices.Api.Billing;
+using OnlineServices.Api.Scheduler;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -21,10 +22,10 @@ namespace LNF.Web.Scheduler.Tests
         private Reservation rsv4 { get { return DA.Current.Single<Reservation>(692137); } } // ended 2016-09-02 10:25:09.000
         private Reservation rsv5 { get { return DA.Current.Single<Reservation>(693413); } } // ended 2016-09-08 17:32:30.000
 
-        private ClientModel sandrine;
-        private ClientModel greg;
-        private ClientModel weibin;
-        private ClientModel davidPellinen;
+        private ClientItem sandrine;
+        private ClientItem greg;
+        private ClientItem weibin;
+        private ClientItem davidPellinen;
 
         protected override void Prepare()
         {
@@ -224,7 +225,7 @@ namespace LNF.Web.Scheduler.Tests
             //      Original AccountID: 1056 [Harvard-Jorgolli] - was used because of default account client setting
             //      Changed to AccountID: 1071 [BMV Solutions]
 
-            ReservationModel rsv;
+            ReservationItem rsv;
 
             bool result;
 
@@ -233,7 +234,7 @@ namespace LNF.Web.Scheduler.Tests
             Assert.IsTrue(result);
 
             // Step 2: check to see if the acct was changed
-            using (var sc = await ApiProvider.NewSchedulerClient())
+            using (var sc = new SchedulerClient())
             {
                 rsv = await sc.GetReservation(687470);
                 Assert.AreEqual(1056, rsv.AccountID);
@@ -248,7 +249,7 @@ namespace LNF.Web.Scheduler.Tests
             Assert.IsFalse(updateBillingResult.HasError());
             Console.WriteLine("[1] Time taken: {0}", updateBillingResult.TotalTimeTaken());
 
-            using (var bc = await ApiProvider.NewBillingClient())
+            using (var bc = new BillingClient())
             {
                 // Step 4: check if tool billing was updated (should have the incorrect acct)
                 var toolBilling = await bc.GetToolBilling(period, rsv.ClientID);
@@ -272,7 +273,7 @@ namespace LNF.Web.Scheduler.Tests
             result = await ReservationHistoryUtility.SaveReservationHistory(687470, 1071, 1, "On The Fly Reservation", false);
 
             // Step 8: check to see if the acct was changed
-            using (var sc = await ApiProvider.NewSchedulerClient())
+            using (var sc = new SchedulerClient())
             {
                 rsv = await sc.GetReservation(687470);
                 Assert.AreEqual(1071, rsv.AccountID);
@@ -283,7 +284,7 @@ namespace LNF.Web.Scheduler.Tests
             Assert.IsFalse(updateBillingResult.HasError());
             Console.WriteLine("[2] Time taken: {0}", updateBillingResult.TotalTimeTaken());
 
-            using (var bc = await ApiProvider.NewBillingClient())
+            using (var bc = new BillingClient())
             {
                 // Step 10: check if tool billing was updated (should have the correct acct)
                 var toolBilling = await bc.GetToolBilling(period, rsv.ClientID);

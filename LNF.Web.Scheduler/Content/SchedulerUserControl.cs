@@ -10,7 +10,7 @@ namespace LNF.Web.Scheduler.Content
             get { return Page.Master; }
         }
 
-        protected ClientModel CurrentUser
+        protected ClientItem CurrentUser
         {
             get { return Page.CurrentUser; }
         }

@@ -15,8 +15,8 @@ Namespace Pages
 
         Private _EditReservation As repo.Reservation
 
-        Private Function GetClient() As ClientModel
-            Dim c As ClientModel = Nothing
+        Private Function GetClient() As ClientItem
+            Dim c As ClientItem = Nothing
             Dim cid As Integer = 0
             If trUser.Visible Then
                 If Not Integer.TryParse(ddlClients.SelectedValue, cid) Then
@@ -149,7 +149,7 @@ Namespace Pages
             Dim sd As Date = ReservationHistoryUtility.GetStartDate(txtStartDate.Text)
             Dim ed As Date = ReservationHistoryUtility.GetEndDate(txtEndDate.Text)
 
-            Dim client As ClientModel = GetClient()
+            Dim client As ClientItem = GetClient()
 
             Session("SelectedClientID") = client.ClientID
             Session("SelectedRange") = Integer.Parse(ddlRange.SelectedValue)

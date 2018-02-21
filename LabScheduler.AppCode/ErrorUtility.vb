@@ -16,7 +16,7 @@ Public Class ErrorUtility
         Dim list As New List(Of ErrorLog)
 
         Dim clientId As Integer
-        Dim c As ClientModel = Nothing
+        Dim c As ClientItem = Nothing
 
         Try
             c = CacheManager.Current.CurrentUser
@@ -54,7 +54,7 @@ Public Class ErrorUtility
         Return list.ToArray()
     End Function
 
-    Private Shared Sub SendEmail(errors As List(Of ErrorLog), c As ClientModel)
+    Private Shared Sub SendEmail(errors As List(Of ErrorLog), c As ClientItem)
         Dim clientId As Integer = 0
         Dim displayName As String = "unknown"
 

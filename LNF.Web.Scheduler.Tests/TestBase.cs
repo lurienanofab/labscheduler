@@ -17,7 +17,7 @@ namespace LNF.Web.Scheduler.Tests
 {
     public abstract class TestBase
     {
-        private ClientInfo _CurrentClient;
+        private ClientInfo _CurrentClient = null;
         private HttpContextManager _ContextManager;
 
         public ClientInfo CurrentClient { get { return _CurrentClient; } }
@@ -32,7 +32,7 @@ namespace LNF.Web.Scheduler.Tests
 
         protected virtual void Prepare()
         {
-            ContextManager.CurrentClient = new ClientModel()
+            ContextManager.CurrentClient = new ClientItem()
             {
                 ClientID = 1301,
                 UserName = "jgett",
@@ -95,7 +95,7 @@ namespace LNF.Web.Scheduler.Tests
     {
         private HttpSessionStateContainer _sessionContainer;
 
-        public ClientModel CurrentClient { get; set; }
+        public ClientItem CurrentClient { get; set; }
 
         public HttpContextManager()
         {
@@ -106,7 +106,7 @@ namespace LNF.Web.Scheduler.Tests
                 SessionStateMode.InProc, false);
         }
 
-        public HttpRequestManager StartRequest(ClientModel currentClient, string filename = "test.aspx", string url = "http://localhost/test.aspx", string queryString = "")
+        public HttpRequestManager StartRequest(ClientItem currentClient, string filename = "test.aspx", string url = "http://localhost/test.aspx", string queryString = "")
         {
             CurrentClient = currentClient;
             return StartRequest(filename, url, queryString);

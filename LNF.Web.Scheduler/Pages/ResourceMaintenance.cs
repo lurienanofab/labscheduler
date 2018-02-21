@@ -7,6 +7,7 @@ using LNF.Scheduler;
 using LNF.Web.Scheduler.Content;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Web.UI;
 using System.Web.UI.HtmlControls;
@@ -317,29 +318,19 @@ namespace LNF.Web.Scheduler.Pages
                 endDateTime = res.GetNextGranularity(actualEndDateTime, NextGranDir.Future);
 
                 // Find and End reservations that are in progress (Endable) for this resource
-                IList<Reservation> endableRsvQuery = DA.Scheduler.Reservation.SelectEndableReservations(res.ResourceID);
-                foreach (Reservation endableRsv in endableRsvQuery)
+                IList<Reservation> endableReservations = DA.Scheduler.Reservation.SelectEndableReservations(res.ResourceID);
+                foreach (Reservation endable in endableReservations.Where(x => x.ReservationID != rsv.ReservationID))
                 {
-                    if (endableRsv.ReservationID != rsv.ReservationID)
-                    {
-                        endableRsv.EndForRepair(CurrentUser.ClientID, CurrentUser.ClientID);
-                        EmailUtility.EmailOnCanceledByRepair(endableRsv, false, "Offline", txtNotes.Text, endDateTime);
-                    }
+                    endable.EndForRepair(CurrentUser.ClientID, CurrentUser.ClientID);
+                    EmailUtility.EmailOnCanceledByRepair(endable, false, "Offline", txtNotes.Text, endDateTime);
                 }
 
                 // Find and Remove any un-started reservations made during time of repair
                 IList<Reservation> unstartedReservations = DA.Scheduler.Reservation.SelectByResource(res.ResourceID, beginDatetime, endDateTime, false);
-                foreach (Reservation unstartedRsv in unstartedReservations)
+                foreach (Reservation unstartedRsv in unstartedReservations.Where(x => !x.ActualBeginDateTime.HasValue && x.ReservationID != rsv.ReservationID))
                 {
-                    // If the reservation has not begun
-                    if (!unstartedRsv.ActualBeginDateTime.HasValue)
-                    {
-                        if (unstartedRsv.ReservationID != rsv.ReservationID)
-                        {
-                            unstartedRsv.Delete(CurrentUser.ClientID);
-                            EmailUtility.EmailOnCanceledByRepair(unstartedRsv, true, "Offline", txtNotes.Text, endDateTime);
-                        }
-                    }
+                    unstartedRsv.Delete(CurrentUser.ClientID);
+                    EmailUtility.EmailOnCanceledByRepair(unstartedRsv, true, "Offline", txtNotes.Text, endDateTime);
                 }
 
                 IList<Reservation> query = ReservationUtility.SelectHistoryToForgiveForRepair(res.ResourceID, actualBeginDateTime, DateTime.Now);
@@ -414,8 +405,7 @@ namespace LNF.Web.Scheduler.Pages
                 rsv.UpdateCharges(chargeMultiplier, true, CurrentUser.ClientID);
 
                 // We have to delete those reservations as well, so it won't conflict with Repair and produce multiple reservation issue
-                //rsvDB.Delete(ReservationID); // why was this commented out?
-                rsv.Delete(CurrentUser.ClientID); // added this back, the previous line was commmented without explanation
+                //rsvDB.Delete(ReservationID); // why was this commented out? because the reservation should already have been ended or canceled
 
                 // Email User after everything is done.
                 EmailUtility.EmailOnForgiveCharge(rsv, 100, true, CurrentUser.ClientID);

@@ -251,7 +251,7 @@ namespace LNF.Web.Scheduler
             // 2009-09-16 Practice reservation : we must also check if tool engineers want to receive the notify email
             if (rsv.Activity == Properties.Current.Activities.Practice)
             {
-                ReservationInviteeItem invitee = null;
+                LNF.Scheduler.ReservationInviteeItem invitee = null;
 
                 var invitees = CacheManager.Current.ReservationInvitees();
 
@@ -378,7 +378,7 @@ namespace LNF.Web.Scheduler
 
         public static void LoadReservationInvitees(int reservationId)
         {
-            var items = DA.Current.Query<ReservationInvitee>().Where(x => x.Reservation.ReservationID == reservationId).Select(ReservationInviteeItem.Create).ToList();
+            var items = DA.Current.Query<ReservationInvitee>().Where(x => x.Reservation.ReservationID == reservationId).Select(LNF.Scheduler.ReservationInviteeItem.Create).ToList();
             CacheManager.Current.ReservationInvitees(items);
         }
 
@@ -390,7 +390,7 @@ namespace LNF.Web.Scheduler
 
         public static void LoadRemovedInvitees()
         {
-            var items = new List<ReservationInviteeItem>();
+            var items = new List<LNF.Scheduler.ReservationInviteeItem>();
             CacheManager.Current.RemovedInvitees(items);
         }
 

@@ -6,7 +6,8 @@ using LNF.Models.Data;
 using LNF.Models.Scheduler;
 using LNF.Repository.Scheduler;
 using LNF.Scheduler;
-using OnlineServices.Api;
+using OnlineServices.Api.Billing;
+using OnlineServices.Api.Scheduler;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -16,7 +17,7 @@ namespace LNF.Web.Scheduler
 {
     public static class ReservationHistoryUtility
     {
-        public static IList<ReservationHistoryItem> GetReservationHistoryData(ClientModel client, DateTime? sd, DateTime? ed, bool includeCanceledForModification)
+        public static IList<ReservationHistoryItem> GetReservationHistoryData(ClientItem client, DateTime? sd, DateTime? ed, bool includeCanceledForModification)
         {
             // Select Past Reservations
             IList<Reservation> reservations = ReservationUtility.SelectHistory(client.ClientID, sd.GetValueOrDefault(Reservation.MinReservationBeginDate), ed.GetValueOrDefault(Reservation.MaxReservationEndDate));
@@ -25,7 +26,7 @@ namespace LNF.Web.Scheduler
             return result;
         }
 
-        public static bool ReservationCanBeForgiven(ClientModel client, Reservation rsv, DateTime now)
+        public static bool ReservationCanBeForgiven(ClientItem client, Reservation rsv, DateTime now)
         {
             // first, only admins and staff can possibly forgive
             if (!client.HasPriv(ClientPrivilege.Administrator | ClientPrivilege.Staff | ClientPrivilege.Developer))
@@ -38,7 +39,7 @@ namespace LNF.Web.Scheduler
             return IsBeforeForgiveCutoff(rsv, now);
         }
 
-        public static bool ReservationAccountCanBeChanged(ClientModel client, Reservation rsv, DateTime now)
+        public static bool ReservationAccountCanBeChanged(ClientItem client, Reservation rsv, DateTime now)
         {
             // admins can always change the account
             if (client.HasPriv(ClientPrivilege.Administrator | ClientPrivilege.Developer))
@@ -51,7 +52,7 @@ namespace LNF.Web.Scheduler
             return false;
         }
 
-        public static bool ReservationNotesCanBeChanged(ClientModel client, Reservation rsv)
+        public static bool ReservationNotesCanBeChanged(ClientItem client, Reservation rsv)
         {
             // staff can always change notes
             if (client.HasPriv(ClientPrivilege.Staff | ClientPrivilege.Administrator | ClientPrivilege.Developer))
@@ -125,7 +126,7 @@ namespace LNF.Web.Scheduler
         {
             double chargeMultiplier = 1.00 - (forgivenPct / 100.0);
 
-            using (var sc = await ApiProvider.NewSchedulerClient())
+            using (var sc = new SchedulerClient())
             {
                 var model = new ReservationHistoryUpdate()
                 {
@@ -147,7 +148,7 @@ namespace LNF.Web.Scheduler
         {
             bool isTemp = sd == DateTime.Now.FirstOfMonth();
 
-            using (var bc = await ApiProvider.NewBillingClient())
+            using (var bc = new BillingClient())
             {
                 BillingProcessResult toolDataCleanResult = null;
                 BillingProcessResult toolDataResult = null;

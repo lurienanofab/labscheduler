@@ -16,7 +16,7 @@ namespace LNF.Web.Scheduler.Tests
         [TestMethod]
         public void SchedulerUtilityTests_CanGetCurrentUserActiveClientAccounts()
         {
-            ContextManager.StartRequest(new ClientModel()
+            ContextManager.StartRequest(new ClientItem()
             {
                 ClientID = 1475,
                 UserName = "1ben",

@@ -74,8 +74,8 @@ Namespace Pages
             End Get
         End Property
 
-        Public Function GetReservationInvitees() As IList(Of ReservationInviteeItem)
-            Dim result As IList(Of ReservationInviteeItem) = CacheManager.Current.ReservationInvitees()
+        Public Function GetReservationInvitees() As IList(Of LNF.Scheduler.ReservationInviteeItem)
+            Dim result As IList(Of LNF.Scheduler.ReservationInviteeItem) = CacheManager.Current.ReservationInvitees()
 
             If result Is Nothing Then
                 RefreshInvitees()
@@ -96,8 +96,8 @@ Namespace Pages
             Return result
         End Function
 
-        Public Function GetRemovedInvitees() As IList(Of ReservationInviteeItem)
-            Dim result As IList(Of ReservationInviteeItem) = CacheManager.Current.RemovedInvitees()
+        Public Function GetRemovedInvitees() As IList(Of LNF.Scheduler.ReservationInviteeItem)
+            Dim result As IList(Of LNF.Scheduler.ReservationInviteeItem) = CacheManager.Current.RemovedInvitees()
 
             If result Is Nothing Then
                 RefreshInvitees()
@@ -332,7 +332,7 @@ Namespace Pages
             Return CacheManager.Current.Resources(Function(x) x.ResourceID = resourceId).FirstOrDefault()
         End Function
 
-        Private Function GetCurrentClient() As ClientModel
+        Private Function GetCurrentClient() As ClientItem
             Dim rsv As repo.Reservation = GetCurrentReservation()
 
             If rsv IsNot Nothing Then
@@ -527,7 +527,7 @@ Namespace Pages
 
             Dim res As ResourceModel = GetCurrentResource()
             Dim rsv As repo.Reservation = GetCurrentReservation()
-            Dim client As ClientModel = GetCurrentClient()
+            Dim client As ClientItem = GetCurrentClient()
 
             Dim reservationId As Integer = 0
 
@@ -569,7 +569,7 @@ Namespace Pages
 
         Private Function GetCurrentAuthLevel() As ClientAuthLevel
             Dim res As ResourceModel = GetCurrentResource()
-            Dim client As ClientModel = GetCurrentClient()
+            Dim client As ClientItem = GetCurrentClient()
             Dim result As ClientAuthLevel = CacheManager.Current.GetAuthLevel(res.ResourceID, client.ClientID)
             Return result
         End Function
@@ -855,12 +855,12 @@ Namespace Pages
         Private Sub ValidateAllInviteesReservationsBetween(beginDateTime As Date, duration As Integer)
             HideInviteeWarning()
 
-            Dim invitees As IList(Of ReservationInviteeItem) = GetReservationInvitees()
+            Dim invitees As IList(Of LNF.Scheduler.ReservationInviteeItem) = GetReservationInvitees()
 
             If invitees IsNot Nothing Then
                 If invitees.Count > 0 Then
                     Dim names As New List(Of String)
-                    For Each inv As ReservationInviteeItem In invitees
+                    For Each inv As LNF.Scheduler.ReservationInviteeItem In invitees
                         If InviteeReservationsBetween(inv.InviteeID, beginDateTime, duration).Count() > 0 Then
                             Dim inviteeClient = CacheManager.Current.GetClient(inv.InviteeID)
                             names.Add(inviteeClient.DisplayName)
@@ -902,9 +902,9 @@ Namespace Pages
         End Sub
 
         Private Sub InviteeModification(res As ResourceModel, rsv As repo.Reservation, actionType As String, ddlInvitees As DropDownList, lblInviteeID As Label, lblInviteeName As Label)
-            Dim invitees As IList(Of ReservationInviteeItem) = GetReservationInvitees()
+            Dim invitees As IList(Of LNF.Scheduler.ReservationInviteeItem) = GetReservationInvitees()
             Dim available As IList(Of AvailableInviteeItem) = GetAvailableInvitees()
-            Dim removed As IList(Of ReservationInviteeItem) = GetRemovedInvitees()
+            Dim removed As IList(Of LNF.Scheduler.ReservationInviteeItem) = GetRemovedInvitees()
 
             If actionType = "Insert" Then
                 ' Insert invitee into ReservInvitee list
@@ -921,7 +921,7 @@ Namespace Pages
 
                 ' make sure the selected invitee is in the list of available invitees
                 If avail IsNot Nothing Then
-                    Dim item As New ReservationInviteeItem()
+                    Dim item As New LNF.Scheduler.ReservationInviteeItem()
                     item.ReservationID = reservationId
                     item.InviteeID = avail.ClientID
                     item.DisplayName = avail.DisplayName
@@ -972,10 +972,10 @@ Namespace Pages
             If e.Item.ItemType = ListItemType.Footer Then
                 ' Select Available Invitees and Remove already Selected Invitees
 
-                Dim invitees As IList(Of ReservationInviteeItem) = GetReservationInvitees()
+                Dim invitees As IList(Of LNF.Scheduler.ReservationInviteeItem) = GetReservationInvitees()
                 Dim available As IList(Of AvailableInviteeItem) = GetAvailableInvitees()
 
-                For Each inv As ReservationInviteeItem In invitees
+                For Each inv As LNF.Scheduler.ReservationInviteeItem In invitees
                     Dim avail As AvailableInviteeItem = available.FirstOrDefault(Function(x) x.ClientID = inv.InviteeID)
                     available.Remove(avail)
                 Next
@@ -989,7 +989,7 @@ Namespace Pages
 
         Protected Sub dgInvitees_ItemDataBound(sender As Object, e As DataGridItemEventArgs) Handles dgInvitees.ItemDataBound
             If e.Item.ItemType = ListItemType.Item OrElse e.Item.ItemType = ListItemType.AlternatingItem Then
-                Dim item As ReservationInviteeItem = CType(e.Item.DataItem, ReservationInviteeItem)
+                Dim item As LNF.Scheduler.ReservationInviteeItem = CType(e.Item.DataItem, LNF.Scheduler.ReservationInviteeItem)
                 CType(e.Item.FindControl("lblInviteeID"), Label).Text = item.InviteeID.ToString()
                 CType(e.Item.FindControl("lblInviteeName"), Label).Text = item.DisplayName.ToString()
             End If
@@ -998,7 +998,7 @@ Namespace Pages
         Private Sub LoadInvitees()
             Dim rsv As repo.Reservation = GetCurrentReservation()
             Dim res As ResourceModel = GetCurrentResource()
-            Dim client As ClientModel = GetCurrentClient()
+            Dim client As ClientItem = GetCurrentClient()
             Dim act As ActivityModel = GetCurrentActivity()
 
             Dim reservationId As Integer = If(rsv Is Nothing, 0, rsv.ReservationID)

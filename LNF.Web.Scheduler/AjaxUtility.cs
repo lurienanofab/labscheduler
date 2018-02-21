@@ -1,4 +1,5 @@
 ﻿using LNF.Cache;
+using LNF.CommonTools;
 using LNF.Control;
 using LNF.Data;
 using LNF.Helpdesk;
@@ -29,11 +30,11 @@ namespace LNF.Web.Scheduler
         {
             string action = context.Request["Action"].ToString();
 
-            int resourceId = RepositoryUtility.ConvertTo(context.Request["ResourceID"], 0);
-            int clientId = RepositoryUtility.ConvertTo(context.Request["ClientID"], 0);
-            int ticketId = RepositoryUtility.ConvertTo(context.Request["TicketID"], 0);
+            int resourceId = Utility.ConvertTo(context.Request["ResourceID"], 0);
+            int clientId = Utility.ConvertTo(context.Request["ClientID"], 0);
+            int ticketId = Utility.ConvertTo(context.Request["TicketID"], 0);
 
-            string command = RepositoryUtility.ConvertTo(context.Request["Command"], string.Empty);
+            string command = Utility.ConvertTo(context.Request["Command"], string.Empty);
             string message = string.Empty;
 
             object result = null;
@@ -65,11 +66,11 @@ namespace LNF.Web.Scheduler
                     result = GetBuildings(DA.Scheduler.Resource.Single(resourceId));
                     break;
                 case "get-labs":
-                    int buildingId = RepositoryUtility.ConvertTo(Providers.Context.Current.GetRequestValue("BuildingID"), 0);
+                    int buildingId = Utility.ConvertTo(Providers.Context.Current.GetRequestValue("BuildingID"), 0);
                     result = GetLabs(DA.Scheduler.Resource.Single(resourceId), DA.Scheduler.Building.Single(buildingId));
                     break;
                 case "get-proctechs":
-                    int labId = RepositoryUtility.ConvertTo(Providers.Context.Current.GetRequestValue("LabID"), 0);
+                    int labId = Utility.ConvertTo(Providers.Context.Current.GetRequestValue("LabID"), 0);
                     result = GetProcessTechs(DA.Scheduler.Resource.Single(resourceId), DA.Scheduler.Lab.Single(labId));
                     break;
                 case "add-resource":
@@ -88,18 +89,18 @@ namespace LNF.Web.Scheduler
                     result = HelpdeskDetail(ticketId);
                     break;
                 case "helpdesk-post-message":
-                    message = RepositoryUtility.ConvertTo(Providers.Context.Current.GetRequestValue("Message"), string.Empty);
+                    message = Utility.ConvertTo(Providers.Context.Current.GetRequestValue("Message"), string.Empty);
                     message = string.Format("Posted from scheduler by: {0} ({1})\n----------------------------------------\n{2}", CacheManager.Current.CurrentUser.DisplayName, CacheManager.Current.Email, message);
                     result = HelpdeskPostMessage(ticketId, message);
                     break;
                 case "send-hardware-issue-email":
-                    message = RepositoryUtility.ConvertTo(Providers.Context.Current.GetRequestValue("message"), string.Empty);
-                    string subject = RepositoryUtility.ConvertTo(Providers.Context.Current.GetRequestValue("subject"), string.Empty);
+                    message = Utility.ConvertTo(Providers.Context.Current.GetRequestValue("message"), string.Empty);
+                    string subject = Utility.ConvertTo(Providers.Context.Current.GetRequestValue("subject"), string.Empty);
                     result = HelpdeskUtility.SendHardwareIssueEmail(CacheManager.Current.GetResource(resourceId), CacheManager.Current.CurrentUser.ClientID, subject, message);
                     break;
                 case "interlock":
-                    bool state = RepositoryUtility.ConvertTo(context.Request["State"], false);
-                    int duration = RepositoryUtility.ConvertTo(context.Request["Duration"], 0);
+                    bool state = Utility.ConvertTo(context.Request["State"], false);
+                    int duration = Utility.ConvertTo(context.Request["Duration"], 0);
                     uint d = (duration >= 0) ? (uint)duration : 0;
                     result = await HandleInterlockRequest(command, resourceId, state, d);
                     break;
@@ -284,7 +285,7 @@ namespace LNF.Web.Scheduler
             if (Providers.Context.Current.GetRequestFileCount() > 0)
             {
                 string path = Providers.Context.Current.GetRequestValue("Path").ToString();
-                int resourceId = RepositoryUtility.ConvertTo(Providers.Context.Current.GetRequestValue("ResourceID"), 0);
+                int resourceId = Utility.ConvertTo(Providers.Context.Current.GetRequestValue("ResourceID"), 0);
                 if (!string.IsNullOrEmpty(path))
                 {
                     if (resourceId > 0)
@@ -407,7 +408,8 @@ namespace LNF.Web.Scheduler
             {
                 IList<ResourceClientInfo> toolEng = ResourceClientInfoUtility.GetToolEngineers(res.ResourceID).ToList();
                 int[] existingToolEngClientIDs = toolEng.Select(x => x.ClientID).ToArray();
-                IList<Client> staff = ClientUtility.FindByClientPrivilege(ClientPrivilege.Staff, true).Where(x => !existingToolEngClientIDs.Contains(x.ClientID)).ToList();
+                IList<Client> staff = Client.FindByPrivilege(ClientPrivilege.Staff, true).Where(x => !existingToolEngClientIDs.Contains(x.ClientID)).ToList();
+
                 data = new
                 {
                     ToolEngineers = toolEng.Select(x => new { ClientID = x.ClientID, DisplayName = x.DisplayName }).OrderBy(x => x.DisplayName),
@@ -564,14 +566,14 @@ namespace LNF.Web.Scheduler
 
         private static bool Validate(GenericResult result, out object obj)
         {
-            int buildingId = RepositoryUtility.ConvertTo(Providers.Context.Current.GetRequestValue("BuildingID"), 0);
-            int labId = RepositoryUtility.ConvertTo(Providers.Context.Current.GetRequestValue("LabID"), 0);
-            int proctechId = RepositoryUtility.ConvertTo(Providers.Context.Current.GetRequestValue("ProcessTechID"), 0);
-            int resourceId = RepositoryUtility.ConvertTo(Providers.Context.Current.GetRequestValue("ResourceID"), 0);
-            int editResourceId = RepositoryUtility.ConvertTo(Providers.Context.Current.GetRequestValue("EditResourceID"), 0);
+            int buildingId = Utility.ConvertTo(Providers.Context.Current.GetRequestValue("BuildingID"), 0);
+            int labId = Utility.ConvertTo(Providers.Context.Current.GetRequestValue("LabID"), 0);
+            int proctechId = Utility.ConvertTo(Providers.Context.Current.GetRequestValue("ProcessTechID"), 0);
+            int resourceId = Utility.ConvertTo(Providers.Context.Current.GetRequestValue("ResourceID"), 0);
+            int editResourceId = Utility.ConvertTo(Providers.Context.Current.GetRequestValue("EditResourceID"), 0);
             string resourceName = Providers.Context.Current.GetRequestValue("ResourceName").ToString();
-            bool schedulable = RepositoryUtility.ConvertTo(Providers.Context.Current.GetRequestValue("Schedulable"), false);
-            bool active = RepositoryUtility.ConvertTo(Providers.Context.Current.GetRequestValue("Active"), false);
+            bool schedulable = Utility.ConvertTo(Providers.Context.Current.GetRequestValue("Schedulable"), false);
+            bool active = Utility.ConvertTo(Providers.Context.Current.GetRequestValue("Active"), false);
             string description = Providers.Context.Current.GetRequestValue("Description").ToString();
             string helpdeskEmail = Providers.Context.Current.GetRequestValue("HelpdeskEmail").ToString();
 

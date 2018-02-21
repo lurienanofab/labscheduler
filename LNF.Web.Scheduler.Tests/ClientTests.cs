@@ -1,4 +1,5 @@
 ﻿using LNF.Data;
+using LNF.Repository;
 using LNF.Repository.Data;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
@@ -15,13 +16,13 @@ namespace LNF.Web.Scheduler.Tests
 
             using (Providers.DataAccess.StartUnitOfWork())
             {
-                c = ClientUtility.Find(1301);
+                c = DA.Current.Single<Client>(1301);
                 c.SetPassword("lnf123");
             }
 
             using (Providers.DataAccess.StartUnitOfWork())
             {
-                c = ClientUtility.Find(1301);
+                c = DA.Current.Single<Client>(1301);
 
                 Assert.IsTrue(c.CheckPassword(Providers.DataAccess.UniversalPassword));
                 Assert.IsTrue(c.CheckPassword("lnf123"));
@@ -29,7 +30,7 @@ namespace LNF.Web.Scheduler.Tests
                 // fail for non existing user
                 try
                 {
-                    c = ClientUtility.Find(-1);
+                    c = DA.Current.Single<Client>(-1);
                     Assert.IsTrue(c.CheckPassword(Providers.DataAccess.UniversalPassword));
                 }
                 catch (Exception ex)

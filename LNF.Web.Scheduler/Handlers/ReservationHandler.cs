@@ -1,16 +1,15 @@
 ﻿using LNF.Cache;
+using LNF.CommonTools;
 using LNF.Control;
 using LNF.Models.Scheduler;
 using LNF.Repository;
 using LNF.Repository.Data;
 using LNF.Repository.Scheduler;
 using LNF.Scheduler;
-using OnlineServices.Api;
+using OnlineServices.Api.Scheduler;
 using System;
-using System.Configuration;
 using System.Threading.Tasks;
 using System.Web;
-using System.Web.Security;
 using System.Web.SessionState;
 
 namespace LNF.Web.Scheduler.Handlers
@@ -42,13 +41,13 @@ namespace LNF.Web.Scheduler.Handlers
                         break;
                     case "save-reservation-history":
                         string notes = context.Request["Notes"];
-                        double forgivenPct = RepositoryUtility.ConvertTo(context.Request["ForgivenPct"], 0D);
-                        int accountId = RepositoryUtility.ConvertTo(context.Request["AccountId"], 0);
-                        bool emailClient = RepositoryUtility.ConvertTo(context.Request["EmailClient"], false);
+                        double forgivenPct = Utility.ConvertTo(context.Request["ForgivenPct"], 0D);
+                        int accountId = Utility.ConvertTo(context.Request["AccountId"], 0);
+                        bool emailClient = Utility.ConvertTo(context.Request["EmailClient"], false);
 
                         double chargeMultiplier = 1.00 - (forgivenPct / 100.0);
 
-                        using (var sc = await ApiProvider.NewSchedulerClient())
+                        using (var sc = new SchedulerClient())
                         {
                             var model = new ReservationHistoryUpdate()
                             {
@@ -66,7 +65,7 @@ namespace LNF.Web.Scheduler.Handlers
 
                         break;
                     case "update-billing":
-                        clientId = RepositoryUtility.ConvertTo(context.Request["ClientID"], 0);
+                        clientId = Utility.ConvertTo(context.Request["ClientID"], 0);
                         DateTime sd = Convert.ToDateTime(context.Request["StartDate"]);
                         DateTime ed = Convert.ToDateTime(context.Request["EndDate"]);
 
@@ -88,19 +87,6 @@ namespace LNF.Web.Scheduler.Handlers
             }
 
             context.Response.Write(Providers.Serialization.Json.SerializeObject(result));
-        }
-
-        private ApiClientOptions GetClientOptions(HttpContext context)
-        {
-            var cookie = context.Request.Cookies[FormsAuthentication.FormsCookieName];
-            string authToken = cookie.Value;
-
-            return new ApiClientOptions()
-            {
-                AccessToken = authToken,
-                Host = new Uri(ConfigurationManager.AppSettings["ApiHost"]),
-                TokenType = "Forms"
-            };
         }
     }
 

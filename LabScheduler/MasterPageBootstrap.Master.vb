@@ -7,7 +7,8 @@ Imports repo = LNF.Repository.Data
 Public Class MasterPageBootstrap
     Inherits LNFMasterPage
 
-    Private _menuItems As IList(Of repo.Menu)
+    'Private _menuItems As IList(Of repo.Menu)
+    Private _menu As SiteMenu
 
     Public Overrides ReadOnly Property ShowMenu As Boolean
         Get
@@ -25,8 +26,8 @@ Public Class MasterPageBootstrap
         If Not Page.IsPostBack Then
             If ShowMenu Then
                 ' load the page menu
-                _menuItems = SiteMenu.Create(CurrentUser).Select()
-                Dim parents As IList(Of repo.Menu) = _menuItems.Where(Function(x) x.MenuParentID = 0).ToList()
+                _menu = SiteMenu.Create(CurrentUser)
+                Dim parents As IList(Of repo.Menu) = _menu.Where(Function(x) x.MenuParentID = 0).ToList()
                 rptMenu.DataSource = parents
                 rptMenu.DataBind()
             End If
@@ -58,7 +59,7 @@ Public Class MasterPageBootstrap
             Dim liParentDropdown As UI.Control = e.Item.FindControl("liParentDropdown")
             Dim liParentLink As UI.Control = e.Item.FindControl("liParentLink")
             Dim parent As repo.Menu = CType(e.Item.DataItem, repo.Menu)
-            Dim children As IList(Of repo.Menu) = _menuItems.Where(Function(x) x.MenuParentID = parent.MenuID).ToList()
+            Dim children As IList(Of repo.Menu) = _menu.Where(Function(x) x.MenuParentID = parent.MenuID).ToList()
             If children.Count > 0 Then
                 liParentDropdown.Visible = True
                 liParentLink.Visible = False

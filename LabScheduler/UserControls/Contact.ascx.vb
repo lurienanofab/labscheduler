@@ -110,7 +110,7 @@ Namespace UserControls
                         SetSendTo("Administrator")
                         showCancel = False
                     ElseIf clientId > 0 Then
-                        Dim client As ClientModel = CacheManager.Current.GetClient(clientId)
+                        Dim client As ClientItem = CacheManager.Current.GetClient(clientId)
                         If client IsNot Nothing Then
                             SetSendTo(client.DisplayName, client.Email)
                         Else
@@ -222,7 +222,7 @@ Namespace UserControls
                 Dim clients As IList(Of repo.ResourceClientInfo) = ResourceClientUtility.SelectByResource(resourceId, authLevel).ToList()
                 receiverAddr = String.Join(",", clients.Select(Function(x) x.Email))
             ElseIf clientId > 0 Then
-                Dim client As ClientModel = CacheManager.Current.GetClient(clientId)
+                Dim client As ClientItem = CacheManager.Current.GetClient(clientId)
                 If client IsNot Nothing Then
                     receiverAddr = client.Email
                 Else

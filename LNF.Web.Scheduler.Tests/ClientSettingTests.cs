@@ -12,7 +12,7 @@ namespace LNF.Web.Scheduler.Tests
     {
         protected override void Prepare()
         {
-            ContextManager.CurrentClient = new ClientModel()
+            ContextManager.CurrentClient = new ClientItem()
             {
                 ClientID = 728,
                 UserName = "codrin",
