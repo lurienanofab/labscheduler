@@ -73,7 +73,7 @@ Namespace Pages
         End Sub
 
         Private Sub LoadTools()
-            Dim resources As IList(Of ResourceModel) = CacheManager.Current.Resources()
+            Dim resources As IList(Of ResourceModel) = CacheManager.Current.ResourceTree().Resources().ToList()
             ddlGranularityTool.AppendDataBoundItems = True
             ddlGranularityTool.DataSource = resources.OrderBy(Function(x) x.ResourceName)
             ddlGranularityTool.DataBind()
@@ -158,7 +158,7 @@ Namespace Pages
 
             Properties.Current.LateChargePenaltyMultiplier = Convert.ToDouble(txtLateChargePenalty.Text)
             Properties.Current.AuthExpWarning = Convert.ToDouble(txtAuthExpWarning.Text)
-            Properties.Current.Admin = DA.Current.Single(Of Client)(Convert.ToInt32(ddlAdmin.SelectedValue))
+            Properties.Current.Admin = CacheManager.Current.GetClient(Integer.Parse(ddlAdmin.SelectedValue))
             Properties.Current.ResourceIPPrefix = txtResourceIPPrefix.Text
 
             ' Update Database

@@ -60,9 +60,9 @@ Namespace Pages
         End Sub
 
         Private Sub LoadResourceClients()
-            Dim dtResources As DataTable = ResourceClientData.SelectByClient(CacheManager.Current.ClientID)
+            Dim dtResources = ResourceClientData.SelectByClient(CacheManager.Current.ClientID)
             dtResources.DefaultView.RowFilter = "ClientID <> -1"
-            dgResources.DataSource = dtResources
+            dgResources.DataSource = dtResources.DefaultView
             dgResources.DataBind()
             If dgResources.Items.Count > 0 Then
                 dgResources.Visible = True
@@ -74,7 +74,7 @@ Namespace Pages
 
             '2009-09-18 for Practice Reservation
             dtResources.DefaultView.RowFilter = "AuthLevel = 16"
-            dgResourcePractice.DataSource = dtResources
+            dgResourcePractice.DataSource = dtResources.DefaultView
             dgResourcePractice.DataBind()
             If dgResourcePractice.Items.Count > 0 Then
                 dgResourcePractice.Visible = True

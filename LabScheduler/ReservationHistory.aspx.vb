@@ -7,13 +7,13 @@ Imports LNF.Repository.Data
 Imports LNF.Scheduler.Data
 Imports LNF.Web.Scheduler
 Imports LNF.Web.Scheduler.Content
-Imports repo = LNF.Repository.Scheduler
+Imports Scheduler = LNF.Repository.Scheduler
 
 Namespace Pages
     Public Class ReservationHistory
         Inherits SchedulerPage
 
-        Private _EditReservation As repo.Reservation
+        Private _EditReservation As Scheduler.Reservation
 
         Private Function GetClient() As ClientItem
             Dim c As ClientItem = Nothing
@@ -28,13 +28,13 @@ Namespace Pages
             Return c
         End Function
 
-        Public ReadOnly Property EditReservation As repo.Reservation
+        Public ReadOnly Property EditReservation As Scheduler.Reservation
             Get
                 If _EditReservation Is Nothing OrElse _EditReservation.ReservationID.ToString() <> hidEditReservationID.Value Then
                     Dim reservationId As Integer
                     If Integer.TryParse(hidEditReservationID.Value, reservationId) Then
                         If reservationId > 0 Then
-                            _EditReservation = DA.Scheduler.Reservation.Single(reservationId)
+                            _EditReservation = DA.Current.Single(Of Scheduler.Reservation)(reservationId)
                         Else
                             _EditReservation = Nothing
                         End If
@@ -70,7 +70,7 @@ Namespace Pages
         End Sub
 
         Private Sub LoadClients()
-            Dim dtClients As DataTable = ResourceClientData.SelectReservHistoryClient(CurrentUser.ClientID)
+            Dim dtClients = ResourceClientData.SelectReservHistoryClient(CurrentUser.ClientID)
 
             ddlClients.DataSource = dtClients
             ddlClients.DataBind()
@@ -216,20 +216,20 @@ Namespace Pages
             litActivityName.Text = EditReservation.Activity.ActivityName
             litIsStarted.Text = If(EditReservation.IsStarted, "Yes", "No")
             litIsCanceled.Text = If(IsCanceled(EditReservation.IsActive), "Yes", "No")
-            trInvitees.Visible = EditReservation.GetInvitees().Count > 0
+            trInvitees.Visible = ReservationManager.GetInvitees(EditReservation).Count() > 0
             litInvitees.Text = InviteeListHTML()
             litCurrentAccount.Text = EditReservation.Account.Name
             trAccount.Visible = canChangeNotes
 
             '2012-10-23 It's possible that there are no available accounts. For example
             'a remote processing run where no one was ever invited.
-            Dim availAccts As List(Of ClientAccount) = EditReservation.AvailableAccounts().ToList()
+            Dim availAccts As List(Of ClientAccount) = ReservationManager.AvailableAccounts(EditReservation).ToList()
             Dim accts As IEnumerable(Of Account) = Nothing
             If availAccts IsNot Nothing Then
                 accts = availAccts.Select(Function(ca) ca.Account)
             End If
             If accts IsNot Nothing Then
-                ddlEditReservationAccount.DataSource = AccountUtility.ConvertToAccountTable(accts.ToList())
+                ddlEditReservationAccount.DataSource = AccountManager.ConvertToAccountTable(accts.ToList())
                 ddlEditReservationAccount.DataBind()
             Else
                 ddlEditReservationAccount.Visible = False
@@ -283,7 +283,7 @@ Namespace Pages
 
         Private Function InviteeListHTML() As String
             Dim sb As New StringBuilder()
-            For Each item As repo.ReservationInvitee In EditReservation.GetInvitees()
+            For Each item As Scheduler.ReservationInvitee In ReservationManager.GetInvitees(EditReservation)
                 sb.AppendLine(String.Format("<div>{0}</div>", item.Invitee.DisplayName))
             Next
             Return sb.ToString()
@@ -291,7 +291,7 @@ Namespace Pages
 
         ' this overload is called from the aspx page
         Protected Overloads Function IsBeforeForgiveCutoff(reservationId As Integer) As Boolean
-            Dim rsv As repo.Reservation = DA.Scheduler.Reservation.Single(reservationId)
+            Dim rsv As Scheduler.Reservation = DA.Current.Single(Of Scheduler.Reservation)(reservationId)
             Return ReservationHistoryUtility.IsBeforeForgiveCutoff(rsv, Date.Now)
         End Function
 

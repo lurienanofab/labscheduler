@@ -118,40 +118,40 @@ Namespace Pages
 
             'Loop through each selected tool and make reservation and delete other people's reservation
             For Each resourceId As Integer In toolIdList
-                Dim rsv As repo.Reservation = New repo.Reservation()
-
-                rsv.Resource = DA.Current.Single(Of repo.Resource)(resourceId)
-                rsv.RecurrenceID = -1 'always -1 for non-recurring reservation
-                rsv.GroupID = groupId
-                rsv.Client = DA.Current.Single(Of Client)(clientId)
-                rsv.BeginDateTime = beginDateTime
-                rsv.EndDateTime = endDateTime
-                rsv.ActualBeginDateTime = beginDateTime 'is this correct?
-                rsv.ActualEndDateTime = endDateTime 'is this correct?
-                rsv.LastModifiedOn = Date.Now
-                rsv.Account = Properties.Current.LabAccount
-                rsv.Activity = Properties.Current.Activities.FacilityDownTime
-                rsv.Duration = (beginDateTime - endDateTime).Duration.TotalMinutes
-                rsv.Notes = txtNotes.Text
-                rsv.AutoEnd = False
-                rsv.HasProcessInfo = False
-                rsv.HasInvitees = False
-                rsv.CreatedOn = Date.Now
+                Dim rsv As repo.Reservation = New repo.Reservation With {
+                    .Resource = DA.Current.Single(Of repo.Resource)(resourceId),
+                    .RecurrenceID = -1, 'always -1 for non-recurring reservation
+                    .GroupID = groupId,
+                    .Client = DA.Current.Single(Of Client)(clientId),
+                    .BeginDateTime = beginDateTime,
+                    .EndDateTime = endDateTime,
+                    .ActualBeginDateTime = beginDateTime, 'is this correct?
+                    .ActualEndDateTime = endDateTime, 'is this correct?
+                    .LastModifiedOn = Date.Now,
+                    .Account = DA.Current.Single(Of Account)(Properties.Current.LabAccount.AccountID),
+                    .Activity = DA.Current.Single(Of Scheduler.Activity)(Properties.Current.Activities.FacilityDownTime),
+                    .Duration = (beginDateTime - endDateTime).Duration.TotalMinutes,
+                    .Notes = txtNotes.Text,
+                    .AutoEnd = False,
+                    .HasProcessInfo = False,
+                    .HasInvitees = False,
+                    .CreatedOn = Date.Now
+                }
 
                 ' Find and Remove any un-started reservations made during time of repair
-                Dim query As IList(Of repo.Reservation) = DA.Scheduler.Reservation.SelectByResource(resourceId, beginDateTime, endDateTime, False)
+                Dim query As IList(Of repo.Reservation) = ReservationManager.SelectByResource(resourceId, beginDateTime, endDateTime, False)
                 For Each existing As repo.Reservation In query
                     ' Only if the reservation has not begun
                     If existing.ActualBeginDateTime Is Nothing Then
-                        existing.Delete(CurrentUser.ClientID)
-                        EmailUtility.EmailOnCanceledByRepair(existing, True, "LNF Facility Down", "Facility is down, thus we have to disable the tool.", endDateTime)
+                        ReservationManager.Delete(existing, CurrentUser.ClientID)
+                        EmailManager.EmailOnCanceledByRepair(existing, True, "LNF Facility Down", "Facility is down, thus we have to disable the tool.", endDateTime)
                     Else
                         'We have to disable all those reservations that have been activated by setting isActive to 0.  
                         'The catch here is that we must compare the "Actual" usage time with the repair time because if the user ends the reservation before the repair starts, we still 
                         'have to charge the user for that reservation
                     End If
                 Next
-                rsv.InsertFacilityDownTime(CurrentUser.ClientID)
+                ReservationManager.InsertFacilityDownTime(rsv, CurrentUser.ClientID)
             Next
 
             GridDataBind()
@@ -174,7 +174,7 @@ Namespace Pages
 
                 hidGroupID.Value = groupId.ToString()
 
-                lboxModify.DataSource = ReservationUtility.SelectByGroup(groupId).Select(Function(x) New With {.ResourceID = x.Resource.ResourceID, .ResourceName = x.Resource.ResourceName}).ToList()
+                lboxModify.DataSource = ReservationManager.SelectByGroup(groupId).Select(Function(x) New With {.ResourceID = x.Resource.ResourceID, .ResourceName = x.Resource.ResourceName}).ToList()
                 lboxModify.DataBind()
 
                 resFacilityDownTime = FacilityDownTimeDB.GetFacilityDownTimeByGroupID(groupId)
@@ -239,7 +239,7 @@ Namespace Pages
                 FacilityDownTimeDB.DeleteGroupReservations(groupId)
 
                 'delete all the future reservations and keep the old ones
-                DA.Scheduler.Reservation.DeleteByGroup(groupId, CurrentUser.ClientID)
+                ReservationManager.DeleteByGroup(groupId, CurrentUser.ClientID)
 
                 GridDataBind()
 
@@ -314,17 +314,17 @@ Namespace Pages
             FacilityDownTimeDB.UpdateByGroupID(CType(hidGroupID.Value, Integer), beginDateTime, endDateTime)
 
             'Update the individual reservations
-            ReservationUtility.UpdateByGroup(CType(hidGroupID.Value, Integer), beginDateTime, endDateTime, txtNotesModify.Text, CurrentUser.ClientID)
+            ReservationManager.UpdateByGroup(CType(hidGroupID.Value, Integer), beginDateTime, endDateTime, txtNotesModify.Text, CurrentUser.ClientID)
 
             'Delete all the reservations in this period
             For Each res As ListItem In lboxModify.Items
                 ' Find and Remove any un-started reservations made during time of repair
-                Dim query As IList(Of repo.Reservation) = DA.Scheduler.Reservation.SelectByResource(Convert.ToInt32(res.Value), beginDateTime, endDateTime, False)
+                Dim query As IList(Of repo.Reservation) = ReservationManager.SelectByResource(Convert.ToInt32(res.Value), beginDateTime, endDateTime, False)
                 For Each existing As repo.Reservation In query
                     ' Only if the reservation has not begun
                     If existing.ActualBeginDateTime Is Nothing Then
-                        existing.Delete(CurrentUser.ClientID)
-                        EmailUtility.EmailOnCanceledByRepair(existing, True, "LNF Facility Down", "Facility is down, thus we have to disable the tool. Notes:", endDateTime)
+                        ReservationManager.Delete(existing, CurrentUser.ClientID)
+                        EmailManager.EmailOnCanceledByRepair(existing, True, "LNF Facility Down", "Facility is down, thus we have to disable the tool. Notes:", endDateTime)
                     Else
                         'We have to disable all those reservations that have been activated by setting isActive to 0.  
                         'The catch here is that we must compare the "Actual" usage time with the repair time because if the user ends the reservation before the repair starts, we still 

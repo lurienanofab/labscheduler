@@ -15,6 +15,8 @@ namespace LNF.Web.Scheduler.Controllers
 {
     public class ReservationController : HttpTaskAsyncHandler, IRequiresSessionState
     {
+        protected IReservationManager ReservationManager => DA.Use<IReservationManager>();
+
         private string GetCommand(HttpContext context)
         {
             if (string.IsNullOrEmpty(context.Request.QueryString["Command"]))
@@ -37,8 +39,7 @@ namespace LNF.Web.Scheduler.Controllers
         {
             if (!string.IsNullOrEmpty(context.Request.QueryString["ReservationID"]))
             {
-                int reservationId;
-                if (int.TryParse(context.Request.QueryString["ReservationID"], out reservationId))
+                if (int.TryParse(context.Request.QueryString["ReservationID"], out int reservationId))
                 {
                     return reservationId;
                 }
@@ -87,7 +88,7 @@ namespace LNF.Web.Scheduler.Controllers
                             break;
                         case "ModifyReservation":
                             rsv = GetReservation(context);
-                            var res = CacheManager.Current.GetResource(rsv.Resource.ResourceID);
+                            var res = CacheManager.Current.ResourceTree().GetResource(rsv.Resource.ResourceID);
                             DateTime currentDate = context.Request.SelectedDate();
 
                             context.Session["ReservationSelectedTime"] = currentDate;
@@ -96,7 +97,7 @@ namespace LNF.Web.Scheduler.Controllers
                             break;
                         case "DeleteReservation":
                             rsv = GetReservation(context);
-                            ReservationUtility.DeleteReservation(rsv.ReservationID);
+                            ReservationManager.DeleteReservation(rsv.ReservationID);
 
                             redirectUrl = SchedulerUtility.GetReservationViewReturnUrl(currentView);
                             break;
@@ -127,9 +128,7 @@ namespace LNF.Web.Scheduler.Controllers
 
         private Reservation GetReservation(HttpContext context)
         {
-            int reservationId;
-
-            if (int.TryParse(context.Request.QueryString["ReservationID"], out reservationId))
+            if (int.TryParse(context.Request.QueryString["ReservationID"], out int reservationId))
             {
                 var result = DA.Current.Single<Reservation>(reservationId);
 
@@ -160,13 +159,13 @@ namespace LNF.Web.Scheduler.Controllers
                 case ReservationState.StartOnly:
                 case ReservationState.StartOrDelete:
                     // If there are previous unended reservations, then ask for confirmation
-                    IList<Reservation> endableRsv = DA.Scheduler.Reservation.SelectEndableReservations(rsv.Resource.ResourceID);
+                    IList<Reservation> endable = ReservationManager.SelectEndableReservations(rsv.Resource.ResourceID);
 
-                    if (endableRsv.Count > 0)
+                    if (endable.Count > 0)
                     {
                         context.Session["ActiveReservationMessage"] = string.Format(
                             "[Previous ReservationID: {0}, Current ReservationID: {1}]",
-                            string.Join(",", endableRsv.Select(x => x.ReservationID)),
+                            string.Join(",", endable.Select(x => x.ReservationID)),
                             rsv.ReservationID);
 
                         confirm = true;
@@ -175,14 +174,14 @@ namespace LNF.Web.Scheduler.Controllers
                     else
                     {
                         var isInLab = CacheManager.Current.ClientInLab(rsv.Resource.ProcessTech.Lab.LabID);
-                        await ReservationUtility.StartReservation(rsv, CacheManager.Current.ClientID, isInLab);
+                        await ReservationManager.StartReservation(rsv, CacheManager.Current.ClientID, isInLab);
                     }
                     break;
                 case ReservationState.Endable:
                     // End reservation
                     if (state == ReservationState.Endable)
                     { 
-                        await ReservationUtility.EndReservation(rsv.ReservationID);
+                        await ReservationManager.EndReservation(rsv.ReservationID);
                     }
                     else
                         throw new InvalidOperationException(string.Format("ReservationID {0} state is {1}, not Endable. ActualBeginDateTime: {2}", rsv.ReservationID, state, rsv.ActualBeginDateTime.HasValue ? rsv.ActualBeginDateTime.Value.ToString("yyyy-MM-dd HH:mm:ss") : "null"));
@@ -206,7 +205,7 @@ namespace LNF.Web.Scheduler.Controllers
 
         private bool CanCreateNewReservation(HttpContext context)
         {
-            var res = context.Request.SelectedPath().GetResource();
+            ResourceModel res = CacheManager.Current.ResourceTree().GetResource(context.Request.SelectedPath().ResourceID);
 
             var currentView = CacheManager.Current.CurrentViewType();
 

@@ -16,7 +16,7 @@ namespace LNF.Web.Scheduler.TreeView
             ID = item.BuildingID;
             Name = item.BuildingName;
             Description = item.BuildingDescription;
-            var labs = CacheManager.Current.Labs().Where(x => x.LabIsActive && x.BuildingID == item.BuildingID).ToList();
+            var labs = CacheManager.Current.ResourceTree().Labs().Where(x => x.LabIsActive && x.BuildingID == item.BuildingID).ToList();
             Children = new TreeItemCollection(labs.Select(x => new LabTreeItem(x, this)));
         }
     }

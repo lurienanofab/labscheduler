@@ -43,15 +43,15 @@ namespace LNF.Web.Scheduler
         public static List<ResourceListItem> List(int buildingId)
         {
             List<ResourceListItem> result = new List<ResourceListItem>();
-            var bldg = CacheManager.Current.GetBuilding(buildingId);
+            var bldg = CacheManager.Current.ResourceTree().GetBuilding(buildingId);
 
             if (bldg != null)
             {
-                foreach (var lab in CacheManager.Current.Labs().Where(x => x.LabIsActive && x.BuildingID == bldg.BuildingID).OrderBy(x => x.LabDisplayName))
+                foreach (var lab in CacheManager.Current.ResourceTree().Labs().Where(x => x.LabIsActive && x.BuildingID == bldg.BuildingID).OrderBy(x => x.LabDisplayName))
                 {
-                    foreach (var pt in CacheManager.Current.ProcessTechs().Where(x => x.ProcessTechIsActive && x.LabID == lab.LabID).OrderBy(x => x.ProcessTechName))
+                    foreach (var pt in CacheManager.Current.ResourceTree().ProcessTechs().Where(x => x.ProcessTechIsActive && x.LabID == lab.LabID).OrderBy(x => x.ProcessTechName))
                     {
-                        foreach (var res in CacheManager.Current.Resources().Where(x => x.ResourceIsActive && x.ProcessTechID == pt.ProcessTechID).OrderBy(x => x.ResourceName))
+                        foreach (var res in CacheManager.Current.ResourceTree().Resources().Where(x => x.ResourceIsActive && x.ProcessTechID == pt.ProcessTechID).OrderBy(x => x.ResourceName))
                             result.Add(Create(bldg, lab, pt, res));
                     }
                 }

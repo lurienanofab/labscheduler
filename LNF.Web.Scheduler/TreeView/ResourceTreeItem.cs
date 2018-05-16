@@ -1,6 +1,6 @@
 ﻿using LNF.Cache;
 using LNF.Models.Scheduler;
-using LNF.Repository.Scheduler;
+using LNF.Repository;
 using LNF.Scheduler;
 using System;
 
@@ -8,6 +8,8 @@ namespace LNF.Web.Scheduler.TreeView
 {
     public class ResourceTreeItem : TreeItem<ResourceModel>
     {
+        protected IReservationManager ReservationManager => DA.Use<IReservationManager>();
+
         public bool IsSchedulable { get; private set; }
         public ResourceState State { get; private set; }
         public string StateNotes { get; private set; }
@@ -31,7 +33,7 @@ namespace LNF.Web.Scheduler.TreeView
 
             if (State == ResourceState.Online && !IsSchedulable)
             {
-                ReservationInProgress repair = ReservationUtility.GetRepairReservationInProgress(item.ResourceID);
+                ReservationInProgress repair = ReservationManager.GetRepairReservationInProgress(item.ResourceID);
                 if (repair != null)
                 {
                     RepairEndDateTime = repair.EndDateTime;

@@ -8,7 +8,7 @@ Imports LNF.Scheduler.Data
 Imports LNF.Web
 Imports LNF.Web.Scheduler
 Imports LNF.Web.Scheduler.Content
-Imports repo = LNF.Repository.Scheduler
+Imports Scheduler = LNF.Repository.Scheduler
 
 Namespace Pages
     Public Class ResourceConfig
@@ -70,16 +70,16 @@ Namespace Pages
             End If
         End Sub
 
-        Private Function GetResourceActivityAuth(resourceId As Integer, ByVal activityId As Integer) As repo.ResourceActivityAuth
-            Return DA.Current.Query(Of repo.ResourceActivityAuth)().FirstOrDefault(Function(x) x.Resource.ResourceID = resourceId AndAlso x.Activity.ActivityID = activityId)
+        Private Function GetResourceActivityAuth(resourceId As Integer, ByVal activityId As Integer) As Scheduler.ResourceActivityAuth
+            Return DA.Current.Query(Of Scheduler.ResourceActivityAuth)().FirstOrDefault(Function(x) x.Resource.ResourceID = resourceId AndAlso x.Activity.ActivityID = activityId)
         End Function
 
         Private Sub InitCreateActivity(res As ResourceModel, act As ActivityModel)
-            Dim rauth As repo.ResourceActivityAuth = GetResourceActivityAuth(res.ResourceID, act.ActivityID)
+            Dim rauth As Scheduler.ResourceActivityAuth = GetResourceActivityAuth(res.ResourceID, act.ActivityID)
             If rauth Is Nothing Then
-                rauth = New repo.ResourceActivityAuth()
-                rauth.Resource = DA.Scheduler.Resource.Single(res.ResourceID)
-                rauth.Activity = DA.Scheduler.Activity.Single(act.ActivityID)
+                rauth = New Scheduler.ResourceActivityAuth()
+                rauth.Resource = DA.Current.Single(Of Scheduler.Resource)(res.ResourceID)
+                rauth.Activity = DA.Current.Single(Of Scheduler.Activity)(act.ActivityID)
                 rauth.UserAuth = CType(act.UserAuth, ClientAuthLevel)
                 rauth.InviteeAuth = CType(act.InviteeAuth, ClientAuthLevel)
                 rauth.StartEndAuth = CType(act.StartEndAuth, ClientAuthLevel)
@@ -92,11 +92,11 @@ Namespace Pages
         Private Sub InitReseourceAuth(res As ResourceModel)
             ' fetch the reseource details from the ResourceActivityAuth table.
             'Dim act As Activity = Activity.DataAccess.Single(20)
-            Dim allActivities As IList(Of ActivityModel) = CacheManager.Current.Activities()
+            Dim allActivities As IList(Of ActivityModel) = CacheManager.Current.Activities().ToList()
             Dim table As Table = New Table()
             Dim columnIndex As Integer = 1
             Dim trow As TableRow = Nothing
-            Dim acAll As IList(Of repo.AuthLevel) = DA.Current.Query(Of repo.AuthLevel)().ToList() 'Search(Function(x) x.Authorizable = 1)
+            Dim acAll As IList(Of Scheduler.AuthLevel) = DA.Current.Query(Of Scheduler.AuthLevel)().ToList() 'Search(Function(x) x.Authorizable = 1)
             For Each act In allActivities
                 InitCreateActivity(res, act)
                 Dim lblTitle As Label = New Label()
@@ -116,18 +116,21 @@ Namespace Pages
                     columnIndex = 1
                 End If
 
+                Dim tcell As TableCell = New TableCell With {
+                    .Width = 200
+                }
 
-                Dim tcell As TableCell = New TableCell()
-                tcell.Width = 200
                 tcell.Controls.Add(lblTitle)
 
                 ' Dynamically create the number of checkbox's based on AuthLevel Table and update UI 
-                Dim cbl As CheckBoxList = New CheckBoxList()
-                cbl.ID = "cbl_" + act.ActivityID.ToString()
                 'cbl.CssClass = "cbl_" + act.ActivityID.ToString()
-                cbl.DataTextField = "AuthLevelName"
-                cbl.DataValueField = "AuthLevelValue"
-                cbl.DataSource = acAll
+                Dim cbl As CheckBoxList = New CheckBoxList With {
+                    .ID = "cbl_" + act.ActivityID.ToString(),
+                    .DataTextField = "AuthLevelName",
+                    .DataValueField = "AuthLevelValue",
+                    .DataSource = acAll
+                }
+
                 cbl.DataBind()
                 tcell.Controls.Add(cbl)
                 trow.Cells.Add(tcell)
@@ -140,7 +143,7 @@ Namespace Pages
         End Sub
 
         Private Sub UpdateResourceUIFromDB(cbl As CheckBoxList, res As ResourceModel, act As ActivityModel)
-            Dim rauth As repo.ResourceActivityAuth = GetResourceActivityAuth(res.ResourceID, act.ActivityID)
+            Dim rauth As Scheduler.ResourceActivityAuth = GetResourceActivityAuth(res.ResourceID, act.ActivityID)
             For i = 0 To cbl.Items.Count - 1
                 'txtboxtest.Text = txtboxtest.Text + "   ,  " + cbl.Items(i).Text + ":" + cblInviteeAuths.Items(i).Value
 
@@ -286,10 +289,10 @@ Namespace Pages
                 ' If update was successful and
                 ' If Granularity changes to bigger number then, remove all future reservations
                 If granularityMinutes > oldGranularityMinutes Then
-                    Dim query As IList(Of repo.Reservation) = DA.Scheduler.Reservation.SelectByResource(res.ResourceID, Date.Now, Date.Now.AddYears(100), False)
-                    For Each rsv As repo.Reservation In query
-                        ReservationUtility.DeleteReservation(rsv.ReservationID)
-                        EmailUtility.EmailOnCanceledByResource(rsv)
+                    Dim query As IList(Of Scheduler.Reservation) = ReservationManager.SelectByResource(res.ResourceID, Date.Now, Date.Now.AddYears(100), False)
+                    For Each rsv As Scheduler.Reservation In query
+                        ReservationManager.DeleteReservation(rsv.ReservationID)
+                        EmailManager.EmailOnCanceledByResource(rsv)
                     Next
                 End If
 
@@ -420,7 +423,7 @@ Namespace Pages
             End If
         End Sub
 
-        'Private Sub LoadOTFSchedTime(res As repo.Resource)
+        'Private Sub LoadOTFSchedTime(res As Scheduler.Resource)
         '    ddlOTFschedTime.Items.Clear()
         '    For i As Integer = res.Granularity To MAX_OTF_SCHED_TIME Step res.Granularity
         '        Dim item As New ListItem

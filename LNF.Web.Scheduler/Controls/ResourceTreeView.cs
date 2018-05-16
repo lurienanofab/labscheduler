@@ -15,7 +15,6 @@ namespace LNF.Web.Scheduler.Controls
     public class ResourceTreeView : WebControl
     {
         #region Control Definitions
-
         protected HtmlInputHidden hidPathDelimiter;
         protected Repeater rptBuilding;
         #endregion
@@ -78,8 +77,7 @@ namespace LNF.Web.Scheduler.Controls
             divTreeView.Controls.Add(hidSelectedPath);
             divTreeView.Controls.Add(hidPathDelimiter);
 
-            SchedulerTreeView treeView = new SchedulerTreeView();
-            TreeItemCollection buildingItems = treeView.Buildings;
+            TreeItemCollection buildingItems = SchedulerTreeView.Current.Buildings;
 
             if (buildingItems != null)
             {
@@ -258,7 +256,8 @@ namespace LNF.Web.Scheduler.Controls
                     // only add if it isn't there already
                     if (!items.Any(x => x.ID == 10030))
                     {
-                        ResourceModel plasma790 = CacheManager.Current.Resources(x => x.ResourceID == 10030).FirstOrDefault();
+                        ResourceModel plasma790 = CacheManager.Current.ResourceTree().Resources().FirstOrDefault(x => x.ResourceID == 10030);
+
                         if (plasma790 != null)
                         {
                             ClientAuthLevel auth = GetCurrentUserAuthLevel(plasma790.ResourceID);

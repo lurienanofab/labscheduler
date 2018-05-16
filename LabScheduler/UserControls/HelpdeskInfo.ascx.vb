@@ -24,7 +24,7 @@ Namespace UserControls
             Dim list As New ArrayList()
             If MultiTool Then
                 If Resources IsNot Nothing Then
-                    Dim resList As IList(Of ResourceModel) = CacheManager.Current.Resources().Where(Function(x) Resources.Contains(x.ResourceID)).ToList()
+                    Dim resList As IList(Of ResourceModel) = CacheManager.Current.ResourceTree().Resources().Where(Function(x) Resources.Contains(x.ResourceID)).ToList()
                     For Each res As ResourceModel In resList
                         list.Add(New With {.id = res.ResourceID, .name = res.ResourceName})
                     Next
@@ -38,7 +38,7 @@ Namespace UserControls
                 End If
             End If
 
-            Return Providers.Serialization.Json.SerializeObject(list)
+            Return ServiceProvider.Current.Serialization.Json.SerializeObject(list)
         End Function
     End Class
 End Namespace

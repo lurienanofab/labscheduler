@@ -26,6 +26,8 @@ namespace LNF.Web.Scheduler
 {
     public static class AjaxUtility
     {
+        public static IClientManager ClientManager => DA.Use<IClientManager>();
+
         public static async Task<object> HandleRequest(HttpContext context)
         {
             string action = context.Request["Action"].ToString();
@@ -39,7 +41,7 @@ namespace LNF.Web.Scheduler
 
             object result = null;
             GenericResult gr;
-            ResourceModel model = CacheManager.Current.GetResource(resourceId);
+            ResourceModel model = CacheManager.Current.ResourceTree().GetResource(resourceId);
 
             switch (action)
             {
@@ -63,15 +65,15 @@ namespace LNF.Web.Scheduler
                     result = gr;
                     break;
                 case "get-buildings":
-                    result = GetBuildings(DA.Scheduler.Resource.Single(resourceId));
+                    result = GetBuildings(DA.Current.Single<Resource>(resourceId));
                     break;
                 case "get-labs":
-                    int buildingId = Utility.ConvertTo(Providers.Context.Current.GetRequestValue("BuildingID"), 0);
-                    result = GetLabs(DA.Scheduler.Resource.Single(resourceId), DA.Scheduler.Building.Single(buildingId));
+                    int buildingId = Utility.ConvertTo(ServiceProvider.Current.Context.GetRequestValue("BuildingID"), 0);
+                    result = GetLabs(DA.Current.Single<Resource>(resourceId), DA.Current.Single<Building>(buildingId));
                     break;
                 case "get-proctechs":
-                    int labId = Utility.ConvertTo(Providers.Context.Current.GetRequestValue("LabID"), 0);
-                    result = GetProcessTechs(DA.Scheduler.Resource.Single(resourceId), DA.Scheduler.Lab.Single(labId));
+                    int labId = Utility.ConvertTo(ServiceProvider.Current.Context.GetRequestValue("LabID"), 0);
+                    result = GetProcessTechs(DA.Current.Single<Resource>(resourceId), DA.Current.Single<Lab>(labId));
                     break;
                 case "add-resource":
                     result = AddResource();
@@ -80,23 +82,23 @@ namespace LNF.Web.Scheduler
                     result = UploadImage();
                     break;
                 case "helpdesk-info":
-                    result = HelpdeskInfo(DA.Scheduler.Resource.Single(resourceId));
+                    result = HelpdeskInfo(DA.Current.Single<Resource>(resourceId));
                     break;
                 case "helpdesk-list-tickets":
-                    result = HelpdeskListTickets(DA.Scheduler.Resource.Single(resourceId));
+                    result = HelpdeskListTickets(DA.Current.Single<Resource>(resourceId));
                     break;
                 case "helpdesk-detail":
                     result = HelpdeskDetail(ticketId);
                     break;
                 case "helpdesk-post-message":
-                    message = Utility.ConvertTo(Providers.Context.Current.GetRequestValue("Message"), string.Empty);
+                    message = Utility.ConvertTo(ServiceProvider.Current.Context.GetRequestValue("Message"), string.Empty);
                     message = string.Format("Posted from scheduler by: {0} ({1})\n----------------------------------------\n{2}", CacheManager.Current.CurrentUser.DisplayName, CacheManager.Current.Email, message);
                     result = HelpdeskPostMessage(ticketId, message);
                     break;
                 case "send-hardware-issue-email":
-                    message = Utility.ConvertTo(Providers.Context.Current.GetRequestValue("message"), string.Empty);
-                    string subject = Utility.ConvertTo(Providers.Context.Current.GetRequestValue("subject"), string.Empty);
-                    result = HelpdeskUtility.SendHardwareIssueEmail(CacheManager.Current.GetResource(resourceId), CacheManager.Current.CurrentUser.ClientID, subject, message);
+                    message = Utility.ConvertTo(ServiceProvider.Current.Context.GetRequestValue("message"), string.Empty);
+                    string subject = Utility.ConvertTo(ServiceProvider.Current.Context.GetRequestValue("subject"), string.Empty);
+                    HelpdeskUtility.SendHardwareIssueEmail(CacheManager.Current.ResourceTree().GetResource(resourceId), CacheManager.Current.CurrentUser.ClientID, subject, message);
                     break;
                 case "interlock":
                     bool state = Utility.ConvertTo(context.Request["State"], false);
@@ -108,10 +110,11 @@ namespace LNF.Web.Scheduler
                     result = new GenericResult() { Success = true, Message = string.Format("current client: {0}", CacheManager.Current.CurrentUser.ClientID), Data = null, Log = null };
                     break;
                 default:
-                    gr = new GenericResult();
-                    gr.Success = false;
-                    gr.Message = "Invalid action.";
-                    result = gr;
+                    result = new GenericResult
+                    {
+                        Success = false,
+                        Message = "Invalid action."
+                    };
                     break;
             }
 
@@ -120,8 +123,8 @@ namespace LNF.Web.Scheduler
 
         private static object GetScheduleItem(Reservation rsv)
         {
-            DateTime start = (rsv.ActualBeginDateTime.HasValue) ? rsv.ActualBeginDateTime.Value : rsv.BeginDateTime;
-            DateTime end = (rsv.ActualEndDateTime.HasValue) ? rsv.ActualEndDateTime.Value : rsv.EndDateTime;
+            DateTime start = rsv.ActualBeginDateTime ?? rsv.BeginDateTime;
+            DateTime end = rsv.ActualEndDateTime ?? rsv.EndDateTime;
             bool allDay = start.Date != end.Date;
 
             return new
@@ -234,7 +237,7 @@ namespace LNF.Web.Scheduler
                     switch (command)
                     {
                         case "get-point-state":
-                            var br = await Providers.Control.GetBlockState(p.Block);
+                            var br = await ServiceProvider.Current.Control.GetBlockState(p.Block);
                             var bs = br.BlockState;
                             if (bs.Points != null)
                             {
@@ -248,7 +251,7 @@ namespace LNF.Web.Scheduler
                             }
                             break;
                         case "set-point-state":
-                            var pr = await Providers.Control.SetPointState(p, state, duration);
+                            var pr = await ServiceProvider.Current.Control.SetPointState(p, state, duration);
 
                             if (pr.Error)
                             {
@@ -282,28 +285,28 @@ namespace LNF.Web.Scheduler
         {
             var result = new GenericResult();
 
-            if (Providers.Context.Current.GetRequestFileCount() > 0)
+            if (ServiceProvider.Current.Context.GetRequestFileCount() > 0)
             {
-                string path = Providers.Context.Current.GetRequestValue("Path").ToString();
-                int resourceId = Utility.ConvertTo(Providers.Context.Current.GetRequestValue("ResourceID"), 0);
+                string path = ServiceProvider.Current.Context.GetRequestValue("Path").ToString();
+                int resourceId = Utility.ConvertTo(ServiceProvider.Current.Context.GetRequestValue("ResourceID"), 0);
                 if (!string.IsNullOrEmpty(path))
                 {
                     if (resourceId > 0)
                     {
-                        if (Providers.Context.Current.GetRequestFileContentLength(0) < 1048596)
+                        if (ServiceProvider.Current.Context.GetRequestFileContentLength(0) < 1048596)
                         {
                             string id = resourceId.ToString().PadLeft(6, '0');
 
                             //Check for existing files
                             string fileName = string.Format("images/{0}/{0}{1}.png", path, id);
                             string iconName = string.Format("images/{0}/{0}{1}_icon.png", path, id);
-                            string filePhysicalName = Path.GetFullPath(Providers.Context.Current.GetRequestPhysicalApplicationPath() + fileName);
-                            string iconPhysicalName = Path.GetFullPath(Providers.Context.Current.GetRequestPhysicalApplicationPath() + iconName);
+                            string filePhysicalName = Path.GetFullPath(ServiceProvider.Current.Context.GetRequestPhysicalApplicationPath() + fileName);
+                            string iconPhysicalName = Path.GetFullPath(ServiceProvider.Current.Context.GetRequestPhysicalApplicationPath() + iconName);
                             if (File.Exists(filePhysicalName)) File.Delete(filePhysicalName);
                             if (File.Exists(iconPhysicalName)) File.Delete(iconPhysicalName);
 
                             //Save original image
-                            Bitmap bImage = new Bitmap(Providers.Context.Current.GetRequestFileInputStream(0));
+                            Bitmap bImage = new Bitmap(ServiceProvider.Current.Context.GetRequestFileInputStream(0));
                             bImage.Save(filePhysicalName, ImageFormat.Png);
 
                             //Save icon image
@@ -350,7 +353,7 @@ namespace LNF.Web.Scheduler
             var result = new GenericResult() { Success = true, Message = string.Empty, Data = null };
 
             int id = (r == null) ? 0 : r.ProcessTech.Lab.Building.BuildingID;
-            IList<Building> query = DA.Scheduler.Building.Query().Where(x => x.IsActive).ToList();
+            IList<Building> query = DA.Current.Query<Building>().Where(x => x.IsActive).ToList();
             result.Data = query
                 .Select(x => new { Text = x.BuildingName, Value = x.BuildingID, Selected = x.BuildingID == id })
                 .OrderBy(x => x.Text);
@@ -408,7 +411,7 @@ namespace LNF.Web.Scheduler
             {
                 IList<ResourceClientInfo> toolEng = ResourceClientInfoUtility.GetToolEngineers(res.ResourceID).ToList();
                 int[] existingToolEngClientIDs = toolEng.Select(x => x.ClientID).ToArray();
-                IList<Client> staff = Client.FindByPrivilege(ClientPrivilege.Staff, true).Where(x => !existingToolEngClientIDs.Contains(x.ClientID)).ToList();
+                IList<Client> staff = ClientManager.FindByPrivilege(ClientPrivilege.Staff, true).Where(x => !existingToolEngClientIDs.Contains(x.ClientID)).ToList();
 
                 data = new
                 {
@@ -423,13 +426,16 @@ namespace LNF.Web.Scheduler
         {
             if (Validate(res, c, result))
             {
-                ResourceClient rc = new ResourceClient();
-                rc.AuthLevel = ClientAuthLevel.ToolEngineer;
-                rc.ClientID = c.ClientID;
-                rc.EmailNotify = null;
-                rc.Expiration = null;
-                rc.PracticeResEmailNotify = null;
-                rc.Resource = DA.Current.Single<Resource>(res.ResourceID);
+                ResourceClient rc = new ResourceClient
+                {
+                    AuthLevel = ClientAuthLevel.ToolEngineer,
+                    ClientID = c.ClientID,
+                    EmailNotify = null,
+                    Expiration = null,
+                    PracticeResEmailNotify = null,
+                    Resource = DA.Current.Single<Resource>(res.ResourceID)
+                };
+
                 DA.Current.Insert(rc);
             }
         }
@@ -450,9 +456,7 @@ namespace LNF.Web.Scheduler
         {
             var result = new GenericResult();
 
-            dynamic v;
-
-            if (Validate(result, out v))
+            if (Validate(result, out dynamic v))
             {
                 Lab lab = DA.Current.Single<Lab>(v.LabID);
 
@@ -566,16 +570,16 @@ namespace LNF.Web.Scheduler
 
         private static bool Validate(GenericResult result, out object obj)
         {
-            int buildingId = Utility.ConvertTo(Providers.Context.Current.GetRequestValue("BuildingID"), 0);
-            int labId = Utility.ConvertTo(Providers.Context.Current.GetRequestValue("LabID"), 0);
-            int proctechId = Utility.ConvertTo(Providers.Context.Current.GetRequestValue("ProcessTechID"), 0);
-            int resourceId = Utility.ConvertTo(Providers.Context.Current.GetRequestValue("ResourceID"), 0);
-            int editResourceId = Utility.ConvertTo(Providers.Context.Current.GetRequestValue("EditResourceID"), 0);
-            string resourceName = Providers.Context.Current.GetRequestValue("ResourceName").ToString();
-            bool schedulable = Utility.ConvertTo(Providers.Context.Current.GetRequestValue("Schedulable"), false);
-            bool active = Utility.ConvertTo(Providers.Context.Current.GetRequestValue("Active"), false);
-            string description = Providers.Context.Current.GetRequestValue("Description").ToString();
-            string helpdeskEmail = Providers.Context.Current.GetRequestValue("HelpdeskEmail").ToString();
+            int buildingId = Utility.ConvertTo(ServiceProvider.Current.Context.GetRequestValue("BuildingID"), 0);
+            int labId = Utility.ConvertTo(ServiceProvider.Current.Context.GetRequestValue("LabID"), 0);
+            int proctechId = Utility.ConvertTo(ServiceProvider.Current.Context.GetRequestValue("ProcessTechID"), 0);
+            int resourceId = Utility.ConvertTo(ServiceProvider.Current.Context.GetRequestValue("ResourceID"), 0);
+            int editResourceId = Utility.ConvertTo(ServiceProvider.Current.Context.GetRequestValue("EditResourceID"), 0);
+            string resourceName = ServiceProvider.Current.Context.GetRequestValue("ResourceName").ToString();
+            bool schedulable = Utility.ConvertTo(ServiceProvider.Current.Context.GetRequestValue("Schedulable"), false);
+            bool active = Utility.ConvertTo(ServiceProvider.Current.Context.GetRequestValue("Active"), false);
+            string description = ServiceProvider.Current.Context.GetRequestValue("Description").ToString();
+            string helpdeskEmail = ServiceProvider.Current.Context.GetRequestValue("HelpdeskEmail").ToString();
 
             obj = null;
 
@@ -614,7 +618,7 @@ namespace LNF.Web.Scheduler
                 return false;
             }
 
-            if (DA.Scheduler.Resource.Single(editResourceId) != null && editResourceId != resourceId)
+            if (DA.Current.Single<Resource>(editResourceId) != null && editResourceId != resourceId)
             {
                 result.Success = false;
                 result.Message = string.Format("Resource ID {0} is already in use.", editResourceId);

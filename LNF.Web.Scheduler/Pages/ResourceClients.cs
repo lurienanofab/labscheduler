@@ -2,11 +2,15 @@
 using LNF.CommonTools;
 using LNF.Models.Data;
 using LNF.Models.Scheduler;
+using LNF.Repository;
+using LNF.Repository.Scheduler;
+using LNF.Repository.Data;
 using LNF.Scheduler;
 using LNF.Scheduler.Data;
 using LNF.Web.Scheduler.Content;
 using System;
-using System.Data;
+using System.Collections.Generic;
+using System.Linq;
 using System.Web.UI.HtmlControls;
 using System.Web.UI.WebControls;
 
@@ -15,612 +19,385 @@ namespace LNF.Web.Scheduler.Pages
     public class ResourceClients : SchedulerPage
     {
         #region Controls
-        protected Literal litErrMsg;
-        protected Literal litCreateModifyResourceClient;
-        protected Literal litClientName;
-        protected Literal litNoTE;
-        protected Literal litNoCheckout;
-        protected Literal litNoTrainer;
-        protected Literal litNoUser;
-        protected Literal litClientListTitle;
-        protected HyperLink hypEmailToolEngineers;
-        protected HyperLink hypEmailCheckouts;
-        protected HyperLink hypEmailTrainers;
-        protected HyperLink hypEmailUsers;
-        protected HyperLink hypEmailAll;
-        protected PlaceHolder phAddUser;
-        protected PlaceHolder phCheckouts;
-        protected PlaceHolder phTrainers;
-        protected PlaceHolder phUsers;
-        protected PlaceHolder phEmailList;
-        protected PlaceHolder phClientName;
-        protected DropDownList ddlAuthLevel;
-        protected DropDownList ddlClients;
-        protected DropDownList ddlPager;
-        protected DataGrid dgTEs;
-        protected DataGrid dgTrainers;
-        protected DataGrid dgCheckouts;
-        protected DataGrid dgUsers;
-        protected HiddenField hidClientID;
-        protected Button btnSubmit;
-        protected Button btnCancel;
-        protected HtmlGenericControl divPager;
-        protected Repeater rptClientList;
+        protected Literal ErrorMessageLiteral;
+        protected Literal ClientNameLiteral;
+        protected Literal EmailListTitleLiteral;
+        protected HyperLink EmailAllHyperLink;
+        protected HyperLink EmailToolEngineersHyperLink;
+        protected HyperLink EmailTrainersHyperLink;
+        protected HyperLink EmailSuperUsersHyperLink;
+        protected HyperLink EmailAuthorizedUsersHyperLink;
+        protected PlaceHolder NoToolEngineersPlaceHolder;
+        protected PlaceHolder NoTrainersPlaceHolder;
+        protected PlaceHolder NoSuperUsersPlaceHolder;
+        protected PlaceHolder NoAuthorizedUsersPlaceHolder;
+        protected PlaceHolder AddUserPlaceHolder;
+        protected PlaceHolder TrainersPlaceHolder;
+        protected PlaceHolder SuperUsersPlaceHolder;
+        protected PlaceHolder AuthorizedUsersPlaceHolder;
+        protected PlaceHolder EmailListPlaceHolder;
+        protected PlaceHolder ClientNamePlaceHolder;
+        protected PlaceHolder ErrorMessagePlaceHolder;
+        protected DropDownList AuthLevelDropDownList;
+        protected DropDownList ClientsDropDownList;
+        protected Repeater ToolEngineersRepeater;
+        protected Repeater TrainersRepeater;
+        protected Repeater SuperUsersRepeater;
+        protected Repeater AuthorizedUsersRepeater;
+        protected Repeater EmailListRepeater;
+        protected HiddenField ClientIdHiddenField;
+        protected Button SubmitButton;
+        protected Button CancelButton;
         #endregion
 
-        protected override void OnLoad(EventArgs e)
-        {
-            ResourceModel res = Request.SelectedPath().GetResource();
+        private IList<ResourceClientItem> CurrentClients { get; set; }
 
-            if (res == null)
-                Response.Redirect("~");
+        private ResourceModel CurrentResource => Request.SelectedPath().GetResource();
+
+        protected void Page_Load(object sender, EventArgs e)
+        {
+            CurrentClients = CreateResourceClientItems(DA.Current.Query<ResourceClientInfo>().Where(x => x.ResourceID == CurrentResource.ResourceID)).ToList();
 
             if (!Page.IsPostBack)
             {
-                Session.Remove("dtAvailClients");
-                Session.Remove("dtAuthLevels");
-                Session.Remove("dtClients");
+                FillAuthLevels();
+                FillClients();
+                FillToolEngineers();
 
-                litErrMsg.Text = string.Empty;
-                LoadResourceClients(res);
-                LoadAuthLevels(res);
-                EnableEdit(false);
-
-                litClientListTitle.Text = string.Format("Client List for {0} [{1}]", res.ResourceName, res.ResourceID);
-            }
-
-            Session["ReturnFromEmail"] = SchedulerUtility.GetReturnUrl("ResourceClients.aspx", Request.SelectedPath(), 0, Request.SelectedDate());
-        }
-
-        private void LoadResourceClients(ResourceModel res)
-        {
-            // Load Available Clients and Resource Clients
-            DataTable dtAvailClients = GetAvailClientsDataTable();
-            DataTable dtClients = GetClientsDataTable();
-
-            // Add email to "Everyone"
-            DataRow drRC = FindRow(dtClients, "ClientID = {0}", -1);
-
-            if (drRC != null)
-                drRC["Email"] = EmailEveryone(dtClients);
-
-            // Bind Avail Clients
-            dtAvailClients.DefaultView.Sort = "DisplayName ASC";
-            ddlClients.DataSource = dtAvailClients.DefaultView;
-            ddlClients.DataBind();
-
-            // Bind Engineers
-            DataView dv = new DataView(dtClients);
-            dv.Sort = "DisplayName";
-            dv.RowFilter = string.Format("AuthLevel = {0}", Convert.ToInt32(ClientAuthLevel.ToolEngineer));
-            dgTEs.DataSource = dv;
-            dgTEs.DataBind();
-
-            if (res.IsSchedulable)
-            {
-                // Bind Trainers
-                dv.RowFilter = string.Format("AuthLevel = {0}", Convert.ToInt32(ClientAuthLevel.Trainer));
-                dgTrainers.DataSource = dv;
-                dgTrainers.DataBind();
-
-                // Bind Super User
-                dv.RowFilter = string.Format("AuthLevel = {0}", Convert.ToInt32(ClientAuthLevel.SuperUser));
-                dgCheckouts.DataSource = dv;
-                dgCheckouts.DataBind();
-
-                // Bind Users
-                dv.RowFilter = string.Format("AuthLevel = {0}", Convert.ToInt32(ClientAuthLevel.AuthorizedUser));
-                dgUsers.DataSource = dv;
-                dgUsers.DataBind();
-            }
-            else
-            {
-                phCheckouts.Visible = false;
-                phTrainers.Visible = false;
-                phUsers.Visible = false;
-                phEmailList.Visible = false;
-            }
-
-            DataTable dtClientList = CreateClientListDataTable(dtClients);
-            rptClientList.DataSource = dtClientList;
-            rptClientList.DataBind();
-        }
-
-        private DataTable CreateClientListDataTable(DataTable dtClients)
-        {
-            DataTable dt = new DataTable();
-            dt.Columns.Add("ClientID", typeof(int));
-            dt.Columns.Add("AuthLevel", typeof(int));
-            dt.Columns.Add("AuthLevelText", typeof(string));
-            dt.Columns.Add("DisplayName", typeof(string));
-            dt.Columns.Add("Email", typeof(string));
-            dt.Columns.Add("SortOrder", typeof(int));
-
-            foreach (DataRow dr in dtClients.Rows)
-            {
-                int clientId = dr.Field<int>("ClientID");
-
-                if (clientId > 0)
+                if (CurrentResource.IsSchedulable)
                 {
-                    ClientAuthLevel authLevel = dr.Field<ClientAuthLevel>("AuthLevel");
-                    ClientAuthLevel includedAuthLevels = ClientAuthLevel.ToolEngineer | ClientAuthLevel.Trainer | ClientAuthLevel.SuperUser | ClientAuthLevel.AuthorizedUser;
-
-                    if ((authLevel & includedAuthLevels) > 0)
-                    {
-                        DataRow ndr = dt.NewRow();
-
-                        ndr["ClientID"] = clientId;
-                        ndr["AuthLevel"] = (int)authLevel;
-                        ndr["AuthLevelText"] = GetAuthLevelText(authLevel);
-                        ndr["DisplayName"] = dr["DisplayName"];
-                        ndr["Email"] = dr["Email"];
-                        ndr["SortOrder"] = GetAuthLevelSortOrder(authLevel);
-
-                        dt.Rows.Add(ndr);
-                    }
+                    FillTrainers();
+                    FillSuperUsers();
+                    FillAuthorizedUsers();
                 }
-            }
-
-            dt.DefaultView.Sort = "SortOrder ASC, DisplayName ASC";
-
-            return dt;
-        }
-
-        private DataRow FindRow(DataTable dt, string where, params object[] values)
-        {
-            DataRow dr = null;
-            DataRow[] rows = dt.Select(string.Format(where, values));
-            if (rows.Length > 0)
-                dr = rows[0];
-            return dr;
-        }
-
-        private string EmailEveryone(DataTable dt)
-        {
-            string result = string.Empty;
-            string comma = string.Empty;
-            foreach (DataRow dr in dt.Rows)
-            {
-                if (dr.Field<int>("ClientID") != -1)
-                {
-                    result += comma + dr["Email"].ToString();
-                    comma = ", ";
-                }
-            }
-            return result;
-        }
-
-        private void LoadAuthLevels(ResourceModel res)
-        {
-            DataTable dtAuthLevels = GetAuthLevelsDataTable();
-
-            ClientAuthLevel currentAuthLevel = GetCurrentAuthLevel();
-
-            // If resource is not schedulable, then only TE can be authorized by TE
-            if (!res.IsSchedulable)
-            {
-                dtAuthLevels.DefaultView.RowFilter = string.Format("AuthLevelID = {0}", Convert.ToInt32(ClientAuthLevel.ToolEngineer));
-                if (currentAuthLevel < ClientAuthLevel.Trainer)
-                    phAddUser.Visible = false;
-            }
-            else
-            {
-                switch (currentAuthLevel)
-                {
-                    case ClientAuthLevel.ToolEngineer:
-                        // Engineers can authorize any type of users
-                        dtAuthLevels.DefaultView.RowFilter = string.Empty;
-                        break;
-                    case ClientAuthLevel.Trainer:
-                        // Checkouts can only authorize regular users
-                        dtAuthLevels.DefaultView.RowFilter = string.Format("AuthLevelID = {0}", Convert.ToInt32(ClientAuthLevel.AuthorizedUser));
-                        break;
-                    default:
-                        // Others can't authorize anyone
-                        break;
-                }
-
-                if (currentAuthLevel < ClientAuthLevel.Trainer)
-                    phAddUser.Visible = false;
-            }
-
-            ddlAuthLevel.DataSource = dtAuthLevels.DefaultView;
-            ddlAuthLevel.DataBind();
-            ddlAuthLevel_SelectedIndexChanged(null, null);
-        }
-
-        protected void ddlAuthLevel_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            DataTable dtAvailClients = GetAvailClientsDataTable();
-
-            string selectedClient = ddlClients.SelectedValue;
-
-            ClientAuthLevel selectedAuthLevel = (ClientAuthLevel)Convert.ToInt32(ddlAuthLevel.SelectedValue);
-
-            switch (selectedAuthLevel)
-            {
-                case ClientAuthLevel.ToolEngineer:
-                    // Display Staffs (only staffs are eligible to be tool engineers)
-                    ddlClients.Items.Clear();
-                    foreach (DataRow dr in dtAvailClients.Rows)
-                    {
-                        if (dr["Privs"] != DBNull.Value && (Convert.ToInt32(dr["Privs"]) & (int)ClientPrivilege.Staff) > 0)
-                            ddlClients.Items.Add(new ListItem(dr["DisplayName"].ToString(), dr["ClientID"].ToString()));
-                    }
-                    break;
-                case ClientAuthLevel.SuperUser:
-                case ClientAuthLevel.Trainer:
-                    // Display all available clients, except "Everyone"
-                    dtAvailClients.DefaultView.RowFilter = "ClientID <> -1";
-                    ddlClients.DataSource = dtAvailClients.DefaultView;
-                    ddlClients.DataBind();
-                    break;
-                default:
-                    // Display all available clients
-                    dtAvailClients.DefaultView.RowFilter = string.Empty;
-                    ddlClients.DataSource = dtAvailClients.DefaultView;
-                    ddlClients.DataBind();
-                    break;
-            }
-
-            ListItem item = ddlClients.Items.FindByValue(selectedClient);
-
-            if (item != null)
-                item.Selected = true;
-        }
-
-        protected void btnSubmit_Click(object sender, EventArgs e)
-        {
-            litErrMsg.Text = string.Empty;
-
-            ResourceModel res = Request.SelectedPath().GetResource();
-
-            // Error Checking
-            if (ddlClients.Items.Count == 0)
-            {
-                litErrMsg.Text = WebUtility.BootstrapAlert("danger", "There are no available clients to add.");
-                return;
-            }
-
-            // Update Dataset
-            try
-            {
-                DataTable dtClients = GetClientsDataTable();
-                DataTable dtAvailClients = GetAvailClientsDataTable();
-
-                DataRow drClient = null;
-                DataRow drAvailC = null;
-                if (btnSubmit.CommandName == "Insert")
-                {
-                    drClient = dtClients.NewRow();
-                    drClient["ResourceID"] = res.ResourceID;
-                    drClient["ClientID"] = ddlClients.SelectedValue;
-                    drClient["DisplayName"] = ddlClients.SelectedItem.Text;
-                    drAvailC = dtAvailClients.Rows.Find(ddlClients.SelectedValue);
-                    drClient["Privs"] = drAvailC["Privs"];
-                    drClient["Email"] = drAvailC["Email"];
-                    dtAvailClients.Rows.Remove(drAvailC);
-                    dtAvailClients.AcceptChanges();
-                }
-                else if (btnSubmit.CommandName == "Update")
-                {
-                    drClient = FindRow(dtClients, "ClientID = {0}", hidClientID.Value);
-                }
-
-                // Only Auth Users needs to set expiration date
-                drClient["Authlevel"] = ddlAuthLevel.SelectedValue;
-                if ((ClientAuthLevel)drClient["AuthLevel"] == ClientAuthLevel.AuthorizedUser)
-                    drClient["Expiration"] = DateTime.Now.AddMonths(res.AuthDuration);
                 else
-                    drClient["Expiration"] = DBNull.Value;
+                {
+                    TrainersPlaceHolder.Visible = false;
+                    SuperUsersPlaceHolder.Visible = false;
+                    AuthorizedUsersPlaceHolder.Visible = false;
+                    EmailListPlaceHolder.Visible = false;
+                }
 
-                if (btnSubmit.CommandName == "Insert")
-                    dtClients.Rows.Add(drClient);
+                FillEmailList();
 
-                ResourceClientData.Update(dtClients);
-
-                // clear cache so it gets reloaded
-                CacheManager.Current.ClearResourceClients(res.ResourceID);
-
-                LoadResourceClients(res);
-
-                EnableEdit(false);
-            }
-            catch (Exception ex)
-            {
-                litErrMsg.Text = WebUtility.BootstrapAlert("danger", ex.Message);
+                SetHyperLinks();
             }
         }
 
-        protected void btnCancel_Click(object sender, EventArgs e)
+        private void FillAuthLevels()
         {
-            EnableEdit(false);
-        }
-
-        protected void dg_DataBinding(object sender, EventArgs e)
-        {
-            ResourceModel res = Request.SelectedPath().GetResource();
-
-            DataGrid dgClient = (DataGrid)sender;
-            Literal litNoData = null;
-            switch (dgClient.ID)
+            if (CanAuthorize())
             {
-                case "dgTEs":
-                    // Tool Engineers
-                    litNoData = litNoTE;
-                    hypEmailToolEngineers.NavigateUrl = string.Format("~/Contact.aspx?Privs=16&Path={0}&Date={1:yyyy-MM-dd}", Request.SelectedPath().UrlEncode(), Request.SelectedDate());
-                    break;
-                case "dgCheckouts":
-                    // Super Users
-                    litNoData = litNoCheckout;
-                    hypEmailCheckouts.NavigateUrl = string.Format("~/Contact.aspx?Privs=4&Path={0}&Date={1:yyyy-MM-dd}", Request.SelectedPath().UrlEncode(), Request.SelectedDate());
-                    break;
-                case "dgTrainers":
-                    // Trainers
-                    litNoData = litNoTrainer;
-                    hypEmailTrainers.NavigateUrl = string.Format("~/Contact.aspx?Privs=8&Path={0}&Date={1:yyyy-MM-dd}", Request.SelectedPath().UrlEncode(), Request.SelectedDate());
-                    break;
-                case "dgUsers":
-                    // Users
-                    litNoData = litNoUser;
-                    hypEmailUsers.NavigateUrl = string.Format("~/Contact.aspx?Privs=2&Path={0}&Date={1:yyyy-MM-dd}", Request.SelectedPath().UrlEncode(), Request.SelectedDate());
-                    break;
-            }
-
-            // All
-            hypEmailAll.NavigateUrl = string.Format("~/Contact.aspx?Privs=62&Path={0}&Date={1:yyyy-MM-dd}", Request.SelectedPath().UrlEncode(), Request.SelectedDate());
-
-            DataView dvClients = (DataView)dgClient.DataSource;
-
-            if (dvClients.Count == 0)
-            {
-                dgClient.Visible = false;
-                litNoData.Visible = true;
-
-                if (dgClient.ID == "dgUsers")
-                    divPager.Visible = false;
+                AuthLevelDropDownList.DataSource = DA.Current.Query<AuthLevel>().Where(x => x.Authorizable == 1).OrderBy(x => x.AuthLevelID);
+                AuthLevelDropDownList.DataBind();
+                AddUserPlaceHolder.Visible = true;
             }
             else
             {
-                dgClient.Visible = true;
-                litNoData.Visible = false;
-
-                // Pager for dgUser
-                if (dgClient.ID == "dgUsers")
-                {
-                    ddlPager.Items.Clear();
-                    int pSize = dgUsers.PageSize;
-                    for (int i = 0; i <= dvClients.Count - 1; i += pSize)
-                    {
-                        ListItem pagerItem = new ListItem();
-                        pagerItem.Value = (i / pSize).ToString();
-                        int j = (i + (pSize - 1) >= dvClients.Count) ? dvClients.Count - 1 : i + (pSize - 1);
-                        pagerItem.Text = dvClients[i].Row["DisplayName"].ToString() + " ... " + dvClients[j].Row["DisplayName"].ToString();
-                        ddlPager.Items.Add(pagerItem);
-                    }
-                    ddlPager.SelectedValue = dgUsers.CurrentPageIndex.ToString();
-                }
+                AddUserPlaceHolder.Visible = false;
             }
         }
 
-        protected void dg_ItemDataBound(object sender, DataGridItemEventArgs e)
+        private void FillClients()
         {
-            if (e.Item.ItemType == ListItemType.Item || e.Item.ItemType == ListItemType.AlternatingItem)
+            var existing = CurrentClients.Select(x => x.ClientID).ToArray();
+
+            var p = ClientPrivilege.LabUser | ClientPrivilege.Staff;
+
+            var query = DA.Current.Query<ClientInfo>().Where(x => (x.Privs & p) > 0 && x.ClientActive && !existing.Contains(x.ClientID)).OrderBy(x => x.LName).ThenBy(x => x.FName);
+
+            ClientsDropDownList.DataSource = query;
+            ClientsDropDownList.DataBind();
+
+            if (!CurrentClients.Any(x => x.ClientID == -1))
+                ClientsDropDownList.Items.Insert(0, new ListItem(" - Everyone - ", "-1"));
+        }
+
+        private void FillEmailList()
+        {
+            EmailListRepeater.DataSource = CurrentClients.Where(x => x.ClientID != -1).OrderBy(x => x.DisplayName);
+            EmailListRepeater.DataBind();
+        }
+
+        private void FillToolEngineers()
+        {
+            var items = CurrentClients.Where(x => x.AuthLevel == ClientAuthLevel.ToolEngineer).OrderByDescending(x => x.IsEveryone).ThenBy(x => x.DisplayName);
+            ToolEngineersRepeater.DataSource = items;
+            ToolEngineersRepeater.DataBind();
+            NoToolEngineersPlaceHolder.Visible = items.Count() == 0;
+        }
+
+        private void FillTrainers()
+        {
+            var items = CurrentClients.Where(x => x.AuthLevel == ClientAuthLevel.Trainer).OrderByDescending(x => x.IsEveryone).ThenBy(x => x.DisplayName);
+            TrainersRepeater.DataSource = items;
+            TrainersRepeater.DataBind();
+            NoTrainersPlaceHolder.Visible = items.Count() == 0;
+        }
+
+        private void FillSuperUsers()
+        {
+            var items = CurrentClients.Where(x => x.AuthLevel == ClientAuthLevel.SuperUser).OrderByDescending(x => x.IsEveryone).ThenBy(x => x.DisplayName);
+            SuperUsersRepeater.DataSource = items;
+            SuperUsersRepeater.DataBind();
+            NoSuperUsersPlaceHolder.Visible = items.Count() == 0;
+        }
+
+        private void FillAuthorizedUsers()
+        {
+            var items = CurrentClients.Where(x => x.AuthLevel == ClientAuthLevel.AuthorizedUser).OrderByDescending(x => x.IsEveryone).ThenByDescending(x => x.ShowExtendButton).ThenBy(x => x.DisplayName);
+            AuthorizedUsersRepeater.DataSource = items;
+            AuthorizedUsersRepeater.DataBind();
+            NoAuthorizedUsersPlaceHolder.Visible = items.Count() == 0;
+        }
+
+        private ClientAuthLevel GetSelectedAuthLevel()
+        {
+            return (ClientAuthLevel)Enum.Parse(typeof(ClientAuthLevel), AuthLevelDropDownList.SelectedValue);
+        }
+
+        private IEnumerable<ResourceClientItem> CreateResourceClientItems(IEnumerable<ResourceClientInfo> source)
+        {
+            return source.Select(x => new ResourceClientItem()
             {
-                try
-                {
-                    ResourceModel res = Request.SelectedPath().GetResource();
-
-                    string emailLinkName = null;
-                    string editName = null;
-                    string deleteName = null;
-
-                    string senderId = ((DataGrid)sender).ID;
-
-                    switch (senderId)
-                    {
-                        case "dgTEs":
-                            emailLinkName = "hypToolEngineer";
-                            editName = "ibtnEditTE";
-                            deleteName = "ibtnDeleteTE";
-                            break;
-                        case "dgCheckouts":
-                            emailLinkName = "hypCheckout";
-                            editName = "ibtnEditCheckout";
-                            deleteName = "ibtnDeleteCheckout";
-                            break;
-                        case "dgTrainers":
-                            emailLinkName = "hypTrainer";
-                            editName = "ibtnEditTrainer";
-                            deleteName = "ibtnDeleteTrainer";
-                            break;
-                        case "dgUsers":
-                            emailLinkName = "hypUser";
-                            editName = "ibtnEditUser";
-                            deleteName = "ibtnDeleteUser";
-                            break;
-                    }
-
-                    ClientAuthLevel authLevel = GetCurrentAuthLevel();
-
-                    DataItemHelper di = new DataItemHelper(e.Item.DataItem);
-                    HyperLink emailLink = (HyperLink)e.Item.FindControl(emailLinkName);
-                    emailLink.Text = di["DisplayName"].ToString();
-                    emailLink.NavigateUrl = string.Format("~/Contact.aspx?ClientID={0}&Path={1}&Date={2:yyyy-MM-dd}", di["ClientID"], Request.SelectedPath().UrlEncode(), Request.SelectedDate());
-                    emailLink.Attributes.Add("title", di["Email"].ToString());
-
-                    if (authLevel == ClientAuthLevel.Trainer || authLevel == ClientAuthLevel.ToolEngineer)
-                    {
-                        if (authLevel == ClientAuthLevel.ToolEngineer || senderId == "dgUsers")
-                        {
-                            ImageButton btnDelete = (ImageButton)e.Item.FindControl(deleteName);
-                            btnDelete.Attributes.Add("onclick", "return confirm('Are you sure you want to delete this user?');");
-                        }
-
-                        if (senderId == "dgUsers")
-                        {
-                            // if we are in dgUsers, then we have to see if we need to show the E button
-                            ImageButton btnExtend = (ImageButton)e.Item.FindControl("ibtnExtend");
-
-                            DateTime expiration;
-                            if (di["Expiration"] == DBNull.Value)
-                                expiration = DateTime.Now.AddDays(10);
-                            else
-                                expiration = Convert.ToDateTime(di["Expiration"]);
-
-                            if (DateTime.Now > expiration.AddDays(-30 * Properties.Current.AuthExpWarning * res.AuthDuration))
-                                btnExtend.Visible = true;
-                            else
-                                btnExtend.Visible = false;
-                        }
-                    }
-                    else
-                    {
-                        ((ImageButton)e.Item.FindControl(editName)).Visible = false;
-                        ((ImageButton)e.Item.FindControl(deleteName)).Visible = false;
-                        if (senderId == "dgUsers")
-                            ((ImageButton)e.Item.FindControl("ibtnExtend")).Visible = false;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    litErrMsg.Text = WebUtility.BootstrapAlert("danger", ex.Message);
-                }
-            }
+                ResourceClientID = x.ResourceClientID,
+                ClientID = x.ClientID,
+                DisplayName = x.DisplayName,
+                Email = x.Email,
+                ContactUrl = GetContactUrl(x.ClientID),
+                AuthLevel = x.AuthLevel,
+                Expiration = x.Expiration,
+                AuthDuration = CurrentResource.AuthDuration
+            });
         }
 
-        protected void dg_ItemCommand(object source, DataGridCommandEventArgs e)
+        private string GetContactUrl(int clientId)
         {
-            ResourceModel res = Request.SelectedPath().GetResource();
+            return $"~/Contact.aspx?ClientID={clientId}&Path={Request.SelectedPath()}&Date={Request.SelectedDate():yyyy-MM-dd}";
+        }
 
-            string senderId = ((DataGrid)source).ID;
+        private void Fill(ClientAuthLevel authLevel)
+        {
+            if ((authLevel & ClientAuthLevel.ToolEngineer) > 0)
+                FillToolEngineers();
+
+            if ((authLevel & ClientAuthLevel.Trainer) > 0)
+                FillTrainers();
+
+            if ((authLevel & ClientAuthLevel.SuperUser) > 0)
+                FillSuperUsers();
+
+            if ((authLevel & ClientAuthLevel.AuthorizedUser) > 0)
+                FillAuthorizedUsers();
+
+            FillEmailList();
+        }
+
+        private void SetExpiration(ResourceClient rc)
+        {
+            if (rc.AuthLevel == ClientAuthLevel.AuthorizedUser)
+                rc.Expiration = DateTime.Now.AddMonths(CurrentResource.AuthDuration);
+        }
+
+        private void CancelEdit()
+        {
+            ClientIdHiddenField.Value = string.Empty;
+            ClientNameLiteral.Text = string.Empty;
+            ClientNamePlaceHolder.Visible = false;
+            ClientsDropDownList.Visible = true;
+            SubmitButton.Text = "Authorize Client";
+            SubmitButton.CommandName = "Authorize";
+            AuthLevelDropDownList.SelectedIndex = 0;
+        }
+
+        private void SetHyperLinks()
+        {
+            var all = ClientAuthLevel.AuthorizedUser | ClientAuthLevel.SuperUser | ClientAuthLevel.Trainer | ClientAuthLevel.ToolEngineer | ClientAuthLevel.RemoteUser;
+            SetHyperLinkNavigateUrl(EmailAllHyperLink, all);
+            SetHyperLinkNavigateUrl(EmailToolEngineersHyperLink, ClientAuthLevel.ToolEngineer);
+            SetHyperLinkNavigateUrl(EmailTrainersHyperLink, ClientAuthLevel.Trainer);
+            SetHyperLinkNavigateUrl(EmailSuperUsersHyperLink, ClientAuthLevel.SuperUser);
+            SetHyperLinkNavigateUrl(EmailAuthorizedUsersHyperLink, ClientAuthLevel.AuthorizedUser);
+        }
+
+        private void SetHyperLinkNavigateUrl(HyperLink hyp, ClientAuthLevel authLevel)
+        {
+            hyp.NavigateUrl = $"~/Contact.aspx?Privs={(int)authLevel}&Path={Request.SelectedPath()}&Date={Request.SelectedDate():yyyy-MM-dd}";
+        }
+
+        protected bool CanModify()
+        {
+            return CanAuthorize();
+        }
+
+        protected bool CanDelete()
+        {
+            return CanAuthorize();
+        }
+
+        protected bool CanExtend()
+        {
+            return CanAuthorize();
+        }
+
+        protected bool CanAuthorize()
+        {
+            var p = ClientAuthLevel.Trainer | ClientAuthLevel.ToolEngineer;
+            var currentUserAuthLevel = DA.Use<IReservationManager>().GetAuthLevel(CurrentClients, CurrentUser);
+            return (currentUserAuthLevel & p) > 0;
+        }
+
+        protected void ShowErrorMessage(string msg)
+        {
+            ErrorMessageLiteral.Text = msg;
+            ErrorMessagePlaceHolder.Visible = string.IsNullOrEmpty(msg);
+        }
+
+        protected void SubmitButton_Command(object sender, CommandEventArgs e)
+        {
+            ShowErrorMessage(string.Empty);
 
             try
             {
-                DataTable dtClients = GetClientsDataTable();
-                DataTable dtAvailClients = GetAvailClientsDataTable();
+                int clientId;
+                var selectedAuthLevel = GetSelectedAuthLevel();
+                var resourceId = CurrentResource.ResourceID;
+                ClientAuthLevel refreshAuthLevel = selectedAuthLevel;
 
-                DataRow drClient = dtClients.Select(string.Format("ClientID = {0}", e.Item.Cells[0].Text))[0];
-
-                if (e.CommandName == "Edit")
+                if (e.CommandName == "Authorize")
                 {
-                    EnableEdit(false);
-                    hidClientID.Value = drClient["ClientID"].ToString();
-                    litClientName.Text = drClient["DisplayName"].ToString();
-                    ddlAuthLevel.Items.FindByValue(drClient["AuthLevel"].ToString()).Selected = true;
-                    EnableEdit(true);
-                }
-                else if (e.CommandName == "Delete")
-                {
-                    // Insert into available clients
-                    int clientId = Convert.ToInt32(drClient["ClientID"]);
-                    if (clientId != -1)
+                    clientId = int.Parse(ClientsDropDownList.SelectedValue);
+                    var rc = new ResourceClient()
                     {
-                        DataRow dr = dtAvailClients.NewRow();
-                        dr["ClientID"] = clientId;
-                        dr["Privs"] = drClient["Privs"];
-                        dr["DisplayName"] = drClient["DisplayName"];
-                        dr["Email"] = drClient["Email"];
-                        dtAvailClients.Rows.Add(dr);
-                    }
+                        Resource = DA.Current.Single<Resource>(resourceId),
+                        ClientID = clientId,
+                        AuthLevel = selectedAuthLevel,
+                        Expiration = null,
+                        EmailNotify = null,
+                        PracticeResEmailNotify = null
+                    };
 
-                    // Delete from resource clients
-                    drClient.Delete();
-                    ResourceClientData.Update(dtClients);
-                    LoadResourceClients(res);
+                    SetExpiration(rc);
+
+                    DA.Current.Insert(rc);
+
+                    CurrentClients.Add(new ResourceClientItem()
+                    {
+                        ResourceClientID = rc.ResourceClientID,
+                        ClientID = clientId,
+                        AuthLevel = selectedAuthLevel,
+                        DisplayName = ClientsDropDownList.SelectedItem.Text,
+                        Expiration = rc.Expiration,
+                        ContactUrl = GetContactUrl(clientId),
+                        AuthDuration = CurrentResource.AuthDuration
+                    });
                 }
-                else if (e.CommandName == "Extend")
+                else if (e.CommandName == "Modify")
                 {
-                    drClient["Expiration"] = DateTime.Now.AddMonths(res.AuthDuration);
-                    ResourceClientData.Update(dtClients);
-                    LoadResourceClients(res);
+                    clientId = int.Parse(ClientIdHiddenField.Value);
+                    var cc = CurrentClients.FirstOrDefault(x => x.ClientID == clientId);
+                    if (cc != null)
+                    {
+                        refreshAuthLevel |= cc.AuthLevel;
+                        var rc = DA.Current.Single<ResourceClient>(cc.ResourceClientID);
+                        rc.AuthLevel = selectedAuthLevel;
+                        cc.AuthLevel = selectedAuthLevel;
+                        SetExpiration(rc);
+                        cc.Expiration = rc.Expiration;
+
+                        CancelEdit();
+                    }
                 }
+
+                Fill(refreshAuthLevel);
+                FillClients();
             }
             catch (Exception ex)
             {
-                litErrMsg.Text = WebUtility.BootstrapAlert("danger", ex.Message);
+                ShowErrorMessage(ex.Message);
             }
         }
 
-        protected void ddlPager_SelectedIndexChanged(object sender, EventArgs e)
+        protected void CancelButton_Click(object sender, EventArgs e)
         {
-            dgUsers.CurrentPageIndex = Convert.ToInt32(ddlPager.SelectedValue); // selectedItem should also work
-            ResourceModel res = Request.SelectedPath().GetResource();
-            LoadResourceClients(res);
-        }
+            ShowErrorMessage(string.Empty);
 
-        private void EnableEdit(bool enable)
-        {
-            if (enable)
+            try
             {
-                litCreateModifyResourceClient.Text = "Modify Client Authorization";
-                btnSubmit.Text = "Modify Client Authorization";
-                btnSubmit.CommandName = "Update";
-                ddlClients.Visible = false;
-                phClientName.Visible = true;
+                throw new Exception("test");
+                CancelEdit();
             }
-            else
+            catch (Exception ex)
             {
-                litCreateModifyResourceClient.Text = "Authorize Client";
-                btnSubmit.Text = "Authorize Client";
-                btnSubmit.CommandName = "Insert";
-                ddlClients.Visible = true;
-                phClientName.Visible = false;
-                ddlClients.ClearSelection();
-                ddlAuthLevel.ClearSelection();
+                ShowErrorMessage(ex.Message);
             }
         }
 
-        private DataTable GetAvailClientsDataTable()
+        protected void Edit_Command(object sender, CommandEventArgs e)
         {
-            if (Session["dtAvailClients"] == null)
-                Session["dtAvailClients"] = ResourceClientData.SelectAvailClients(Request.SelectedPath().ResourceID);
-            return (DataTable)Session["dtAvailClients"];
+            var clientId = Convert.ToInt32(e.CommandArgument);
+            var cc = CurrentClients.FirstOrDefault(x => x.ClientID == clientId);
+
+            if (cc != null)
+            {
+                ClientIdHiddenField.Value = clientId.ToString();
+                ClientNameLiteral.Text = cc.DisplayName;
+                ClientNamePlaceHolder.Visible = true;
+                ClientsDropDownList.Visible = false;
+                AuthLevelDropDownList.SelectedValue = e.CommandName;
+                SubmitButton.Text = "Modify Client Authorization";
+                SubmitButton.CommandName = "Modify";
+            }
         }
 
-        private DataTable GetAuthLevelsDataTable()
+        protected void Delete_Command(object sender, CommandEventArgs e)
         {
-            if (Session["dtAuthLevels"] == null)
-                base.Session["dtAuthLevels"] = AuthLevelData.SelectAuthorizable();
+            var clientId = Convert.ToInt32(e.CommandArgument);
+            var authLevel = (ClientAuthLevel)Enum.Parse(typeof(ClientAuthLevel), e.CommandName);
+            var cc = CurrentClients.FirstOrDefault(x => x.ClientID == clientId);
 
-            return (DataTable)Session["dtAuthLevels"];
+            if (cc != null)
+            {
+                var rc = DA.Current.Single<ResourceClient>(cc.ResourceClientID);
+                DA.Current.Delete(rc);
+                CurrentClients.Remove(cc);
+            }
+
+            Fill(authLevel);
+            FillClients();
         }
 
-        private DataTable GetClientsDataTable()
+        protected void Extend_Command(object sender, CommandEventArgs e)
         {
-            if (Session["dtClients"] == null)
-                Session["dtClients"] = ResourceClientData.SelectByResource(Request.SelectedPath().ResourceID);
-            return (DataTable)Session["dtClients"];
+            throw new NotImplementedException();
         }
+    }
 
-        private ClientAuthLevel GetCurrentAuthLevel()
+    public class ResourceClientItem : IAuthorized
+    {
+        public int ResourceClientID { get; set; }
+        public int ClientID { get; set; }
+        public string Email { get; set; }
+        public ClientAuthLevel AuthLevel { get; set; }
+        public DateTime? Expiration { get; set; }
+        public string DisplayName { get; set; }
+        public string ContactUrl { get; set; }
+        public int AuthDuration { get; set; }
+        public bool IsEveryone => ClientID == -1;
+
+        public bool ShowExtendButton
         {
-            ClientAuthLevel result = CacheManager.Current.GetAuthLevel(Request.SelectedPath().ResourceID, CacheManager.Current.ClientID);
-            return result;
-        }
+            get
+            {
+                // check to see if we need to show the E button
 
-        protected string GetAuthLevelText(ClientAuthLevel value)
-        {
-            return Enum.GetName(typeof(ClientAuthLevel), value);
-        }
+                var value = Expiration.GetValueOrDefault(DateTime.Now.AddDays(10));
 
-        protected int GetAuthLevelSortOrder(ClientAuthLevel value)
-        {
-            // this order matches the order each group of clients is displayed on the page
-
-            if ((value & ClientAuthLevel.ToolEngineer) > 0)
-                return 1;
-
-            if ((value & ClientAuthLevel.Trainer) > 0)
-                return 2;
-
-            if ((value & ClientAuthLevel.SuperUser) > 0)
-                return 3;
-
-            if ((value & ClientAuthLevel.AuthorizedUser) > 0)
-                return 4;
-
-            return 9999;
+                if (DateTime.Now > value.AddDays(-30 * Properties.Current.AuthExpWarning * AuthDuration))
+                    return true;
+                else
+                    return false;
+            }
         }
     }
 }

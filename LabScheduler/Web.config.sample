@@ -1,143 +1,137 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <configuration>
-  <configSections>
-    <sectionGroup name="lnf">
-      <section name="providers" type="LNF.ProvidersSection, LNF"/>
-      <section name="redis" type="LNF.Impl.Redis.RedisConfigurationSection, LNF.Impl"/>
-    </sectionGroup>
-    <section name="glimpse" type="Glimpse.Core.Configuration.Section, Glimpse.Core"/>
-  </configSections>
+    <configSections>
+        <sectionGroup name="lnf">
+            <section name="provider" type="LNF.ServiceProviderSection, LNF" />
+        </sectionGroup>
+        <section name="glimpse" type="Glimpse.Core.Configuration.Section, Glimpse.Core" />
+    </configSections>
 
-  <lnf>
-    <providers production="false">
-      <context type="LNF.Impl.WebContextProvider, LNF.Impl" loginUrl="/login"/>
-      <dataAccess type="LNF.Impl.NHibernateWebDataAccess, LNF.Impl" showSql="false"/>
-      <serialization type="LNF.Impl.Serialization.SerializationProvider, LNF.Impl"/>
-      <email type="LNF.Impl.Email.EmailProvider, LNF.Impl" host="127.0.0.1" log="true"/>
-      <control type="LNF.Impl.Control.Wago.WagoControl, LNF.Impl" host="http://wagosvr:7778/"/>
-      <log type="LNF.Impl.Logging.ServiceLogProvider, LNF.Impl" name="LabScheduler" enabled="true"/>
-      <modelFactory type="LNF.Impl.ModelFactory.ValueInjecterModelFactory, LNF.Impl"/>
-    </providers>
-    <redis>
-      <connection host="cachesvr" databaseId="5"/>
-    </redis>
-  </lnf>
+    <lnf>
+        <provider production="false">
+            <context loginUrl="/login" />
+            <dataAccess showSql="true" />
+            <email host="xxxxx" log="true" />
+            <control host="xxxxx" />
+            <log name="LabScheduler" enabled="true" />
+        </provider>
+    </lnf>
 
-  <glimpse defaultRuntimePolicy="On" endpointBaseUri="~/glimpse.axd">
-    <!-- 
-      For more information on how to configure Glimpse, please visit http://getglimpse.com/Help/Configuration
-      or access {your site}/Glimpse.axd for even more details and a Configuration Tool to support you. 
-    -->
-    <tabs>
-      <ignoredTypes>
-        <add type="Glimpse.AspNet.Tab.Cache, Glimpse.AspNet"/>
-      </ignoredTypes>
-    </tabs>
-    <runtimePolicies>
-      <ignoredTypes>
-        <add type="Glimpse.AspNet.Policy.LocalPolicy, Glimpse.AspNet"/>
-      </ignoredTypes>
-    </runtimePolicies>
-  </glimpse>
+    <glimpse defaultRuntimePolicy="On" endpointBaseUri="~/glimpse.axd">
+        <!-- 
+          For more information on how to configure Glimpse, please visit http://getglimpse.com/Help/Configuration
+          or access {your site}/Glimpse.axd for even more details and a Configuration Tool to support you. 
+        -->
+        <tabs>
+            <ignoredTypes>
+                <add type="Glimpse.AspNet.Tab.Cache, Glimpse.AspNet"/>
+            </ignoredTypes>
+        </tabs>
+        <runtimePolicies>
+            <ignoredTypes>
+                <add type="Glimpse.AspNet.Policy.LocalPolicy, Glimpse.AspNet"/>
+            </ignoredTypes>
+        </runtimePolicies>
+    </glimpse>
 
-  <appSettings>
-    <add key="IsStaging" value="false"/>
-    <add key="SchedulerEmail" value="xxxxx"/>
-    <add key="EmailContentAuditAdmin" value=""/>
-    <add key="EmailForgivenCharge" value="xxxxx"/>
-    <add key="MaxForgivenDay" value="3"/>
-    <add key="HelpdeskUrl" value="xxxxx"/>
-    <add key="HelpdeskApiKey" value="xxxxx"/>
-    <add key="AppServer" value="xxxxx"/>
-    <add key="DocServer" value="xxxxx"/>
-    <add key="DocStore" value="xxxxx"/>
-    <add key="TreeView.ShowImages" value="false"/>
-    <add key="TreeView.PathDelimiter" value=":"/>
-    <add key="ShowCanceledForModification" value="true"/>
-    <add key="ShowMenu" value="false"/>
-    <add key="OverrideIsOnKiosk" value="false"/>
-    <add key="as:AudienceId" value="xxxxx"/>
-    <add key="as:AudienceSecret" value="xxxxx"/>
-    <add key="ApiHost" value="xxxxx"/>
-    <add key="HandleErrors" value="false"/>
-    <add key="WagoEnabled" value="true"/>
-    <add key="UseStartReservationPage" value="false"/>
-    <add key="LogDirectory" value="xxxxx"/>
-    <add key="StaticHost" value="xxxxx"/>
-    <add key="AfterHoursName" value="A" />
-    <add key="AfterHoursBuddyCalendarUrl" value="xxxxx" />
-    <add key="nhibernate-logger" value="NHibernate.Glimpse.LoggerFactory, NHibernate.Glimpse"/>
-    <add key="NHibernate.Glimpse.Loggers" value="command"/>
-    <!-- all loggers
+    <appSettings>
+        <add key="IsStaging" value="false"/>
+        <add key="SchedulerEmail" value="xxxxx"/>
+        <add key="EmailContentAuditAdmin" value=""/>
+        <add key="EmailForgivenCharge" value="xxxxx"/>
+        <add key="MaxForgivenDay" value="3"/>
+        <add key="HelpdeskUrl" value="xxxxx"/>
+        <add key="HelpdeskApiKey" value="xxxxx"/>
+        <add key="AppServer" value="xxxxx"/>
+        <add key="DocServer" value="xxxxx"/>
+        <add key="DocStore" value="xxxxx"/>
+        <add key="TreeView.ShowImages" value="false"/>
+        <add key="TreeView.PathDelimiter" value=":"/>
+        <add key="ShowCanceledForModification" value="true"/>
+        <add key="ShowMenu" value="false"/>
+        <add key="OverrideIsOnKiosk" value="false"/>
+        <add key="as:AudienceId" value="xxxxx"/>
+        <add key="as:AudienceSecret" value="xxxxx"/>
+        <add key="ApiHost" value="xxxxx"/>
+        <add key="HandleErrors" value="false"/>
+        <add key="WagoEnabled" value="true"/>
+        <add key="UseStartReservationPage" value="false"/>
+        <add key="LogDirectory" value="xxxxx"/>
+        <add key="StaticHost" value="xxxxx"/>
+        <add key="AfterHoursName" value="A" />
+        <add key="AfterHoursBuddyCalendarUrl" value="xxxxx" />
+        <add key="nhibernate-logger" value="NHibernate.Glimpse.LoggerFactory, NHibernate.Glimpse"/>
+        <add key="NHibernate.Glimpse.Loggers" value="command"/>
+        <!-- all loggers
         <add key="NHibernate.Glimpse.Loggers" value="command,connection,flush,load,transaction"/>
-    -->
-    <add key="ValidationSettings:UnobtrusiveValidationMode" value="None"/>
-  </appSettings>
+        -->
+        <add key="ValidationSettings:UnobtrusiveValidationMode" value="None"/>
+    </appSettings>
 
-  <connectionStrings>
-    <add name="cnSselData" connectionString="*****"/>
-    <add name="cnSselControl" connectionString="*****"/>
-    <add name="cnSselScheduler" connectionString="*****"/>
-    <add name="SchedulerEntities" connectionString="*****" providerName="System.Data.EntityClient"/>
-    <add name="RecurringReservationEntities" connectionString="*****" providerName="System.Data.EntityClient"/>
-  </connectionStrings>
+    <connectionStrings>
+        <add name="cnSselData" connectionString="xxxxx"/>
+        <add name="cnSselControl" connectionString="xxxxx"/>
+        <add name="cnSselScheduler" connectionString="xxxxx"/>
+        <add name="SchedulerEntities" connectionString="xxxxx" providerName="System.Data.EntityClient"/>
+        <add name="RecurringReservationEntities" connectionString="xxxxx" providerName="System.Data.EntityClient"/>
+    </connectionStrings>
 
-  <system.web>
-    <httpRuntime targetFramework="4.6.1"/>
+    <system.web>
+        <httpRuntime targetFramework="4.7"/>
 
-    <compilation debug="true" strict="false" explicit="true" targetFramework="4.6.1"/>
+        <compilation debug="true" strict="false" explicit="true" targetFramework="4.7"/>
 
-    <pages controlRenderingCompatibilityVersion="4.0"/>
+        <pages controlRenderingCompatibilityVersion="4.0"/>
 
-    <authentication mode="Forms">
-      <forms name="sselAuth.cookie" path="/" loginUrl="/login" timeout="480" protection="All" slidingExpiration="true" domain="umich.edu" cookieless="UseCookies"/>
-    </authentication>
+        <authentication mode="Forms">
+            <forms name="sselAuth.cookie" path="/" loginUrl="/login" timeout="480" protection="All" slidingExpiration="true" domain="umich.edu" cookieless="UseCookies"/>
+        </authentication>
 
-    <authorization>
-      <deny users="?"/>
-    </authorization>
+        <authorization>
+            <deny users="?"/>
+        </authorization>
 
-    <machineKey compatibilityMode="Framework20SP2" validationKey="xxxxx" decryptionKey="xxxxx" validation="SHA1" decryption="3DES"/>
+        <machineKey compatibilityMode="Framework20SP2" validationKey="xxxxx" decryptionKey="xxxxx" validation="SHA1" decryption="3DES"/>
 
-    <customErrors mode="Off"/>
+        <customErrors mode="Off"/>
 
-    <!-- Glimpse: This can be commented in to add additional data to the Trace tab when using WebForms
+        <!-- Glimpse: This can be commented in to add additional data to the Trace tab when using WebForms
         <trace writeToDiagnosticsTrace="true" enabled="true" pageOutput="false"/> -->
-    <httpModules>
-      <add name="Glimpse" type="Glimpse.AspNet.HttpModule, Glimpse.AspNet"/>
-    </httpModules>
+        <httpModules>
+            <add name="Glimpse" type="Glimpse.AspNet.HttpModule, Glimpse.AspNet"/>
+        </httpModules>
 
-    <httpHandlers>
-      <add path="glimpse.axd" verb="GET" type="Glimpse.AspNet.HttpHandler, Glimpse.AspNet"/>
-    </httpHandlers>
-  </system.web>
-
-  <system.webServer>
-    <modules runAllManagedModulesForAllRequests="true">
-      <add name="Glimpse" type="Glimpse.AspNet.HttpModule, Glimpse.AspNet" preCondition="integratedMode"/>
-    </modules>
-
-    <handlers>
-      <add name="Glimpse" path="glimpse.axd" verb="GET" type="Glimpse.AspNet.HttpHandler, Glimpse.AspNet" preCondition="integratedMode"/>
-    </handlers>
-
-    <validation validateIntegratedModeConfiguration="false"/>
-  </system.webServer>
-
-  <location path="ajax">
-    <system.web>
-      <authorization>
-        <allow users="*"/>
-      </authorization>
+        <httpHandlers>
+            <add path="glimpse.axd" verb="GET" type="Glimpse.AspNet.HttpHandler, Glimpse.AspNet"/>
+        </httpHandlers>
     </system.web>
-  </location>
 
-  <location path="Status.aspx">
-    <system.web>
-      <authorization>
-        <allow users="*"/>
-      </authorization>
-    </system.web>
-  </location>
+    <system.webServer>
+        <modules runAllManagedModulesForAllRequests="true">
+            <add name="Glimpse" type="Glimpse.AspNet.HttpModule, Glimpse.AspNet" preCondition="integratedMode"/>
+        </modules>
+
+        <handlers>
+            <add name="Glimpse" path="glimpse.axd" verb="GET" type="Glimpse.AspNet.HttpHandler, Glimpse.AspNet" preCondition="integratedMode"/>
+        </handlers>
+
+        <validation validateIntegratedModeConfiguration="false"/>
+    </system.webServer>
+
+    <location path="ajax">
+        <system.web>
+            <authorization>
+                <allow users="*"/>
+            </authorization>
+        </system.web>
+    </location>
+
+    <location path="Status.aspx">
+        <system.web>
+            <authorization>
+                <allow users="*"/>
+            </authorization>
+        </system.web>
+    </location>
 </configuration>

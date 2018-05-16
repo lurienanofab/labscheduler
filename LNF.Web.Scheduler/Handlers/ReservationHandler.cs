@@ -24,20 +24,19 @@ namespace LNF.Web.Scheduler.Handlers
 
             object result = null;
 
-            int reservationId;
             int clientId;
             bool isInLab = CacheManager.Current.IsOnKiosk();
 
-            if (int.TryParse(context.Request["ReservationID"], out reservationId))
+            if (int.TryParse(context.Request["ReservationID"], out int reservationId))
             {
                 switch (command)
                 {
                     case "start-reservation":
                         clientId = CacheManager.Current.CurrentUser.ClientID;
-                        result = await ReservationManager.Start(reservationId, clientId);
+                        result = await ReservationHandlerUtility.Start(reservationId, clientId);
                         break;
                     case "get-reservation":
-                        result = ReservationManager.GetReservation(context, reservationId);
+                        result = ReservationHandlerUtility.GetReservation(context, reservationId);
                         break;
                     case "save-reservation-history":
                         string notes = context.Request["Notes"];
@@ -86,21 +85,23 @@ namespace LNF.Web.Scheduler.Handlers
                 throw new Exception("Missing parameter: id");
             }
 
-            context.Response.Write(Providers.Serialization.Json.SerializeObject(result));
+            context.Response.Write(ServiceProvider.Current.Serialization.Json.SerializeObject(result));
         }
     }
 
-    public static class ReservationManager
+    public static class ReservationHandlerUtility
     {
+        public static IReservationManager ReservationManager => DA.Use<IReservationManager>();
+
         public static async Task<object> Start(int reservationId, int clientId)
         {
             try
             {
-                var rsv = DA.Scheduler.Reservation.Single(reservationId);
+                var rsv = DA.Current.Single<Reservation>(reservationId);
                 if (rsv != null)
                 {
                     bool isInLab = CacheManager.Current.ClientInLab(rsv.Resource.ProcessTech.Lab.LabID);
-                    await ReservationUtility.StartReservation(rsv, clientId, isInLab);
+                    await DA.Use<IReservationManager>().StartReservation(rsv, clientId, isInLab);
                     return new { Error = false, Message = "OK" };
                 }
                 else
@@ -125,12 +126,14 @@ namespace LNF.Web.Scheduler.Handlers
 
         public static StartReservationItem CreateStartReservationItem(HttpContext context, Reservation rsv)
         {
-            StartReservationItem item = new StartReservationItem();
-            item.ReservationID = rsv.ReservationID;
-            item.ResourceID = rsv.Resource.ResourceID;
-            item.ResourceName = rsv.Resource.ResourceName;
-            item.ReservedByClientID = rsv.Client.ClientID;
-            item.ReservedByClientName = string.Format("{0} {1}", rsv.Client.FName, rsv.Client.LName);
+            var item = new StartReservationItem
+            {
+                ReservationID = rsv.ReservationID,
+                ResourceID = rsv.Resource.ResourceID,
+                ResourceName = rsv.Resource.ResourceName,
+                ReservedByClientID = rsv.Client.ClientID,
+                ReservedByClientName = string.Format("{0} {1}", rsv.Client.FName, rsv.Client.LName)
+            };
 
             if (rsv.ClientIDBegin.HasValue)
             {
@@ -153,8 +156,8 @@ namespace LNF.Web.Scheduler.Handlers
             }
 
             bool isInLab = CacheManager.Current.ClientInLab(rsv.Resource.ProcessTech.Lab.LabID);
-            ReservationState state = ReservationUtility.GetReservationState(rsv.ReservationID, CacheManager.Current.CurrentUser.ClientID, isInLab);
-            item.Startable = ReservationUtility.IsStartable(state);
+            ReservationState state = ReservationManager.GetReservationState(rsv.ReservationID, CacheManager.Current.CurrentUser.ClientID, isInLab);
+            item.Startable = ReservationManager.IsStartable(state);
             item.NotStartableMessage = GetNotStartableMessage(state);
 
             var inst = ActionInstanceUtility.Find(ActionType.Interlock, rsv.Resource.ResourceID);

@@ -17,6 +17,12 @@
             $this.on("click", ".reservation-action", function (e) {
                 var cell = $(this);
 
+                // remove the reservation-action class from ALL cells (prevent double clicking)
+                $(".reservation-action", $this).removeClass("reservation-action");
+
+                // add the reservation-action-clicked class to this cell only (maybe to style differently or something)
+                cell.addClass("reservation-action-clicked");
+
                 var args = {
                     Command: cell.data("command"),
                     ReservationID: parseInt(cell.data("reservation-id")), //0 for new reservations

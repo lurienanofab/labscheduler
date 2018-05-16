@@ -6,56 +6,56 @@ Imports LNF.Repository
 Imports LNF.Scheduler
 Imports LNF.Web.Scheduler
 Imports LNF.Web.Scheduler.Content
-Imports repo = LNF.Repository.Scheduler
+Imports Scheduler = LNF.Repository.Scheduler
 
 Namespace Pages
     Public Class AdminActivities
         Inherits SortablePage
 
         Private dbActivity As New ActivityDB
-        Private _AuthLevels As IList(Of repo.AuthLevel)
-        Private _Activities As IList(Of repo.Activity)
-        Private _ActivityAuthTypes As IList(Of repo.ActivityAuthType)
-        Private _GlobalActivityAuths As IList(Of repo.GlobalActivityAuth)
+        Private _AuthLevels As IList(Of Scheduler.AuthLevel)
+        Private _Activities As IList(Of Scheduler.Activity)
+        Private _ActivityAuthTypes As IList(Of Scheduler.ActivityAuthType)
+        Private _GlobalActivityAuths As IList(Of Scheduler.GlobalActivityAuth)
 
-        Public ReadOnly Property Activities As IEnumerable(Of repo.Activity)
+        Public ReadOnly Property Activities As IEnumerable(Of Scheduler.Activity)
             Get
                 If _Activities Is Nothing Then
-                    _Activities = DA.Scheduler.Activity.Query().ToList()
+                    _Activities = DA.Current.Query(Of Scheduler.Activity)().ToList()
                 End If
                 Return _Activities
             End Get
         End Property
 
-        Public ReadOnly Property AuthLevels As IList(Of repo.AuthLevel)
+        Public ReadOnly Property AuthLevels As IList(Of Scheduler.AuthLevel)
             Get
                 If _AuthLevels Is Nothing Then
-                    _AuthLevels = DA.Current.Query(Of repo.AuthLevel)().ToList()
+                    _AuthLevels = DA.Current.Query(Of Scheduler.AuthLevel)().ToList()
                 End If
                 Return _AuthLevels
             End Get
         End Property
 
-        Public ReadOnly Property ActivityAuthTypes As IList(Of repo.ActivityAuthType)
+        Public ReadOnly Property ActivityAuthTypes As IList(Of Scheduler.ActivityAuthType)
             Get
                 If _ActivityAuthTypes Is Nothing Then
-                    _ActivityAuthTypes = DA.Current.Query(Of repo.ActivityAuthType)().ToList()
+                    _ActivityAuthTypes = DA.Current.Query(Of Scheduler.ActivityAuthType)().ToList()
                 End If
                 Return _ActivityAuthTypes
             End Get
         End Property
 
-        Public ReadOnly Property GlobalActivityAuths As IEnumerable(Of repo.GlobalActivityAuth)
+        Public ReadOnly Property GlobalActivityAuths As IEnumerable(Of Scheduler.GlobalActivityAuth)
             Get
                 If _GlobalActivityAuths Is Nothing Then
-                    _GlobalActivityAuths = DA.Current.Query(Of repo.GlobalActivityAuth)().ToList()
+                    _GlobalActivityAuths = DA.Current.Query(Of Scheduler.GlobalActivityAuth)().ToList()
                 End If
                 Return _GlobalActivityAuths
             End Get
         End Property
 
-        Public Function GetGlobalActivityAuthsByActivity(activity As repo.Activity) As IList(Of repo.GlobalActivityAuth)
-            Dim result As IList(Of repo.GlobalActivityAuth) = DA.Current.Query(Of repo.GlobalActivityAuth)().Where(Function(x) x.Activity Is activity).ToList()
+        Public Function GetGlobalActivityAuthsByActivity(activity As Scheduler.Activity) As IList(Of Scheduler.GlobalActivityAuth)
+            Dim result As IList(Of Scheduler.GlobalActivityAuth) = DA.Current.Query(Of Scheduler.GlobalActivityAuth)().Where(Function(x) x.Activity Is activity).ToList()
             Return result
         End Function
 
@@ -154,10 +154,10 @@ Namespace Pages
         Private Function UpdateActivity(ByVal Insert As Boolean) As Boolean
             lblErrMsg.Text = String.Empty
             Try
-                Dim activity As repo.Activity
-                Dim auths As IList(Of repo.GlobalActivityAuth)
+                Dim activity As Scheduler.Activity
+                Dim auths As IList(Of Scheduler.GlobalActivityAuth)
                 If Insert Then
-                    activity = New repo.Activity()
+                    activity = New Scheduler.Activity()
                     DA.Current.Insert(activity)
                     auths = CreateGlobalActivityAuths().ToList()
                     DA.Current.Insert(auths)
@@ -202,10 +202,10 @@ Namespace Pages
             End Try
         End Function
 
-        Private Function CreateGlobalActivityAuths() As IList(Of repo.GlobalActivityAuth)
-            Dim result As New List(Of repo.GlobalActivityAuth)
+        Private Function CreateGlobalActivityAuths() As IList(Of Scheduler.GlobalActivityAuth)
+            Dim result As New List(Of Scheduler.GlobalActivityAuth)
             For Each authType In ActivityAuthTypes
-                Dim item As New repo.GlobalActivityAuth()
+                Dim item As New Scheduler.GlobalActivityAuth()
                 item.ActivityAuthType = authType
                 result.Add(item)
             Next
@@ -228,8 +228,8 @@ Namespace Pages
                 Case "edit"
                     SwitchPanels(False, False)
                     ' Get Activity Info
-                    Dim activity As repo.Activity = Activities.First(Function(x) x.ActivityID = Convert.ToInt32(e.CommandArgument))
-                    Dim auths As IList(Of repo.GlobalActivityAuth) = GetGlobalActivityAuthsByActivity(activity)
+                    Dim activity As Scheduler.Activity = Activities.First(Function(x) x.ActivityID = Convert.ToInt32(e.CommandArgument))
+                    Dim auths As IList(Of Scheduler.GlobalActivityAuth) = GetGlobalActivityAuthsByActivity(activity)
                     hidSelectedActivityID.Value = e.CommandArgument.ToString()
                     txtActivityName.Text = activity.ActivityName
                     txtListOrder.Text = activity.ListOrder.ToString()
@@ -250,14 +250,14 @@ Namespace Pages
                     AuthLevelUtility.SetAuthLevel(rptNoMaxSchedAuth.Items, GetLockedAuthByName(auths, "NoMaxAuth"), "chkLocked")
                     txtDescription.Text = activity.Description
                 Case "delete"
-                    Dim activity As repo.Activity = Activities.First(Function(x) x.ActivityID = Convert.ToInt32(e.CommandArgument))
+                    Dim activity As Scheduler.Activity = Activities.First(Function(x) x.ActivityID = Convert.ToInt32(e.CommandArgument))
                     DA.Current.Delete(activity)
                     LoadActivities()
             End Select
         End Sub
 
-        Protected Function GetDefaultAuthByName(auths As IList(Of repo.GlobalActivityAuth), name As String) As Integer
-            Dim item As repo.GlobalActivityAuth = auths.FirstOrDefault(Function(x) x.ActivityAuthType.AuthTypeName = name)
+        Protected Function GetDefaultAuthByName(auths As IList(Of Scheduler.GlobalActivityAuth), name As String) As Integer
+            Dim item As Scheduler.GlobalActivityAuth = auths.FirstOrDefault(Function(x) x.ActivityAuthType.AuthTypeName = name)
             If item IsNot Nothing Then
                 Return item.DefaultAuth
             Else
@@ -265,15 +265,15 @@ Namespace Pages
             End If
         End Function
 
-        Protected Sub SetDefaultAuthByName(auths As IList(Of repo.GlobalActivityAuth), name As String, value As Integer)
-            Dim item As repo.GlobalActivityAuth = auths.FirstOrDefault(Function(x) x.ActivityAuthType.AuthTypeName = name)
+        Protected Sub SetDefaultAuthByName(auths As IList(Of Scheduler.GlobalActivityAuth), name As String, value As Integer)
+            Dim item As Scheduler.GlobalActivityAuth = auths.FirstOrDefault(Function(x) x.ActivityAuthType.AuthTypeName = name)
             If item IsNot Nothing Then
                 item.DefaultAuth = CType(value, ClientAuthLevel)
             End If
         End Sub
 
-        Protected Function GetLockedAuthByName(auths As IList(Of repo.GlobalActivityAuth), name As String) As Integer
-            Dim item As repo.GlobalActivityAuth = auths.FirstOrDefault(Function(x) x.ActivityAuthType.AuthTypeName = name)
+        Protected Function GetLockedAuthByName(auths As IList(Of Scheduler.GlobalActivityAuth), name As String) As Integer
+            Dim item As Scheduler.GlobalActivityAuth = auths.FirstOrDefault(Function(x) x.ActivityAuthType.AuthTypeName = name)
             If item IsNot Nothing Then
                 Return item.LockedAuth
             Else
@@ -281,8 +281,8 @@ Namespace Pages
             End If
         End Function
 
-        Protected Sub SetLockedAuthByName(auths As IList(Of repo.GlobalActivityAuth), name As String, value As Integer)
-            Dim item As repo.GlobalActivityAuth = auths.FirstOrDefault(Function(x) x.ActivityAuthType.AuthTypeName = name)
+        Protected Sub SetLockedAuthByName(auths As IList(Of Scheduler.GlobalActivityAuth), name As String, value As Integer)
+            Dim item As Scheduler.GlobalActivityAuth = auths.FirstOrDefault(Function(x) x.ActivityAuthType.AuthTypeName = name)
             If item IsNot Nothing Then
                 item.LockedAuth = CType(value, ClientAuthLevel)
             End If
@@ -357,7 +357,7 @@ Namespace Pages
 
         Protected Sub rptActivities_ItemDataBound(sender As Object, e As RepeaterItemEventArgs)
             Dim rpt As Repeater = CType(e.Item.FindControl("rptActivityAuths"), Repeater)
-            Dim activity As repo.Activity = CType(e.Item.DataItem, repo.Activity)
+            Dim activity As Scheduler.Activity = CType(e.Item.DataItem, Scheduler.Activity)
             rpt.DataSource = GetGlobalActivityAuthsByActivity(activity)
             rpt.DataBind()
         End Sub

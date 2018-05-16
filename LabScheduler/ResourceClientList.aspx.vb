@@ -16,10 +16,9 @@ Namespace Pages
 
             Dim resourceId As Integer = Convert.ToInt32(Request.QueryString("ResourceID"))
 
-            Using reader As IDataReader = ResourceClientData.SelectClientList(resourceId)
-                dgRC.DataSource = reader
-                dgRC.DataBind()
-            End Using
+            Dim clientList = ResourceClientData.SelectClientList(resourceId)
+            dgRC.DataSource = clientList
+            dgRC.DataBind()
         End Sub
 
     End Class

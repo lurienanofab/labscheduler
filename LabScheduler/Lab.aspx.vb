@@ -14,7 +14,7 @@ Namespace Pages
         End Sub
 
         Private Sub LoadLab(labId As Integer)
-            Dim lab As LabModel = CacheManager.Current.GetLab(labId)
+            Dim lab As LabModel = CacheManager.Current.ResourceTree().GetLab(labId)
             If lab IsNot Nothing Then
                 lblLabPath.Text = lab.BuildingName + " > "
                 lblLabName.Text = lab.LabDisplayName

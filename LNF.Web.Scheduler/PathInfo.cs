@@ -155,7 +155,7 @@ namespace LNF.Web.Scheduler
         public BuildingModel GetBuilding()
         {
             if (BuildingID > 0)
-                return CacheManager.Current.GetBuilding(BuildingID);
+                return CacheManager.Current.ResourceTree().GetBuilding(BuildingID);
             else
                 return null;
         }
@@ -163,7 +163,7 @@ namespace LNF.Web.Scheduler
         public LabModel GetLab()
         {
             if (LabID > 0)
-                return CacheManager.Current.GetLab(LabID);
+                return CacheManager.Current.ResourceTree().GetLab(LabID);
             else
                 return null;
         }
@@ -171,7 +171,7 @@ namespace LNF.Web.Scheduler
         public ProcessTechModel GetProcessTech()
         {
             if (ProcessTechID > 0)
-                return CacheManager.Current.GetProcessTech(ProcessTechID);
+                return CacheManager.Current.ResourceTree().GetProcessTech(ProcessTechID);
             else
                 return null;
         }
@@ -179,7 +179,7 @@ namespace LNF.Web.Scheduler
         public ResourceModel GetResource()
         {
             if (ResourceID > 0)
-                return CacheManager.Current.GetResource(ResourceID);
+                return CacheManager.Current.ResourceTree().GetResource(ResourceID);
             else
                 return null;
         }

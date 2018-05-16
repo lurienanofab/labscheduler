@@ -8,7 +8,7 @@ Imports LNF.Web
 Imports LNF.Web.Controls
 Imports LNF.Web.Scheduler
 Imports LNF.Web.Scheduler.Content
-Imports repo = LNF.Repository.Scheduler
+Imports Scheduler = LNF.Repository.Scheduler
 
 Namespace UserControls
     Public Class ReservationView
@@ -64,7 +64,7 @@ Namespace UserControls
             If e.CommandName = "ok" Then
                 Dim reservationId As Integer
                 If e.CommandArgument IsNot Nothing AndAlso Integer.TryParse(e.CommandArgument.ToString(), reservationId) Then
-                    Dim rsv As repo.Reservation = DA.Current.Single(Of repo.Reservation)(reservationId)
+                    Dim rsv As Scheduler.Reservation = DA.Current.Single(Of Scheduler.Reservation)(reservationId)
                     If rsv IsNot Nothing Then
                         Page.RegisterAsyncTask(New PageAsyncTask(Function() StartReservationAsync(rsv, CurrentUser.ClientID)))
                     Else
@@ -127,7 +127,7 @@ Namespace UserControls
         ''' </summary>
         Public Function GetReservations() As ReservationCollection
             If _reservations Is Nothing Then
-                _reservations = New ReservationCollection()
+                _reservations = New ReservationCollection(Page.ReservationManager)
 
                 Dim sd, ed As Date
 
@@ -199,7 +199,7 @@ Namespace UserControls
                     Next
                     _minGran = Convert.ToInt32(Resource.Granularity.TotalMinutes)
                 Case ViewType.ProcessTechView
-                    Dim query As IList(Of ResourceModel) = CacheManager.Current.Resources().Where(Function(x) x.ProcessTechID = ProcessTechID AndAlso x.ResourceIsActive).OrderBy(Function(x) x.ResourceName).ToList()
+                    Dim query As IList(Of ResourceModel) = CacheManager.Current.ResourceTree().Resources().Where(Function(x) x.ProcessTechID = ProcessTechID AndAlso x.ResourceIsActive).OrderBy(Function(x) x.ResourceName).ToList()
 
                     Dim d As Date = Request.SelectedDate()
 
@@ -212,10 +212,10 @@ Namespace UserControls
                 Case ViewType.UserView
                     HelpdeskInfo1.Resources = New List(Of Integer)()
 
-                    Dim query As IList(Of repo.Reservation) = GetReservations().Find(Request.SelectedDate(), False)
+                    Dim query As IList(Of Scheduler.Reservation) = GetReservations().Find(Request.SelectedDate(), False)
                     Dim prevResourceId As Integer = -1
 
-                    For Each res As repo.Reservation In query.OrderBy(Function(x) x.Resource.ResourceID)
+                    For Each res As Scheduler.Reservation In query.OrderBy(Function(x) x.Resource.ResourceID)
                         If res.Resource.ResourceID <> prevResourceId Then
                             prevResourceId = res.Resource.ResourceID
                             AddHeaderCell(res.Resource.ResourceID, res.Resource.ResourceName, Request.SelectedDate())
@@ -235,23 +235,24 @@ Namespace UserControls
         End Sub
 
         Private Sub AddHeaderCell(resourceId As Integer, resourceName As String, cellDate As Date)
-            Dim headerCell As New CustomTableCell()
-
-            headerCell.ResourceID = resourceId
-            headerCell.CellDate = cellDate
-            headerCell.CssClass = "ReservTableHeader"
+            Dim headerCell As New CustomTableCell With {
+                .ResourceID = resourceId,
+                .CellDate = cellDate,
+                .CssClass = "ReservTableHeader"
+            }
 
             If View = ViewType.DayView Then
                 headerCell.Text = cellDate.ToString("dddd'<br>'MMMM d, yyyy")
             Else
-                Dim link As New HyperLink()
-                link.CssClass = "ReservLinkHeader"
+                Dim link As New HyperLink With {
+                    .CssClass = "ReservLinkHeader"
+                }
 
                 If View = ViewType.WeekView Then
                     link.Text = cellDate.ToString("dddd'<br>'MMMM d, yyyy")
                     link.NavigateUrl = String.Format("~/ResourceDayWeek.aspx?Path={0}&Date={1:yyyy-MM-dd}", Request.SelectedPath().UrlEncode(), cellDate)
                 Else
-                    Dim res As ResourceModel = CacheManager.Current.GetResource(resourceId)
+                    Dim res As ResourceModel = CacheManager.Current.ResourceTree().GetResource(resourceId)
                     link.Text = res.ResourceName
                     link.NavigateUrl = String.Format("~/ResourceDayWeek.aspx?Path={0}&Date={1:yyyy-MM-dd}", PathInfo.Create(res).UrlEncode(), cellDate)
                 End If
@@ -289,21 +290,25 @@ Namespace UserControls
             ' Create Table Cells
             While currentTime < currentTimeEnd
                 ' Time Cell
-                Dim timeCell As New TableCell()
-                timeCell.CssClass = "TableCell"
-                timeCell.Wrap = False
-                timeCell.Text = weekStart.Add(currentTime).ToShortTimeString()
+                Dim timeCell As New TableCell With {
+                    .CssClass = "TableCell",
+                    .Wrap = False,
+                    .Text = weekStart.Add(currentTime).ToShortTimeString()
+                }
+
                 Dim newRow As New TableRow()
                 newRow.Cells.Add(timeCell)
 
                 ' Empty Cells
                 For i As Integer = 1 To tblSchedule.Rows(0).Cells.Count - 1 'iterate through each column skipping the first (time column)
                     Dim headerCell As CustomTableCell = CType(tblSchedule.Rows(0).Cells(i), CustomTableCell)
-                    Dim rsvCell As New CustomTableCell()
-                    rsvCell.ReservationID = 0
-                    rsvCell.MouseOverText = String.Empty
-                    rsvCell.Enabled = True
-                    rsvCell.AutoPostBack = False
+
+                    Dim rsvCell As New CustomTableCell With {
+                        .ReservationID = 0,
+                        .MouseOverText = String.Empty,
+                        .Enabled = True,
+                        .AutoPostBack = False
+                    }
 
                     If View = ViewType.DayView OrElse View = ViewType.WeekView Then
                         rsvCell.ResourceID = Resource.ResourceID
@@ -336,7 +341,7 @@ Namespace UserControls
                         rsvCell.Attributes("data-caption") = String.Empty
                     ElseIf View = ViewType.ProcessTechView Then
                         Dim resourceId As Integer = headerCell.ResourceID
-                        Dim r As repo.Resource = DA.Current.Single(Of repo.Resource)(resourceId)
+                        Dim r As Scheduler.Resource = DA.Current.Single(Of Scheduler.Resource)(resourceId)
 
                         authLevel = GetAuthorization(resourceId)
                         rsvCell.CellDate = weekStart.Add(currentTime)
@@ -398,13 +403,13 @@ Namespace UserControls
             Dim iter As Integer = tblSchedule.Rows(0).Cells.Count
 
             'Read from ReservationRecurrence table 
-            Dim recurringRes As IList(Of repo.ReservationRecurrence) = Nothing
+            Dim recurringRes As IList(Of Scheduler.ReservationRecurrence) = Nothing
 
             Select Case View
                 Case ViewType.DayView, ViewType.WeekView
                     recurringRes = ReservationRecurrenceUtility.SelectByResource(Resource.ResourceID).OrderBy(Function(x) x.Resource.ResourceID).ToList()
                 Case ViewType.ProcessTechView
-                    Dim lab As repo.Lab = DA.Current.Single(Of repo.Lab)(LabID)
+                    Dim lab As Scheduler.Lab = DA.Current.Single(Of Scheduler.Lab)(LabID)
                     recurringRes = ReservationRecurrenceUtility.SelectByProcessTech(ProcessTechID).OrderBy(Function(x) x.Resource.ResourceID).ToList()
                 Case ViewType.UserView
                     recurringRes = ReservationRecurrenceUtility.SelectByClient(CacheManager.Current.CurrentUser.ClientID).OrderBy(Function(x) x.Resource.ResourceID).ToList()
@@ -420,7 +425,7 @@ Namespace UserControls
             If Not hasData Then Exit Sub
 
             Dim dtRegRsvToday As DataTable = Nothing
-            Dim listRegRsvToday As IList(Of repo.Reservation) = Nothing
+            Dim listRegRsvToday As IList(Of Scheduler.Reservation) = Nothing
 
             'The first for loop is for process tech, week or day view.  If it's day view, it will just loop once.
             'If it's user view, then it won't come here at all
@@ -448,7 +453,7 @@ Namespace UserControls
                 Dim dtRecurRsv As DataTable = dtRegRsvToday.Clone()
 
                 'Populate the temporary regular reservation table from recurring reservation for this period of time
-                For Each rr As repo.ReservationRecurrence In recurringRes
+                For Each rr As Scheduler.ReservationRecurrence In recurringRes
                     RecurringReservationTransform.GetRegularFromRecurring(rr, curStartTime, dtRecurRsv)
                 Next
 
@@ -468,35 +473,39 @@ Namespace UserControls
                         '[2013-05-16 jg] We need find any existing, unended and uncancelled reservations in the
                         'same time slot. This can happen if there are overlapping recurring reservation patterns.
                         'To determine if two reservations overlap I'm using this logic: (StartA < EndB) and (EndA > StartB)
-                        Dim overlappingRsv As IList(Of repo.Reservation) = reservations.Where(Function(x) _
-                            x.IsActive AndAlso x.Resource.ResourceID = resourceId _
-                            AndAlso (x.BeginDateTime < endDateTime AndAlso x.EndDateTime > beginDateTime) _
-                            AndAlso x.ActualEndDateTime Is Nothing).ToList()
+                        Dim overlapping As IEnumerable(Of Scheduler.Reservation)
 
-                        If overlappingRsv.Count = 0 Then
+                        overlapping = From x In reservations
+                                      Where x.IsActive AndAlso x.Resource.ResourceID = resourceId _
+                                          AndAlso (x.BeginDateTime < endDateTime AndAlso x.EndDateTime > beginDateTime) _
+                                          AndAlso x.ActualEndDateTime Is Nothing
+
+                        If overlapping.Count() = 0 Then
                             'Add new row to the database as well
                             ' Insert/Update Reservation
-                            Dim rsv As repo.Reservation = New repo.Reservation()
-                            rsv.Resource = DA.Scheduler.Resource.Single(resourceId)
-                            rsv.Client = DA.Current.Single(Of Client)(clientId)
-                            rsv.CreatedOn = createdOn
-                            rsv.BeginDateTime = beginDateTime
-                            rsv.EndDateTime = endDateTime
-                            rsv.LastModifiedOn = Date.Now
-                            rsv.Account = DA.Current.Single(Of Account)(Convert.ToInt32(row("AccountID")))
-                            rsv.Duration = Convert.ToDouble(row("Duration"))
-                            rsv.MaxReservedDuration = Convert.ToDouble(row("Duration"))
-                            rsv.Notes = row("Notes").ToString()
-                            rsv.AutoEnd = Convert.ToBoolean(row("AutoEnd"))
-                            rsv.HasProcessInfo = False
-                            rsv.HasInvitees = False
-                            rsv.RecurrenceID = recurrenceId
-                            rsv.Activity = DA.Scheduler.Activity.Single(Convert.ToInt32(row("ActivityID")))
-                            rsv.KeepAlive = Convert.ToBoolean(row("KeepAlive"))
+                            Dim rsv As Scheduler.Reservation = New Scheduler.Reservation With {
+                                .Resource = DA.Current.Single(Of Scheduler.Resource)(resourceId),
+                                .Client = DA.Current.Single(Of Client)(clientId),
+                                .CreatedOn = createdOn,
+                                .BeginDateTime = beginDateTime,
+                                .EndDateTime = endDateTime,
+                                .LastModifiedOn = Date.Now,
+                                .Account = DA.Current.Single(Of Account)(Convert.ToInt32(row("AccountID"))),
+                                .Duration = Convert.ToDouble(row("Duration")),
+                                .MaxReservedDuration = Convert.ToDouble(row("Duration")),
+                                .Notes = row("Notes").ToString(),
+                                .AutoEnd = Convert.ToBoolean(row("AutoEnd")),
+                                .HasProcessInfo = False,
+                                .HasInvitees = False,
+                                .RecurrenceID = recurrenceId,
+                                .Activity = DA.Current.Single(Of Scheduler.Activity)(Convert.ToInt32(row("ActivityID"))),
+                                .KeepAlive = Convert.ToBoolean(row("KeepAlive"))
+                            }
+
                             rsv.Notes = row("Notes").ToString()
 
                             ' Insert Reservation Info
-                            rsv.Insert(CurrentUser.ClientID)
+                            Page.ReservationManager.Insert(rsv, CurrentUser.ClientID)
                             reservations.Add(rsv)
 
                             ' Check for process info
@@ -529,7 +538,7 @@ Namespace UserControls
         End Sub
 
         Private Sub LoadReservationCells()
-            Dim listRsv As IList(Of repo.Reservation) = Nothing
+            Dim listRsv As IList(Of Scheduler.Reservation) = Nothing
 
             Dim totalReservationCount As Integer = 0
 
@@ -561,7 +570,7 @@ Namespace UserControls
                     ' Get number of reservation cells that lie in that cell
                     Dim beginTime As Date = rsvCell.CellDate
                     Dim endTime As Date = beginTime.AddMinutes(_minGran)
-                    Dim filteredRsv As IList(Of repo.Reservation) = Nothing
+                    Dim filteredRsv As IList(Of Scheduler.Reservation) = Nothing
 
                     Select Case View
                         Case ViewType.DayView, ViewType.WeekView
@@ -592,7 +601,7 @@ Namespace UserControls
 
                             If reservationCount = 1 OrElse Not filteredRsv(reservationCount - 1).ActualEndDateTime.HasValue Then
                                 ' Display reservation
-                                Dim rsv As repo.Reservation
+                                Dim rsv As Scheduler.Reservation
 
                                 If reservationCount = 1 Then
                                     rsv = filteredRsv.First()
@@ -645,7 +654,7 @@ Namespace UserControls
         End Sub
 
         Private Sub SetReservationActionCellAttributes(cell As CustomTableCell, command As String, state As ReservationState)
-            Dim res As ResourceModel = CacheManager.Current.GetResource(cell.ResourceID)
+            Dim res As ResourceModel = CacheManager.Current.ResourceTree().GetResource(cell.ResourceID)
             cell.CssClass = (cell.CssClass + " reservation-action").Trim()
             cell.Attributes.Add("data-command", command)
             cell.Attributes.Add("data-reservation-id", cell.ReservationID.ToString())
@@ -657,7 +666,7 @@ Namespace UserControls
 #End Region
 
 #Region "Utility"
-        Private Function ReservationFilter(rsv As repo.Reservation, beginTime As Date, endTime As Date) As Boolean
+        Private Function ReservationFilter(rsv As Scheduler.Reservation, beginTime As Date, endTime As Date) As Boolean
             If Not rsv.ActualEndDateTime.HasValue Then
                 Return rsv.BeginDateTime < endTime AndAlso rsv.EndDateTime > beginTime
             Else
@@ -678,10 +687,10 @@ Namespace UserControls
             Return CacheManager.Current.GetAuthLevel(resourceId, CacheManager.Current.ClientID)
         End Function
 
-        Public Async Function StartReservationAsync(rsv As repo.Reservation, clientId As Integer) As Task
+        Public Async Function StartReservationAsync(rsv As Scheduler.Reservation, clientId As Integer) As Task
             Try
                 Dim isInLab As Boolean = CacheManager.Current.ClientInLab(rsv.Resource.ProcessTech.Lab.LabID)
-                Await ReservationUtility.StartReservation(rsv, clientId, isInLab)
+                Await Page.ReservationManager.StartReservation(rsv, clientId, isInLab)
             Catch ex As Exception
                 Session("ErrorMessage") = ex.Message
             End Try

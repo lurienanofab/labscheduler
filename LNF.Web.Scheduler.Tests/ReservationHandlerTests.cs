@@ -16,7 +16,7 @@ namespace LNF.Web.Scheduler.Tests
             HttpRequestManager mgr = ContextManager.StartRequest("reservation.ashx", "http://lnf-dev.eecs.umich.edu/sselscheduler/ajax/reservation.ashx", "Command=test&ReservationID=0");
             await handler.ProcessRequestAsync(mgr.Context);
             var content = mgr.GetResponse();
-            var result = Providers.Serialization.Json.DeserializeAnonymous(content, new { Error = false, Message = "" });
+            var result = ServiceProvider.Current.Serialization.Json.DeserializeAnonymous(content, new { Error = false, Message = "" });
             Assert.AreEqual(result.Error, false);
             Assert.AreEqual(result.Message, "ok");
 

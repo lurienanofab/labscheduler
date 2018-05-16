@@ -3,6 +3,8 @@ using LNF.Models.Data;
 using LNF.Models.Scheduler;
 using LNF.Scheduler;
 using LNF.Web.Content;
+using LNF.Data;
+using LNF.Repository;
 
 namespace LNF.Web.Scheduler.Content
 {
@@ -12,6 +14,14 @@ namespace LNF.Web.Scheduler.Content
         {
             get { return (SchedulerMasterPage)Page.Master; }
         }
+
+        public IClientManager ClientManager => DA.Use<IClientManager>();
+        public IClientOrgManager ClientOrgManager => DA.Use<IClientOrgManager>();
+        public IAccountManager AccountManager => DA.Use<IAccountManager>();
+        public IReservationManager ReservationManager => DA.Use<IReservationManager>();
+        public IReservationInviteeManager ReservationInviteeManager => DA.Use<IReservationInviteeManager>();
+        public IResourceManager ResourceManager => DA.Use<IResourceManager>();
+        public IEmailManager EmailManager => DA.Use<IEmailManager>();
 
         //Public Shadows ReadOnly Property Master As MasterPageScheduler
         //Get

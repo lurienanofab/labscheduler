@@ -10,7 +10,7 @@ Imports LNF.Scheduler.Data
 Imports LNF.Web
 Imports LNF.Web.Scheduler
 Imports LNF.Web.Scheduler.Content
-Imports repo = LNF.Repository.Scheduler
+Imports Scheduler = LNF.Repository.Scheduler
 
 Namespace Pages
     Public Class Reservation
@@ -33,8 +33,8 @@ Namespace Pages
         ' Resource Info
         ' Need to track both because when creating _reservation will be null and _resource will be based on path.
         ' When modifying _reservation will be based on the QuerySting parameter and _resource will be based on _reservation.Resource
-        'Private _reservation As repo.Reservation
-        'Private _resource As repo.Resource
+        'Private _reservation As Scheduler.Reservation
+        'Private _resource As Scheduler.Resource
 
         'Private _authLevel As ClientAuthLevel
 
@@ -53,21 +53,22 @@ Namespace Pages
         'Private _dtAvailInvitees As DataTable
 
         ' Other
-        Private _overwriteReservations As IList(Of repo.Reservation)
+        Private _overwriteReservations As IList(Of Scheduler.Reservation)
 
         Private _RecurrenceWeekDays As Dictionary(Of DayOfWeek, HtmlInputRadioButton)
 
         Public ReadOnly Property RecurrenceWeekDays As Dictionary(Of DayOfWeek, HtmlInputRadioButton)
             Get
                 If _RecurrenceWeekDays Is Nothing Then
-                    _RecurrenceWeekDays = New Dictionary(Of DayOfWeek, HtmlInputRadioButton)
-                    _RecurrenceWeekDays.Add(DayOfWeek.Sunday, rdoRecurringPatternWeeklySunday)
-                    _RecurrenceWeekDays.Add(DayOfWeek.Monday, rdoRecurringPatternWeeklyMonday)
-                    _RecurrenceWeekDays.Add(DayOfWeek.Tuesday, rdoRecurringPatternWeeklyTuesday)
-                    _RecurrenceWeekDays.Add(DayOfWeek.Wednesday, rdoRecurringPatternWeeklyWednesday)
-                    _RecurrenceWeekDays.Add(DayOfWeek.Thursday, rdoRecurringPatternWeeklyThursday)
-                    _RecurrenceWeekDays.Add(DayOfWeek.Friday, rdoRecurringPatternWeeklyFriday)
-                    _RecurrenceWeekDays.Add(DayOfWeek.Saturday, rdoRecurringPatternWeeklySaturday)
+                    _RecurrenceWeekDays = New Dictionary(Of DayOfWeek, HtmlInputRadioButton) From {
+                        {DayOfWeek.Sunday, rdoRecurringPatternWeeklySunday},
+                        {DayOfWeek.Monday, rdoRecurringPatternWeeklyMonday},
+                        {DayOfWeek.Tuesday, rdoRecurringPatternWeeklyTuesday},
+                        {DayOfWeek.Wednesday, rdoRecurringPatternWeeklyWednesday},
+                        {DayOfWeek.Thursday, rdoRecurringPatternWeeklyThursday},
+                        {DayOfWeek.Friday, rdoRecurringPatternWeeklyFriday},
+                        {DayOfWeek.Saturday, rdoRecurringPatternWeeklySaturday}
+                    }
                 End If
 
                 Return _RecurrenceWeekDays
@@ -75,33 +76,33 @@ Namespace Pages
         End Property
 
         Public Function GetReservationInvitees() As IList(Of LNF.Scheduler.ReservationInviteeItem)
-            Dim result As IList(Of LNF.Scheduler.ReservationInviteeItem) = CacheManager.Current.ReservationInvitees()
+            Dim result As IList(Of LNF.Scheduler.ReservationInviteeItem) = CacheManager.Current.ReservationInvitees().ToList()
 
             If result Is Nothing Then
                 RefreshInvitees()
-                result = CacheManager.Current.ReservationInvitees()
+                result = CacheManager.Current.ReservationInvitees().ToList()
             End If
 
             Return result
         End Function
 
         Public Function GetAvailableInvitees() As IList(Of AvailableInviteeItem)
-            Dim result As IList(Of AvailableInviteeItem) = CacheManager.Current.AvailableInvitees()
+            Dim result As IList(Of AvailableInviteeItem) = CacheManager.Current.AvailableInvitees().ToList()
 
             If result Is Nothing Then
                 RefreshInvitees()
-                result = CacheManager.Current.AvailableInvitees()
+                result = CacheManager.Current.AvailableInvitees().ToList()
             End If
 
             Return result
         End Function
 
         Public Function GetRemovedInvitees() As IList(Of LNF.Scheduler.ReservationInviteeItem)
-            Dim result As IList(Of LNF.Scheduler.ReservationInviteeItem) = CacheManager.Current.RemovedInvitees()
+            Dim result As IList(Of LNF.Scheduler.ReservationInviteeItem) = CacheManager.Current.RemovedInvitees().ToList()
 
             If result Is Nothing Then
                 RefreshInvitees()
-                result = CacheManager.Current.RemovedInvitees()
+                result = CacheManager.Current.RemovedInvitees().ToList()
             End If
 
             Return result
@@ -109,7 +110,7 @@ Namespace Pages
 
         Private Sub RefreshInvitees()
             Dim res As ResourceModel = GetCurrentResource()
-            Dim rsv As repo.Reservation = GetCurrentReservation()
+            Dim rsv As Scheduler.Reservation = GetCurrentReservation()
 
             Dim reservationId As Integer
             Dim resourceId As Integer
@@ -162,7 +163,7 @@ Namespace Pages
             Session("ReturnTo") = Nothing
 
             'This variables must be set every time
-            Dim rsv As repo.Reservation = GetCurrentReservation()
+            Dim rsv As Scheduler.Reservation = GetCurrentReservation()
             Dim res As ResourceModel = GetCurrentResource()
 
             RequestLog.Append("     GetCurrentReservation and GetCurrentResource: {0}", Date.Now - startTime)
@@ -297,7 +298,7 @@ Namespace Pages
             Return Request.QueryString("ChangeDate") = "1"
         End Function
 
-        Private Function GetCurrentReservation() As repo.Reservation
+        Private Function GetCurrentReservation() As Scheduler.Reservation
             Dim reservationId As Integer = 0
 
             If Request.QueryString("ReservationID") IsNot Nothing Then
@@ -314,14 +315,14 @@ Namespace Pages
             If reservationId = 0 Then
                 Return Nothing
             Else
-                Return DA.Current.Single(Of repo.Reservation)(reservationId)
+                Return DA.Current.Single(Of Scheduler.Reservation)(reservationId)
             End If
         End Function
 
         Public Overrides Function GetCurrentResource() As ResourceModel
             Dim resourceId As Integer = 0
 
-            Dim rsv As repo.Reservation = GetCurrentReservation()
+            Dim rsv As Scheduler.Reservation = GetCurrentReservation()
 
             If rsv Is Nothing Then
                 resourceId = Request.SelectedPath().ResourceID
@@ -329,11 +330,11 @@ Namespace Pages
                 resourceId = rsv.Resource.ResourceID
             End If
 
-            Return CacheManager.Current.Resources(Function(x) x.ResourceID = resourceId).FirstOrDefault()
+            Return CacheManager.Current.ResourceTree().GetResource(resourceId)
         End Function
 
         Private Function GetCurrentClient() As ClientItem
-            Dim rsv As repo.Reservation = GetCurrentReservation()
+            Dim rsv As Scheduler.Reservation = GetCurrentReservation()
 
             If rsv IsNot Nothing Then
                 Return CacheManager.Current.GetClient(rsv.Client.ClientID)
@@ -354,12 +355,12 @@ Namespace Pages
         End Sub
 
         Protected Sub ddlStartTimeMin_SelectedIndexChanged(sender As Object, e As EventArgs) Handles ddlStartTimeMin.SelectedIndexChanged
-            Dim res As repo.Resource = Nothing
-            Dim rsv As repo.Reservation = Nothing
+            Dim res As Scheduler.Resource = Nothing
+            Dim rsv As Scheduler.Reservation = Nothing
             GetMaxDuration(True)
         End Sub
 
-        Private Sub LoadReservationInfo(rsv As repo.Reservation)
+        Private Sub LoadReservationInfo(rsv As Scheduler.Reservation)
             Dim headerText = String.Empty
 
             If rsv Is Nothing Then
@@ -436,7 +437,7 @@ Namespace Pages
         End Function
 
         ' Loads Reservation Start Time Dropdownlist
-        Private Sub LoadBeginTime(rsv As repo.Reservation)
+        Private Sub LoadBeginTime(rsv As Scheduler.Reservation)
             Dim res As ResourceModel = GetCurrentResource()
 
             ' Restrictions: Start Time either = end of previous reservation or
@@ -483,7 +484,7 @@ Namespace Pages
             End If
 
             For i As Integer = 0 To 59 Step Convert.ToInt32(res.Granularity.TotalMinutes)
-                ddlStartTimeMin.Items.Add(New ListItem(i.ToString(), i.ToString()))
+                ddlStartTimeMin.Items.Add(New ListItem(i.ToString("00"), i.ToString()))
             Next
 
             ' Select Preselected Time
@@ -526,7 +527,7 @@ Namespace Pages
             selectedDateTime = selectedDateTime.AddMinutes(Convert.ToInt32(ddlStartTimeMin.SelectedValue))
 
             Dim res As ResourceModel = GetCurrentResource()
-            Dim rsv As repo.Reservation = GetCurrentReservation()
+            Dim rsv As Scheduler.Reservation = GetCurrentReservation()
             Dim client As ClientItem = GetCurrentClient()
 
             Dim reservationId As Integer = 0
@@ -536,7 +537,7 @@ Namespace Pages
                 chkIsRecurring.Checked = rsv.IsRecurring()
             End If
 
-            Dim maxDuration As TimeSpan = DA.Scheduler.Reservation.GetTimeUntilNextReservation(res.ResourceID, reservationId, client.ClientID, selectedDateTime)
+            Dim maxDuration As TimeSpan = ReservationManager.GetTimeUntilNextReservation(res.ResourceID, reservationId, client.ClientID, selectedDateTime)
 
             If maxDuration.TotalMinutes <= 0 Then ' this means that the reservable time is limited by max schedulable
                 LoadDuration(-1 * maxDuration.TotalMinutes, True)
@@ -617,7 +618,7 @@ Namespace Pages
             lblMaxSchedLimit.Visible = showLimitMsg
 
             Dim act As ActivityModel = GetCurrentActivity()
-            Dim rsv As repo.Reservation = GetCurrentReservation()
+            Dim rsv As Scheduler.Reservation = GetCurrentReservation()
 
             If GetDurationType(act.NoMaxSchedAuth, act.ActivityID) Then
                 ShowDurationText()
@@ -637,7 +638,7 @@ Namespace Pages
         End Sub
 
         ' Loads Activity Type Dropdownlist
-        Private Sub LoadActivity(rsv As repo.Reservation)
+        Private Sub LoadActivity(rsv As Scheduler.Reservation)
             Dim authLevel As ClientAuthLevel = GetCurrentAuthLevel()
             ddlActivity.DataSource = CacheManager.Current.AuthorizedActivities(authLevel)
             ddlActivity.DataBind()
@@ -664,7 +665,7 @@ Namespace Pages
             Dim activity As ActivityModel = CacheManager.Current.GetActivity(activityId)
             ddlActivity.Attributes.Add("title", activity.Description)
 
-            Dim rsv As repo.Reservation = GetCurrentReservation()
+            Dim rsv As Scheduler.Reservation = GetCurrentReservation()
             Dim res As ResourceModel = GetCurrentResource()
 
             If rsv IsNot Nothing Then
@@ -702,7 +703,7 @@ Namespace Pages
             FillAccountDropDown(accts, selectedAccountId, mustAddInvitee)
         End Sub
 
-        Private Sub LoadAccount(rsv As repo.Reservation)
+        Private Sub LoadAccount(rsv As Scheduler.Reservation)
             If rsv Is Nothing Then Throw New ArgumentNullException("rsv")
             Dim accts As New List(Of ClientAccountModel)
             Dim mustAddInvitee As Boolean = SchedulerUtility.LoadAccounts(accts, rsv.Activity.AccountType, rsv.Client.ClientID)
@@ -827,7 +828,7 @@ Namespace Pages
             FillProcessInfoRepeater(items)
         End Sub
 
-        Private Sub LoadProcessInfo(rsv As repo.Reservation)
+        Private Sub LoadProcessInfo(rsv As Scheduler.Reservation)
             If rsv Is Nothing Then Throw New ArgumentNullException("rsv")
             SchedulerUtility.LoadProcessInfo(rsv.ReservationID)
             Dim items As IList(Of ProcessInfoModel) = CacheManager.Current.ProcessInfos(rsv.Resource.ResourceID).ToList()
@@ -876,12 +877,12 @@ Namespace Pages
             End If
         End Sub
 
-        Private Function InviteeReservationsBetween(inviteeClientId As Integer, startDateTime As Date, duration As Integer) As IList(Of repo.Reservation)
+        Private Function InviteeReservationsBetween(inviteeClientId As Integer, startDateTime As Date, duration As Integer) As IList(Of Scheduler.Reservation)
             Dim endDateTime As Date = startDateTime.AddMinutes(duration)
 
-            Dim inviteeRsv As IList(Of repo.Reservation) = DA.Scheduler.Reservation.SelectByClient(inviteeClientId, Request.SelectedDate().AddHours(0), Request.SelectedDate().AddHours(24), False)
+            Dim inviteeRsv As IList(Of Scheduler.Reservation) = ReservationManager.SelectByClient(inviteeClientId, Request.SelectedDate().AddHours(0), Request.SelectedDate().AddHours(24), False)
 
-            Dim conflictingRsv As IList(Of repo.Reservation) = ReservationUtility.GetConflictingReservations(inviteeRsv, startDateTime, endDateTime)
+            Dim conflictingRsv As IList(Of Scheduler.Reservation) = ReservationManager.GetConflictingReservations(inviteeRsv, startDateTime, endDateTime)
 
             Return conflictingRsv
         End Function
@@ -901,7 +902,7 @@ Namespace Pages
             litInviteeWarning.Text = String.Format("Please be aware that the following invitees have made another reservation at this time: <ul>{0}</ul>", String.Join(Environment.NewLine, names.Select(Function(x) String.Format("<li>{0}</li>", x))))
         End Sub
 
-        Private Sub InviteeModification(res As ResourceModel, rsv As repo.Reservation, actionType As String, ddlInvitees As DropDownList, lblInviteeID As Label, lblInviteeName As Label)
+        Private Sub InviteeModification(res As ResourceModel, rsv As Scheduler.Reservation, actionType As String, ddlInvitees As DropDownList, lblInviteeID As Label, lblInviteeName As Label)
             Dim invitees As IList(Of LNF.Scheduler.ReservationInviteeItem) = GetReservationInvitees()
             Dim available As IList(Of AvailableInviteeItem) = GetAvailableInvitees()
             Dim removed As IList(Of LNF.Scheduler.ReservationInviteeItem) = GetRemovedInvitees()
@@ -921,10 +922,11 @@ Namespace Pages
 
                 ' make sure the selected invitee is in the list of available invitees
                 If avail IsNot Nothing Then
-                    Dim item As New LNF.Scheduler.ReservationInviteeItem()
-                    item.ReservationID = reservationId
-                    item.InviteeID = avail.ClientID
-                    item.DisplayName = avail.DisplayName
+                    Dim item As New LNF.Scheduler.ReservationInviteeItem With {
+                        .ReservationID = reservationId,
+                        .InviteeID = avail.ClientID,
+                        .DisplayName = avail.DisplayName
+                    }
 
                     invitees.Add(item)
                     ' avail will be removed from session in dgInvitees_ItemCreated
@@ -996,7 +998,7 @@ Namespace Pages
         End Sub
 
         Private Sub LoadInvitees()
-            Dim rsv As repo.Reservation = GetCurrentReservation()
+            Dim rsv As Scheduler.Reservation = GetCurrentReservation()
             Dim res As ResourceModel = GetCurrentResource()
             Dim client As ClientItem = GetCurrentClient()
             Dim act As ActivityModel = GetCurrentActivity()
@@ -1018,7 +1020,7 @@ Namespace Pages
         ' When submit button is clicked, validate reservation and ask for confirmation
         Protected Sub btnSubmit_Click(sender As Object, e As EventArgs) Handles btnSubmit.Click
             Try
-                Dim rsv As repo.Reservation = GetCurrentReservation()
+                Dim rsv As Scheduler.Reservation = GetCurrentReservation()
                 Dim res As ResourceModel = GetCurrentResource()
 
                 Dim reservationId As Integer
@@ -1060,12 +1062,12 @@ Namespace Pages
                         If reservationId = 0 Then
                             ' new recurring reservation
                             If Date.TryParse(txtStartDate.Text, rrStartDate) Then
-                                Dim rr As New repo.ReservationRecurrence()
+                                Dim rr As New Scheduler.ReservationRecurrence()
                                 Dim patId As Integer = If(rdoRecurringPatternWeekly.Checked, 1, 2)
-                                rr.Pattern = DA.Current.Single(Of repo.RecurrencePattern)(patId)
-                                rr.Resource = DA.Scheduler.Resource.Single(res.ResourceID)
+                                rr.Pattern = DA.Current.Single(Of Scheduler.RecurrencePattern)(patId)
+                                rr.Resource = DA.Current.Single(Of Scheduler.Resource)(res.ResourceID)
                                 rr.Client = client
-                                rr.Account = Properties.Current.LabAccount 'Currently only supports general lab account
+                                rr.Account = DA.Current.Single(Of Account)(Properties.Current.LabAccount.AccountID) 'Currently only supports general lab account
                                 rr.BeginTime = rd.BeginDateTime
                                 rr.Duration = rrDuration
                                 rr.EndTime = rd.EndDateTime
@@ -1073,7 +1075,7 @@ Namespace Pages
                                 rr.CreatedOn = Date.Now
                                 rr.AutoEnd = chkAutoEnd.Checked
                                 rr.IsActive = True
-                                rr.Activity = Properties.Current.Activities.ScheduledMaintenance
+                                rr.Activity = DA.Current.Single(Of Scheduler.Activity)(Properties.Current.Activities.ScheduledMaintenance.ActivityID)
                                 rr.AutoEnd = chkAutoEnd.Checked
                                 rr.KeepAlive = chkKeepAlive.Checked
                                 rr.Notes = txtNotes.Text
@@ -1205,7 +1207,7 @@ Namespace Pages
                 'do not go over the limit
                 If activity.ActivityID = 21 OrElse activity.ActivityID = 22 Then
                     For Each ri In GetReservationInvitees()
-                        Dim availableMinutes As Integer = ReservationUtility.GetAvailableSchedMin(res.ResourceID, ri.InviteeID)
+                        Dim availableMinutes As Integer = ReservationManager.GetAvailableSchedMin(res.ResourceID, ri.InviteeID)
 
                         'This code is trying to solve the problem about calculating correct available time when current reservation being modified
                         'must be excluded.  So we must added the current reservation's duration back to available time
@@ -1294,7 +1296,7 @@ Namespace Pages
 
                 lblConfirm.Text += String.Format("<br/><br/>The estimated cost of this activity will be {0}.", dblCostStr)
 
-                Dim processInfoEnum As IList(Of repo.ProcessInfo) = DA.Current.Query(Of repo.ProcessInfo)().Where(Function(x) x.Resource.ResourceID = res.ResourceID).ToList()
+                Dim processInfoEnum As IList(Of Scheduler.ProcessInfo) = DA.Current.Query(Of Scheduler.ProcessInfo)().Where(Function(x) x.Resource.ResourceID = res.ResourceID).ToList()
 
                 If processInfoEnum.Count > 0 Then
                     lblConfirm.Text += "<br/>Additional precious metal charges may apply."
@@ -1317,13 +1319,13 @@ Namespace Pages
                 Dim isEngineer As Boolean = (authLevel And ClientAuthLevel.ToolEngineer) > 0
 
                 'Dim isStartable As Boolean = (DateTime.Now > BeginDateTime.AddMinutes(-1 * resDB.MinReservTime))
-                Dim resevationState As ReservationState = ReservationUtility.GetUnstartedReservationState(rd.BeginDateTime, Convert.ToInt32(res.MinReservTime.TotalMinutes), isInLab, isEngineer, True, False, True, True)
+                Dim resevationState As ReservationState = ReservationManager.GetUnstartedReservationState(rd.BeginDateTime, Convert.ToInt32(res.MinReservTime.TotalMinutes), isInLab, isEngineer, True, False, True, True)
                 Dim allowedAuths As ClientAuthLevel = ClientAuthLevel.AuthorizedUser Or ClientAuthLevel.SuperUser Or ClientAuthLevel.ToolEngineer Or ClientAuthLevel.Trainer
 
                 phConfirmYesAndStart.Visible = False ' reset to false 
                 If ReservationState.StartOnly = resevationState OrElse ReservationState.StartOrDelete = resevationState Then
                     If (allowedAuths And authLevel) > 0 Then ' isUserAuthorized Then
-                        Dim endableRsvQuery As IList(Of repo.Reservation) = DA.Scheduler.Reservation.SelectEndableReservations(res.ResourceID)
+                        Dim endableRsvQuery As IList(Of Scheduler.Reservation) = ReservationManager.SelectEndableReservations(res.ResourceID)
                         If endableRsvQuery.Count = 0 Then
                             ' If there are no previous un-ended reservations
                             phConfirmYesAndStart.Visible = True
@@ -1364,7 +1366,7 @@ Namespace Pages
             litReservationAlert.Text = String.Format(formatString, alertType, text)
         End Sub
 
-        Protected Function IsThereAlreadyAnotherReservation(rsv As repo.Reservation) As Boolean
+        Protected Function IsThereAlreadyAnotherReservation(rsv As Scheduler.Reservation) As Boolean
             Dim res As ResourceModel = GetCurrentResource()
 
             ' Check for other reservations made during this time
@@ -1381,7 +1383,7 @@ Namespace Pages
 
             Dim rd As ReservationDuration = GetReservationDuration(activityId)
 
-            Dim otherRsv As IList(Of repo.Reservation) = ReservationUtility.SelectOverwrittable(res.ResourceID, rd.BeginDateTime, rd.EndDateTime)
+            Dim otherRsv As IList(Of Scheduler.Reservation) = ReservationManager.SelectOverwrittable(res.ResourceID, rd.BeginDateTime, rd.EndDateTime)
 
             If otherRsv.Count > 0 Then
                 If Not (otherRsv.Count = 1 AndAlso otherRsv(0).ReservationID = reservationId) Then
@@ -1416,7 +1418,7 @@ Namespace Pages
                     Dim pt As ProcessTechModel = Request.SelectedPath().GetProcessTech()
                     Dim path As PathInfo = PathInfo.Create(pt)
                     redirectUrl = String.Format("~/ProcessTech.aspx?Path={0}&Date={1:yyyy-MM-dd}", path.UrlEncode(), Request.SelectedDate())
-                Else 'ViewType.DayView OrElse repo.ViewType.WeekView
+                Else 'ViewType.DayView OrElse Scheduler.ViewType.WeekView
                     redirectUrl = String.Format("~/ResourceDayWeek.aspx?Path={0}&Date={1:yyyy-MM-dd}", Request.SelectedPath().UrlEncode(), Request.SelectedDate())
                 End If
             End If
@@ -1444,7 +1446,7 @@ Namespace Pages
 
         Protected Sub btnConfirmYesAndStart_Click(sender As Object, e As EventArgs)
             Try
-                Dim rsv As repo.Reservation = CreateOrModifyReservation()
+                Dim rsv As Scheduler.Reservation = CreateOrModifyReservation()
 
                 Dim clientId As Integer = CurrentUser.ClientID
                 Dim isInLab As Boolean = CacheManager.Current.ClientInLab(rsv.Resource.ProcessTech.Lab.LabID)
@@ -1458,15 +1460,15 @@ Namespace Pages
             ReturnToResourceDayWeek()
         End Sub
 
-        Private Async Function StartReservationAsync(rsv As repo.Reservation, clientId As Integer) As Task
+        Private Async Function StartReservationAsync(rsv As Scheduler.Reservation, clientId As Integer) As Task
             If rsv IsNot Nothing Then
                 Dim isInLab As Boolean = CacheManager.Current.ClientInLab(rsv.Resource.ProcessTech.Lab.LabID)
-                Await ReservationUtility.StartReservation(rsv, clientId, isInLab)
+                Await ReservationManager.StartReservation(rsv, clientId, isInLab)
             End If
         End Function
 
-        Private Function CreateOrModifyReservation() As repo.Reservation
-            Dim rsv As repo.Reservation = GetCurrentReservation()
+        Private Function CreateOrModifyReservation() As Scheduler.Reservation
+            Dim rsv As Scheduler.Reservation = GetCurrentReservation()
 
             Session("ReservationProcessInfoJsonData") = hidProcessInfoData.Value
 
@@ -1478,7 +1480,7 @@ Namespace Pages
             End If
 
             ' this will be the result reservation - either a true new reservation when creating, a new reservation for modification, or the existing rsv when modifying non-duration data
-            Dim result As repo.Reservation = Nothing
+            Dim result As Scheduler.Reservation = Nothing
 
             ' Overwrite other reservations
             If _overwriteReservations IsNot Nothing Then
@@ -1495,13 +1497,14 @@ Namespace Pages
         End Function
 
         Public Function GetReservationData() As SchedulerUtility.ReservationData
-            Dim result As New SchedulerUtility.ReservationData()
-            result.ClientID = GetCurrentClient().ClientID
-            result.AccountID = Integer.Parse(ddlAccount.SelectedValue)
-            result.ActivityID = GetCurrentActivity().ActivityID
-            result.AutoEnd = chkAutoEnd.Checked
-            result.KeepAlive = chkKeepAlive.Checked
-            result.Notes = txtNotes.Text
+            Dim result As New SchedulerUtility.ReservationData With {
+                .ClientID = GetCurrentClient().ClientID,
+                .AccountID = Integer.Parse(ddlAccount.SelectedValue),
+                .ActivityID = GetCurrentActivity().ActivityID,
+                .AutoEnd = chkAutoEnd.Checked,
+                .KeepAlive = chkKeepAlive.Checked,
+                .Notes = txtNotes.Text
+            }
             result.ReservationDuration = GetReservationDuration(result.ActivityID)
             result.ResourceID = GetCurrentResource().ResourceID
             Return result
@@ -1515,12 +1518,12 @@ Namespace Pages
 
         ' Overwrite intervening reservations
         Private Sub OverwriteReservations()
-            For Each rsv As repo.Reservation In _overwriteReservations
+            For Each rsv As Scheduler.Reservation In _overwriteReservations
                 ' Delete Reservation
-                rsv.Delete(CurrentUser.ClientID)
+                ReservationManager.Delete(rsv, CurrentUser.ClientID)
 
                 ' Send email to reserver informing them that their reservation has been canceled
-                EmailUtility.EmailOnToolEngDelete(rsv, CurrentUser.ClientID)
+                EmailManager.EmailOnToolEngDelete(rsv, CurrentUser.ClientID)
             Next
         End Sub
 #End Region
@@ -1551,10 +1554,11 @@ Namespace Pages
             LoadRecurringReservation()
         End Sub
 
-        Protected Function ReservationLog(reservation As repo.Reservation, reservationParams As Dictionary(Of String, String)) As Boolean
+        Protected Function ReservationLog(reservation As Scheduler.Reservation, reservationParams As Dictionary(Of String, String)) As Boolean
             For Each kvp As KeyValuePair(Of String, String) In reservationParams
-                Dim resLog As repo.ReservationLog = New repo.ReservationLog()
-                resLog.Reservation = reservation
+                Dim resLog As Scheduler.ReservationLog = New Scheduler.ReservationLog With {
+                    .Reservation = reservation
+                }
                 'resLog.ParamName = kvp.Key
                 'resLog.ParamValue = kvp.Value.ToString()
             Next

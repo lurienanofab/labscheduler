@@ -23,11 +23,11 @@ Public Class index
                 result = Await AjaxUtility.HandleRequest(context)
             End If
         Catch ex As Exception
-            Dim gr As New GenericResult()
-            gr.Data = "-Exception-"
-            gr.Success = False
-            gr.Message = ex.ToString()
-            result = gr
+            result = New GenericResult With {
+                .Data = "-Exception-",
+                .Success = False,
+                .Message = ex.ToString()
+            }
         End Try
 
         context.Response.ContentType = "application/json"
@@ -43,6 +43,6 @@ Public Class index
     End Function
 
     Private Function JsonResult(obj As Object) As String
-        Return Providers.Serialization.Json.SerializeObject(obj)
+        Return ServiceProvider.Current.Serialization.Json.SerializeObject(obj)
     End Function
 End Class

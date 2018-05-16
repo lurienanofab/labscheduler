@@ -14,24 +14,24 @@ namespace LNF.Web.Scheduler.Tests
         {
             Client c;
 
-            using (Providers.DataAccess.StartUnitOfWork())
+            using (ServiceProvider.Current.DataAccess.StartUnitOfWork())
             {
                 c = DA.Current.Single<Client>(1301);
                 c.SetPassword("lnf123");
             }
 
-            using (Providers.DataAccess.StartUnitOfWork())
+            using (ServiceProvider.Current.DataAccess.StartUnitOfWork())
             {
                 c = DA.Current.Single<Client>(1301);
 
-                Assert.IsTrue(c.CheckPassword(Providers.DataAccess.UniversalPassword));
+                Assert.IsTrue(c.CheckPassword(ServiceProvider.Current.DataAccess.UniversalPassword));
                 Assert.IsTrue(c.CheckPassword("lnf123"));
 
                 // fail for non existing user
                 try
                 {
                     c = DA.Current.Single<Client>(-1);
-                    Assert.IsTrue(c.CheckPassword(Providers.DataAccess.UniversalPassword));
+                    Assert.IsTrue(c.CheckPassword(ServiceProvider.Current.DataAccess.UniversalPassword));
                 }
                 catch (Exception ex)
                 {

@@ -19,6 +19,10 @@ namespace LNF.Web.Scheduler
 {
     public static class SchedulerUtility
     {
+        public static IReservationManager ReservationManager => DA.Use<IReservationManager>();
+        public static IReservationInviteeManager ReservationInviteeManager => DA.Use<IReservationInviteeManager>();
+        public static IEmailManager EmailManager => DA.Use<IEmailManager>();
+
         public class ReservationData
         {
             public int ClientID { get; set; }
@@ -38,40 +42,39 @@ namespace LNF.Web.Scheduler
             UpdateReservation(result, data);
 
             if (HandleFacilityDowntimeResrvation(result, data))
-                result.InsertFacilityDownTime(data.ClientID);
+                ReservationManager.InsertFacilityDownTime(result, data.ClientID);
             else
             {
-                result.Insert(data.ClientID);
+                ReservationManager.Insert(result, data.ClientID);
                 HandlePracticeReservation(result, data);
             }
 
             InsertReservationInvitees(result.ReservationID);
             InsertReservationProcessInfos(result.ReservationID);
 
-            EmailUtility.EmailOnUserCreate(result);
-            EmailUtility.EmailOnInvited(result, CacheManager.Current.ReservationInvitees());
+            EmailManager.EmailOnUserCreate(result);
+            EmailManager.EmailOnInvited(result, CacheManager.Current.ReservationInvitees());
 
             return result;
         }
 
         public static Reservation ModifyExistingReservation(Reservation rsv, ReservationData data)
         {
-            bool insert;
-            var result = GetReservationForModification(rsv, data, out insert);
+            var result = GetReservationForModification(rsv, data, out bool insert);
 
             UpdateReservation(result, data);
 
             if (HandleFacilityDowntimeResrvation(result, data))
-                result.UpdateFacilityDownTime(data.ClientID);
+                ReservationManager.UpdateFacilityDownTime(result, data.ClientID);
             else
             {
                 if (insert)
                 {
-                    result.InsertForModification(rsv.ReservationID, data.ClientID);
+                    ReservationManager.InsertForModification(result, rsv.ReservationID, data.ClientID);
                     rsv.AppendNotes(string.Format("Canceled for modification. New ReservationID: {0}", result.ReservationID));
                 }
                 else
-                    result.Update(data.ClientID);
+                    ReservationManager.Update(result, data.ClientID);
 
                 HandlePracticeReservation(result, data);
             }
@@ -87,9 +90,9 @@ namespace LNF.Web.Scheduler
                 UpdateReservationProcessInfos();
             }
 
-            EmailUtility.EmailOnUserUpdate(result);
-            EmailUtility.EmailOnInvited(result, CacheManager.Current.ReservationInvitees(), EmailUtility.ReservationModificationType.Modified);
-            EmailUtility.EmailOnUninvited(rsv, CacheManager.Current.RemovedInvitees());
+            EmailManager.EmailOnUserUpdate(result);
+            EmailManager.EmailOnInvited(result, CacheManager.Current.ReservationInvitees(), ReservationModificationType.Modified);
+            EmailManager.EmailOnUninvited(rsv, CacheManager.Current.RemovedInvitees());
 
             return result;
         }
@@ -101,7 +104,7 @@ namespace LNF.Web.Scheduler
             if (removed != null)
             {
                 foreach (var item in removed)
-                    item.Delete();
+                    ReservationInviteeManager.Delete(item.ReservationID, item.InviteeID);
             }
 
             var invitees = CacheManager.Current.ReservationInvitees();
@@ -109,7 +112,7 @@ namespace LNF.Web.Scheduler
             if (invitees != null)
             {
                 foreach (var item in invitees)
-                    item.Insert();
+                    ReservationInviteeManager.Insert(item.ReservationID, item.InviteeID);
             }
         }
 
@@ -122,7 +125,7 @@ namespace LNF.Web.Scheduler
                 foreach (var item in invitees)
                 {
                     item.ReservationID = reservationId;
-                    item.Insert();
+                    ReservationInviteeManager.Insert(item.ReservationID, item.InviteeID);
                 }
             }
         }
@@ -153,14 +156,17 @@ namespace LNF.Web.Scheduler
 
         public static Reservation GetNewReservation(ReservationData data, TimeSpan maxReservedDuration)
         {
-            var result = new Reservation();
-            result.IsActive = true;
-            result.Resource = DA.Current.Single<Resource>(data.ResourceID);
-            result.Client = DA.Current.Single<Client>(data.ClientID);
-            result.RecurrenceID = -1; //always -1 for non-recurring reservation
-            result.MaxReservedDuration = maxReservedDuration.TotalMinutes;
-            result.Activity = DA.Current.Single<Activity>(data.ActivityID);
-            result.CreatedOn = DateTime.Now;
+            var result = new Reservation
+            {
+                IsActive = true,
+                Resource = DA.Current.Single<Resource>(data.ResourceID),
+                Client = DA.Current.Single<Client>(data.ClientID),
+                RecurrenceID = -1, //always -1 for non-recurring reservation
+                MaxReservedDuration = maxReservedDuration.TotalMinutes,
+                Activity = DA.Current.Single<Activity>(data.ActivityID),
+                CreatedOn = DateTime.Now
+            };
+
             return result;
         }
 
@@ -177,7 +183,7 @@ namespace LNF.Web.Scheduler
                 DateTime originalModifiedOn = rsv.OriginalModifiedOn.GetValueOrDefault(rsv.LastModifiedOn);
 
                 // New Update mechanism: Cancel the current reservation and create a new reservation
-                rsv.Delete(data.ClientID);
+                ReservationManager.Delete(rsv, data.ClientID);
 
                 // Now we need to create a new reservation object
                 double maxReservedMinutes = Math.Max(data.ReservationDuration.Duration.TotalMinutes, rsv.MaxReservedDuration);
@@ -215,22 +221,22 @@ namespace LNF.Web.Scheduler
         public static bool HandleFacilityDowntimeResrvation(Reservation rsv, ReservationData data)
         {
             // 2009-06-21 If it's Facility downtime, we must delete the reservations that has been made during that period
-            if (rsv.Activity == Properties.Current.Activities.FacilityDownTime)
+            if (rsv.Activity.ActivityID == Properties.Current.Activities.FacilityDownTime.ActivityID)
             {
                 // Facility down time must not need to be activated manually by person
                 rsv.ActualBeginDateTime = rsv.BeginDateTime;
                 rsv.ActualEndDateTime = rsv.EndDateTime;
 
                 // Find and Remove any un-started reservations made during time of repair
-                var query = DA.Scheduler.Reservation.SelectByResource(rsv.Resource.ResourceID, rsv.BeginDateTime, rsv.EndDateTime, false);
+                var query = ReservationManager.SelectByResource(rsv.Resource.ResourceID, rsv.BeginDateTime, rsv.EndDateTime, false);
 
-                foreach (var existingRsv in query)
+                foreach (var existing in query)
                 {
                     // Only if the reservation has not begun
-                    if (existingRsv.ActualBeginDateTime == null)
+                    if (existing.ActualBeginDateTime == null)
                     {
-                        existingRsv.Delete(data.ClientID);
-                        EmailUtility.EmailOnCanceledByRepair(existingRsv, true, "LNF Facility Down", "Facility is down, thus we have to disable the tool.", rsv.EndDateTime);
+                        ReservationManager.Delete(existing, data.ClientID);
+                        EmailManager.EmailOnCanceledByRepair(existing, true, "LNF Facility Down", "Facility is down, thus we have to disable the tool.", rsv.EndDateTime);
                     }
                     else
                     {
@@ -249,7 +255,7 @@ namespace LNF.Web.Scheduler
         public static bool HandlePracticeReservation(Reservation rsv, ReservationData data)
         {
             // 2009-09-16 Practice reservation : we must also check if tool engineers want to receive the notify email
-            if (rsv.Activity == Properties.Current.Activities.Practice)
+            if (rsv.Activity.ActivityID == Properties.Current.Activities.Practice.ActivityID)
             {
                 LNF.Scheduler.ReservationInviteeItem invitee = null;
 
@@ -261,7 +267,7 @@ namespace LNF.Web.Scheduler
                 if (invitee == null)
                     throw new InvalidOperationException("A practice reservation must have at least one invitee.");
 
-                EmailUtility.EmailOnPracticeRes(rsv, invitee.DisplayName);
+                EmailManager.EmailOnPracticeRes(rsv, invitee.DisplayName);
 
                 return true;
             }
@@ -276,7 +282,7 @@ namespace LNF.Web.Scheduler
             var invitees = CacheManager.Current.ReservationInvitees();
 
             if (invitees != null)
-                inviteeCount = invitees.Count;
+                inviteeCount = invitees.Count();
 
             rsv.BeginDateTime = data.ReservationDuration.BeginDateTime;
             rsv.EndDateTime = data.ReservationDuration.EndDateTime;
@@ -285,7 +291,7 @@ namespace LNF.Web.Scheduler
             rsv.Account = DA.Current.Single<Account>(data.AccountID);
             rsv.Notes = data.Notes;
             rsv.AutoEnd = data.AutoEnd;
-            rsv.HasProcessInfo = CacheManager.Current.ReservationProcessInfos().Count > 0;
+            rsv.HasProcessInfo = CacheManager.Current.ReservationProcessInfos().Count() > 0;
             rsv.HasInvitees = inviteeCount > 0;
             rsv.KeepAlive = data.KeepAlive;
         }
@@ -296,15 +302,15 @@ namespace LNF.Web.Scheduler
             int resourceId = rsv.Resource.ResourceID;
 
             // Reservation State
-            var state = ReservationUtility.GetReservationState(reservationId, clientId, isInLab);
+            var state = ReservationManager.GetReservationState(reservationId, clientId, isInLab);
 
             // 2008-08-15 temp
             if (reservationId == -1 && state == ReservationState.Repair)
                 state = ReservationState.Meeting;
 
             // Tooltip Caption and Text
-            string caption = ReservationUtility.GetReservationCaption(state);
-            string toolTip = ReservationUtility.GetReservationToolTip(rsv, state);
+            string caption = ReservationManager.GetReservationCaption(state);
+            string toolTip = ReservationManager.GetReservationToolTip(rsv, state);
             rsvCell.Attributes["data-tooltip"] = toolTip;
             rsvCell.Attributes["data-caption"] = caption;
 
@@ -312,21 +318,27 @@ namespace LNF.Web.Scheduler
             rsvCell.CssClass = state.ToString();
 
             // Reservation Text
-            Literal litReserver = new Literal();
-            litReserver.Text = string.Format("<div>{0}</div>", rsv.Client.DisplayName);
+            Literal litReserver = new Literal
+            {
+                Text = string.Format("<div>{0}</div>", rsv.Client.DisplayName)
+            };
+
             rsvCell.Controls.Add(litReserver);
 
             // Delete Button
             // 2/11/05 - GPR: allow tool engineers to cancel any non-started, non-repair reservation in the future
             ClientAuthLevel authLevel = CacheManager.Current.GetAuthLevel(resourceId, clientId);
-            ResourceModel res = CacheManager.Current.GetResource(rsv.Resource.ResourceID);
+            ResourceModel res = CacheManager.Current.ResourceTree().GetResource(rsv.Resource.ResourceID);
 
             if (state == ReservationState.Editable || state == ReservationState.StartOrDelete || state == ReservationState.StartOnly || (authLevel == ClientAuthLevel.ToolEngineer && DateTime.Now < rsv.BeginDateTime && rsv.ActualBeginDateTime == null && state != ReservationState.Repair))
             {
-                var hypDelete = new HyperLink();
-                hypDelete.NavigateUrl = string.Format("~/ReservationController.ashx?Command=DeleteReservation&ReservationID={0}&Date={1:yyyy-MM-dd'T'HH:mm:ss}&State={2}&Path={3}", rsv.ReservationID, rsvCell.CellDate, state, PathInfo.Create(res));
-                hypDelete.ImageUrl = "~/images/deleteGrid.gif";
-                hypDelete.CssClass = "ReservDelete";
+                var hypDelete = new HyperLink
+                {
+                    NavigateUrl = string.Format("~/ReservationController.ashx?Command=DeleteReservation&ReservationID={0}&Date={1:yyyy-MM-dd'T'HH:mm:ss}&State={2}&Path={3}", rsv.ReservationID, rsvCell.CellDate, state, PathInfo.Create(res)),
+                    ImageUrl = "~/images/deleteGrid.gif",
+                    CssClass = "ReservDelete"
+                };
+
                 hypDelete.Attributes["data-tooltip"] = "Click to cancel reservation";
                 hypDelete.Attributes["data-caption"] = "Cancel this reservation";
                 rsvCell.Controls.Add(hypDelete);
@@ -337,10 +349,13 @@ namespace LNF.Web.Scheduler
             // 2011/04/03 Modify button
             if (state == ReservationState.Editable || state == ReservationState.StartOrDelete || state == ReservationState.StartOnly)
             {
-                var hypModify = new HyperLink();
-                hypModify.NavigateUrl = string.Format("~/ReservationController.ashx?Command=ModifyReservation&ReservationID={0}&Date={1:yyyy-MM-dd'T'HH:mm:ss}&State={2}&Path={3}", rsv.ReservationID, rsvCell.CellDate, state, PathInfo.Create(res));
-                hypModify.ImageUrl = "~/images/edit.png";
-                hypModify.CssClass = "ReservModify";
+                var hypModify = new HyperLink
+                {
+                    NavigateUrl = string.Format("~/ReservationController.ashx?Command=ModifyReservation&ReservationID={0}&Date={1:yyyy-MM-dd'T'HH:mm:ss}&State={2}&Path={3}", rsv.ReservationID, rsvCell.CellDate, state, PathInfo.Create(res)),
+                    ImageUrl = "~/images/edit.png",
+                    CssClass = "ReservModify"
+                };
+
                 hypModify.Attributes["data-tooltip"] = "Click to modify reservation";
                 hypModify.Attributes["data-caption"] = "Modify this reservation";
                 //ibtnModify.Attributes.Add("onclick", "event.cancelBubble=true;return true;");
@@ -378,7 +393,7 @@ namespace LNF.Web.Scheduler
 
         public static void LoadReservationInvitees(int reservationId)
         {
-            var items = DA.Current.Query<ReservationInvitee>().Where(x => x.Reservation.ReservationID == reservationId).Select(LNF.Scheduler.ReservationInviteeItem.Create).ToList();
+            var items = LNF.Scheduler.ReservationInviteeItem.Create(DA.Current.Query<ReservationInvitee>().Where(x => x.Reservation.ReservationID == reservationId));
             CacheManager.Current.ReservationInvitees(items);
         }
 
@@ -413,9 +428,7 @@ namespace LNF.Web.Scheduler
             if (pil == null)
                 throw new Exception(string.Format("Cannot find a ProcessInfoLine record with ProcessInfoID = {0} and ProcessInfoLineID = {1}", processInfoId, processInfoLineId));
 
-            double value;
-
-            if (!double.TryParse(valueText, out value))
+            if (!double.TryParse(valueText, out double value))
                 throw new Exception(string.Format("Please enter a floating-point number for Process Info {0}", pi.ProcessInfoName));
 
             if (value < pil.MinValue || value > pil.MaxValue)
@@ -448,7 +461,9 @@ namespace LNF.Web.Scheduler
                         Active = true
                     };
 
-                    CacheManager.Current.ReservationProcessInfos().Add(rpi);
+                    var list = CacheManager.Current.ReservationProcessInfos().ToList();
+                    list.Add(rpi);
+                    CacheManager.Current.ReservationProcessInfos(list);
                 }
                 else
                 {
@@ -495,7 +510,7 @@ namespace LNF.Web.Scheduler
 
                 var invitees = CacheManager.Current.ReservationInvitees();
 
-                if (invitees != null && invitees.Count > 0)
+                if (invitees != null && invitees.Count() > 0)
                 {
                     foreach (var inv in invitees)
                     {

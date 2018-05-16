@@ -13,7 +13,7 @@
     <OutputType>Library</OutputType>
     <RootNamespace>LabScheduler</RootNamespace>
     <AssemblyName>LabScheduler</AssemblyName>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
     <MyType>Custom</MyType>
     <UseIISExpress>false</UseIISExpress>
     <IISExpressSSLPort />
@@ -53,19 +53,15 @@
   <ItemGroup>
     <Reference Include="Glimpse.Ado, Version=1.7.3.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Glimpse.Ado.1.7.3\lib\net45\Glimpse.Ado.dll</HintPath>
-      <Private>True</Private>
     </Reference>
     <Reference Include="Glimpse.AspNet, Version=1.9.2.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Glimpse.AspNet.1.9.2\lib\net45\Glimpse.AspNet.dll</HintPath>
-      <Private>True</Private>
     </Reference>
     <Reference Include="Glimpse.Core, Version=1.8.6.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Glimpse.1.8.6\lib\net45\Glimpse.Core.dll</HintPath>
-      <Private>True</Private>
     </Reference>
     <Reference Include="Glimpse.WebForms, Version=1.1.1.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Glimpse.WebForms.1.1.1\lib\net45\Glimpse.WebForms.dll</HintPath>
-      <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="Microsoft.Owin, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
@@ -76,7 +72,9 @@
     </Reference>
     <Reference Include="Owin, Version=1.0.0.0, Culture=neutral, PublicKeyToken=f0ebd12fd5e55cc5, processorArchitecture=MSIL">
       <HintPath>..\packages\Owin.1.0\lib\net40\Owin.dll</HintPath>
-      <Private>True</Private>
+    </Reference>
+    <Reference Include="StructureMap, Version=4.6.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\StructureMap.4.6.1\lib\net45\StructureMap.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
@@ -132,6 +130,7 @@
     <Content Include="CacheUtility.aspx" />
     <Content Include="Contact.aspx" />
     <Content Include="ErrorPage.aspx" />
+    <Content Include="GlimpseSecurityPolicy.cs" />
     <Content Include="Global.asax" />
     <Content Include="images\arrow_r.cur" />
     <Content Include="images\arr_down.gif" />
@@ -387,10 +386,10 @@
     <Content Include="ajax\utility.ashx" />
     <Content Include="MasterPageBootstrap.Master" />
     <Content Include="ajax\treeview.ashx" />
-    <Content Include="packages.config" />
     <Content Include="ajax\resource.ashx" />
     <Content Include="ajax\auth.ashx" />
     <Content Include="scripts\resourceMaintenance.js" />
+    <None Include="packages.config" />
     <None Include="scripts\_references.js" />
     <Content Include="scripts\processinfo.js" />
     <Content Include="scripts\querystring.js" />

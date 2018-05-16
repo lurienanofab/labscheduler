@@ -244,9 +244,12 @@ a.ReservLinkHeader {
         text-decoration: underline;
     }
 
+.reservation-action {
+    background-color: #fff;
+}
+
 .ReservationCell,
-.reservation-action[data-command='NewReservation'] {
-    background-color: White;
+div.reservation-action[data-command='NewReservation'] {
     cursor: pointer;
 }
 

@@ -1,7 +1,7 @@
 ﻿Imports LNF.Repository
 Imports LNF.Web
 Imports LNF.Web.Scheduler.Content
-Imports repo = LNF.Repository.Scheduler
+Imports Scheduler = LNF.Repository.Scheduler
 
 Namespace Pages
     Public Class ReservationCharges
@@ -37,20 +37,20 @@ Namespace Pages
             Dim dblChargeMultiplier As Double = Double.Parse(txtChargeMultiplier.Text)
 
             If dblChargeMultiplier > 1 Then
-                ServerJScript.JSAlert(Me.Page, "Please enter a value less than or equal to 1 for Charge Multiplier.")
+                ServerJScript.JSAlert(Page, "Please enter a value less than or equal to 1 for Charge Multiplier.")
                 Exit Sub
             End If
 
             Dim reservationId As Integer = Convert.ToInt32(btnSubmit.CommandArgument)
-            Dim rsv As repo.Reservation = DA.Scheduler.Reservation.Single(reservationId)
-            rsv.UpdateCharges(dblChargeMultiplier, chkApplyLateChargePenalty.Checked, CurrentUser.ClientID)
+            Dim rsv As Scheduler.Reservation = DA.Current.Single(Of Scheduler.Reservation)(reservationId)
+            ReservationManager.UpdateCharges(rsv, dblChargeMultiplier, chkApplyLateChargePenalty.Checked, CurrentUser.ClientID)
 
             Response.Write("<script language='javascript'> { self.close() }</script>")
         End Sub
 
         Private Sub LoadReservation(reservationId As Integer)
             ' Get Reservation Charges
-            Dim rsv As repo.Reservation = DA.Scheduler.Reservation.Single(reservationId)
+            Dim rsv As Scheduler.Reservation = DA.Current.Single(Of Scheduler.Reservation)(reservationId)
 
             If rsv Is Nothing Then
                 lblErrMsg.Text = "Error: Invalid ReservationID"
@@ -65,6 +65,5 @@ Namespace Pages
                 End If
             End If
         End Sub
-
     End Class
 End Namespace

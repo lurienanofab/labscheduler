@@ -2,7 +2,7 @@
 Imports LNF.Models.Data
 Imports LNF.Web.Content
 Imports LNF.Web.Scheduler
-Imports repo = LNF.Repository.Data
+Imports Scheduler = LNF.Repository.Data
 
 Public Class MasterPageBootstrap
     Inherits LNFMasterPage
@@ -26,8 +26,8 @@ Public Class MasterPageBootstrap
         If Not Page.IsPostBack Then
             If ShowMenu Then
                 ' load the page menu
-                _menu = SiteMenu.Create(CurrentUser)
-                Dim parents As IList(Of repo.Menu) = _menu.Where(Function(x) x.MenuParentID = 0).ToList()
+                _menu = New SiteMenu(CurrentUser, Nothing)
+                Dim parents As IList(Of MenuItem) = _menu.Where(Function(x) x.MenuParentID = 0).ToList()
                 rptMenu.DataSource = parents
                 rptMenu.DataBind()
             End If
@@ -58,8 +58,8 @@ Public Class MasterPageBootstrap
         If e.Item.ItemType = ListItemType.Item OrElse e.Item.ItemType = ListItemType.AlternatingItem Then
             Dim liParentDropdown As UI.Control = e.Item.FindControl("liParentDropdown")
             Dim liParentLink As UI.Control = e.Item.FindControl("liParentLink")
-            Dim parent As repo.Menu = CType(e.Item.DataItem, repo.Menu)
-            Dim children As IList(Of repo.Menu) = _menu.Where(Function(x) x.MenuParentID = parent.MenuID).ToList()
+            Dim parent As MenuItem = CType(e.Item.DataItem, MenuItem)
+            Dim children As IList(Of MenuItem) = _menu.Where(Function(x) x.MenuParentID = parent.MenuID).ToList()
             If children.Count > 0 Then
                 liParentDropdown.Visible = True
                 liParentLink.Visible = False
@@ -76,14 +76,14 @@ Public Class MasterPageBootstrap
         End If
     End Sub
 
-    Protected Function GetMenuUrl(item As repo.Menu) As String
+    Protected Function GetMenuUrl(item As MenuItem) As String
         If String.IsNullOrEmpty(item.MenuURL) Then
             Return "#"
         End If
 
         Dim appServer As String = String.Empty
 
-        If Providers.Context.Current.GetRequestIsSecureConnection() Then
+        If ServiceProvider.Current.Context.GetRequestIsSecureConnection() Then
             appServer = "https://" + ConfigurationManager.AppSettings("AppServer")
         Else
             appServer = "http://" + ConfigurationManager.AppSettings("AppServer")
@@ -98,7 +98,7 @@ Public Class MasterPageBootstrap
         End If
     End Function
 
-    Protected Function GetMenuTarget(item As repo.Menu) As String
+    Protected Function GetMenuTarget(item As MenuItem) As String
         If item.NewWindow Then
             Return "_blank"
         Else

@@ -48,7 +48,7 @@ Namespace Pages
         End Sub
 
         Public Sub DeleteResource()
-            Dim res As Resource = DA.Scheduler.Resource.Single(ResourceID)
+            Dim res As Resource = DA.Current.Single(Of Resource)(ResourceID)
             res.IsActive = False
             res.IsSchedulable = False
         End Sub
@@ -57,7 +57,7 @@ Namespace Pages
             If ResourceID = 0 Then
                 LoadEditForm(Nothing)
             Else
-                Dim res As ResourceModel = CacheManager.Current.Resources(Function(x) x.ResourceID = ResourceID).FirstOrDefault()
+                Dim res As ResourceModel = CacheManager.Current.ResourceTree().Resources().FirstOrDefault(Function(x) x.ResourceID = ResourceID)
                 If res IsNot Nothing Then
                     LoadEditForm(res)
                 Else
@@ -109,7 +109,7 @@ Namespace Pages
 
         Private Sub LoadResources()
             Dim start As Date = Date.Now
-            Dim query As IList(Of ResourceModel) = CacheManager.Current.Resources()
+            Dim query As IList(Of ResourceModel) = CacheManager.Current.ResourceTree().Resources().ToList()
             Dim secondsTaken As Double = (Date.Now - start).TotalSeconds
             Dim items As IList(Of ResourceTableItem) = ResourceTableItem.CreateList(query)
             rptResources.DataSource = items

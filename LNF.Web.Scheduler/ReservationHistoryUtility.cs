@@ -4,6 +4,7 @@ using LNF.Models.Billing;
 using LNF.Models.Billing.Process;
 using LNF.Models.Data;
 using LNF.Models.Scheduler;
+using LNF.Repository;
 using LNF.Repository.Scheduler;
 using LNF.Scheduler;
 using OnlineServices.Api.Billing;
@@ -17,11 +18,13 @@ namespace LNF.Web.Scheduler
 {
     public static class ReservationHistoryUtility
     {
+        public static IReservationManager ReservationManager => DA.Use<IReservationManager>();
+
         public static IList<ReservationHistoryItem> GetReservationHistoryData(ClientItem client, DateTime? sd, DateTime? ed, bool includeCanceledForModification)
         {
             // Select Past Reservations
-            IList<Reservation> reservations = ReservationUtility.SelectHistory(client.ClientID, sd.GetValueOrDefault(Reservation.MinReservationBeginDate), ed.GetValueOrDefault(Reservation.MaxReservationEndDate));
-            IList<ReservationHistoryFilterItem> filtered = ReservationUtility.FilterCancelledReservations(reservations, includeCanceledForModification);
+            IList<Reservation> reservations = ReservationManager.SelectHistory(client.ClientID, sd.GetValueOrDefault(Reservation.MinReservationBeginDate), ed.GetValueOrDefault(Reservation.MaxReservationEndDate));
+            IList<ReservationHistoryFilterItem> filtered = ReservationManager.FilterCancelledReservations(reservations, includeCanceledForModification);
             var result = ReservationHistoryItem.CreateList(filtered);
             return result;
         }
@@ -103,8 +106,7 @@ namespace LNF.Web.Scheduler
             if (string.IsNullOrEmpty(input))
                 return Reservation.MinReservationBeginDate;
 
-            DateTime d;
-            if (DateTime.TryParse(input, out d))
+            if (DateTime.TryParse(input, out DateTime d))
                 return d.Date;
             else
                 return DateTime.Now.Date;
@@ -115,8 +117,7 @@ namespace LNF.Web.Scheduler
             if (string.IsNullOrEmpty(input))
                 return Reservation.MaxReservationEndDate;
 
-            DateTime d;
-            if (DateTime.TryParse(input, out d))
+            if (DateTime.TryParse(input, out DateTime d))
                 return d.Date.AddDays(1);
             else
                 return DateTime.Now.Date.AddDays(1);

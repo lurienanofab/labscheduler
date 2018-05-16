@@ -1,6 +1,7 @@
 ﻿using LNF.Repository;
 using LNF.Repository.Data;
 using LNF.Repository.Scheduler;
+using LNF.Scheduler;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 
@@ -12,7 +13,7 @@ namespace LNF.Web.Scheduler.Tests
         [TestMethod]
         public void ReservationTests_CanCreateCheck()
         {
-            using (Providers.DataAccess.StartUnitOfWork())
+            using (ServiceProvider.Current.DataAccess.StartUnitOfWork())
             {
                 // in the past
                 DateTime sd = DateTime.Parse("2017-01-17 08:00:00");
@@ -45,7 +46,7 @@ namespace LNF.Web.Scheduler.Tests
 
                 try
                 {
-                    rsv.CanCreateCheck();
+                    DA.Use<IReservationManager>().CanCreateCheck(rsv);
                 }
                 catch (Exception ex)
                 {
@@ -58,7 +59,7 @@ namespace LNF.Web.Scheduler.Tests
 
                 try
                 {
-                    rsv.CanCreateCheck();
+                    DA.Use<IReservationManager>().CanCreateCheck(rsv);
                 }
                 catch (Exception ex)
                 {

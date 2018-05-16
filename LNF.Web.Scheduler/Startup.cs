@@ -1,7 +1,6 @@
-﻿using LNF.Cache;
-using LNF.Impl;
+﻿using LNF.Impl.DataAccess;
+using LNF.Impl.DependencyInjection.Web;
 using Microsoft.Owin;
-using NHibernate.Context;
 using NHibernate.Glimpse;
 using Owin;
 
@@ -13,8 +12,10 @@ namespace LNF.Web.Scheduler
     {
         public override void Configuration(IAppBuilder app)
         {
+            ServiceProvider.Current = IOC.Resolver.GetInstance<ServiceProvider>();
+
             // setup for viewing NHibernate queries with Glimpse
-            Plugin.RegisterSessionFactory(SessionManager<WebSessionContext>.Current.SessionFactory);
+            Plugin.RegisterSessionFactory(IOC.Resolver.GetInstance<ISessionManager>().GetSessionFactory());
 
             base.Configuration(app);
         }

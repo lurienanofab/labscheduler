@@ -1,11 +1,8 @@
 ﻿using LNF.Cache;
-using LNF.Models.Data;
 using LNF.Models.Scheduler;
 using LNF.Repository;
-using LNF.Repository.Data;
 using LNF.Repository.Scheduler;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
@@ -37,16 +34,16 @@ namespace LNF.Web.Scheduler
             }
         }
 
-        private IList<ResourceTree> _items;
+        private IList<ResourceTreeItem> _items;
 
         public ResourceTreeManager()
         {
             // create a new ResourceTreeManager based on the currently logged in user
             var clientId = CacheManager.Current.CurrentUser.ClientID;
-            _items = DA.Current.Query<ResourceTree>().Where(x => x.ClientID == clientId).ToList();
+            _items = DA.Current.Query<ResourceTreeItem>().Where(x => x.ClientID == clientId).ToList();
         }
 
-        public static ResourceModel CreateResourceModel(ResourceTree item)
+        public static ResourceModel CreateResourceModel(ResourceTreeItem item)
         {
             return new ResourceModel()
             {
@@ -82,7 +79,7 @@ namespace LNF.Web.Scheduler
             };
         }
 
-        public static ProcessTechModel CreateProcessTechModel(ResourceTree item)
+        public static ProcessTechModel CreateProcessTechModel(ResourceTreeItem item)
         {
             return new ProcessTechModel()
             {
@@ -102,7 +99,7 @@ namespace LNF.Web.Scheduler
             };
         }
 
-        public static LabModel CreateLabModel(ResourceTree item)
+        public static LabModel CreateLabModel(ResourceTreeItem item)
         {
             return new LabModel()
             {
@@ -119,7 +116,7 @@ namespace LNF.Web.Scheduler
             };
         }
 
-        public static BuildingModel CreateBuildingModel(ResourceTree item)
+        public static BuildingModel CreateBuildingModel(ResourceTreeItem item)
         {
             return new BuildingModel()
             {
@@ -130,7 +127,7 @@ namespace LNF.Web.Scheduler
             };
         }
 
-        public IEnumerable<ResourceTree> GetItems()
+        public IEnumerable<ResourceTreeItem> GetItems()
         {
             return _items.AsEnumerable();
         }

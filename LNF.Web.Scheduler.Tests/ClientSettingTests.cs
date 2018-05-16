@@ -25,7 +25,7 @@ namespace LNF.Web.Scheduler.Tests
         {
             ContextManager.StartRequest();
 
-            using (Providers.DataAccess.StartUnitOfWork())
+            using (ServiceProvider.Current.DataAccess.StartUnitOfWork())
             {
                 Assert.AreEqual(-1, CacheManager.Current.GetClientSetting().LabID);
                 Assert.AreEqual(ClientSetting.DefaultLabID, CacheManager.Current.GetClientSetting().GetLabOrDefault().LabID);
@@ -33,24 +33,24 @@ namespace LNF.Web.Scheduler.Tests
 
             CacheManager.Current.GetClientSetting().LabID = 9;
 
-            using (Providers.DataAccess.StartUnitOfWork())
+            using (ServiceProvider.Current.DataAccess.StartUnitOfWork())
             {
                 DA.Current.SaveOrUpdate(CacheManager.Current.GetClientSetting());
             }
 
-            using (Providers.DataAccess.StartUnitOfWork())
+            using (ServiceProvider.Current.DataAccess.StartUnitOfWork())
             {
                 Assert.AreEqual(9, CacheManager.Current.GetClientSetting().GetLabOrDefault().LabID);
             }
 
             CacheManager.Current.GetClientSetting().LabID = -1;
 
-            using (Providers.DataAccess.StartUnitOfWork())
+            using (ServiceProvider.Current.DataAccess.StartUnitOfWork())
             {
                 DA.Current.SaveOrUpdate(CacheManager.Current.GetClientSetting());
             }
 
-            using (Providers.DataAccess.StartUnitOfWork())
+            using (ServiceProvider.Current.DataAccess.StartUnitOfWork())
             {
                 Assert.AreEqual(-1, CacheManager.Current.GetClientSetting().LabID);
                 Assert.AreEqual(1, CacheManager.Current.GetClientSetting().GetLabOrDefault().LabID);

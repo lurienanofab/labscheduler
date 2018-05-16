@@ -102,7 +102,8 @@ namespace LNF.Web.Scheduler.Pages
             else if (res.HasState(ResourceState.Offline))
             {
                 // Tool state is offline
-                Reservation rsv = DA.Scheduler.Reservation.GetRepairReservationInProgress(res.ResourceID);
+                var rip = ReservationManager.GetRepairReservationInProgress(res.ResourceID);
+                var rsv = DA.Current.Single<Reservation>(rip.ReservationID);
 
                 if (rsv != null)
                 {
@@ -225,30 +226,31 @@ namespace LNF.Web.Scheduler.Pages
                     //    actualBeginDateTime = lastRepairEndTime.Value.AddSeconds(1);
                     //}
 
-                    beginDateTime = res.GetNextGranularity(actualBeginDateTime, NextGranDir.Previous);
+                    beginDateTime = ResourceManager.GetNextGranularity(res, actualBeginDateTime, NextGranDir.Previous);
 
                     if (!string.IsNullOrEmpty(txtRepairTime.Text))
                         actualEndDateTime = actualEndDateTime.AddMinutes(Convert.ToDouble(txtRepairTime.Text) * (rdoRepairTimeUnitMinutes.Checked ? 1.0 : 60.0));
 
-                    endDateTime = res.GetNextGranularity(actualEndDateTime, NextGranDir.Future);
+                    endDateTime = ResourceManager.GetNextGranularity(res, actualEndDateTime, NextGranDir.Future);
 
                     // Find and End reservations that are in progress (Endable) for this resource
-                    IList<Reservation> endableRsvQuery = DA.Scheduler.Reservation.SelectEndableReservations(res.ResourceID);
+                    IList<Reservation> endableRsvQuery = ReservationManager.SelectEndableReservations(res.ResourceID);
                     foreach (Reservation endableRsv in endableRsvQuery)
                     {
-                        endableRsv.EndForRepair(CurrentUser.ClientID, CurrentUser.ClientID);
-                        EmailUtility.EmailOnCanceledByRepair(endableRsv, false, "Offline", txtNotes.Text, endDateTime);
+                        ReservationManager.EndForRepair(endableRsv, CurrentUser.ClientID, CurrentUser.ClientID);
+                        //endableRsv.EndForRepair(CurrentUser.ClientID, CurrentUser.ClientID);    
+                        EmailManager.EmailOnCanceledByRepair(endableRsv, false, "Offline", txtNotes.Text, endDateTime);
                     }
 
                     // Find and Remove any un-started reservations made during time of repair
-                    IList<Reservation> unstartedReservations = DA.Scheduler.Reservation.SelectByResource(res.ResourceID, beginDateTime, endDateTime, false);
+                    IList<Reservation> unstartedReservations = ReservationManager.SelectByResource(res.ResourceID, beginDateTime, endDateTime, false);
                     foreach (Reservation unstartedRsv in unstartedReservations)
                     {
                         // If the reservation has not begun
                         if (!unstartedRsv.ActualBeginDateTime.HasValue)
                         {
-                            unstartedRsv.DeleteAndForgive(CurrentUser.ClientID);
-                            EmailUtility.EmailOnCanceledByRepair(unstartedRsv, true, "Offline", txtNotes.Text, endDateTime);
+                            ReservationManager.DeleteAndForgive(unstartedRsv, CurrentUser.ClientID);
+                            EmailManager.EmailOnCanceledByRepair(unstartedRsv, true, "Offline", txtNotes.Text, endDateTime);
                         }
                         else
                         {
@@ -268,7 +270,7 @@ namespace LNF.Web.Scheduler.Pages
                     //      The previous date range only covered reservations scheduled to start between the actualBeginDateTime (the time the repair began
                     //      without going to the previous granularity) and the current time. The range is now between the repair begin (to previous granularity)
                     //      to repair end (to next granularity).
-                    IList<Reservation> query = ReservationUtility.SelectHistoryToForgiveForRepair(res.ResourceID, beginDateTime, endDateTime);
+                    IList<Reservation> query = ReservationManager.SelectHistoryToForgiveForRepair(res.ResourceID, beginDateTime, endDateTime);
 
                     ForgiveReservationsForRepair(query, actualBeginDateTime);
 
@@ -277,7 +279,7 @@ namespace LNF.Web.Scheduler.Pages
                     CacheManager.Current.RemoveSessionValue("ReservationProcessInfos");
 
                     // Insert the new repair reservation
-                    DA.Scheduler.Reservation.InsertRepair(res.ResourceID, CurrentUser.ClientID, beginDateTime, endDateTime, actualBeginDateTime, txtNotes.Text, CurrentUser.ClientID);
+                    ReservationManager.InsertRepair(res.ResourceID, CurrentUser.ClientID, beginDateTime, endDateTime, actualBeginDateTime, txtNotes.Text, CurrentUser.ClientID);
 
                     // Set the state into resource table and session object
                     ResourceUtility.UpdateState(res.ResourceID, ResourceState.Offline, string.Empty);
@@ -309,37 +311,38 @@ namespace LNF.Web.Scheduler.Pages
                 DateTime actualBeginDateTime = DateTime.Now;
                 DateTime actualEndDateTime = DateTime.Now;
 
-                Reservation rsv = DA.Scheduler.Reservation.GetRepairReservationInProgress(res.ResourceID);
-                beginDatetime = rsv.BeginDateTime;
+                var rip = ReservationManager.GetRepairReservationInProgress(res.ResourceID);
+                var rsv = DA.Current.Single<Reservation>(rip.ReservationID);
+                beginDatetime = rip.BeginDateTime;
 
                 if (!string.IsNullOrEmpty(txtRepairTime.Text))
                     actualEndDateTime = actualEndDateTime.AddMinutes(Convert.ToDouble(txtRepairTime.Text) * (rdoRepairTimeUnitMinutes.Checked ? 1.0 : 60.0));
 
-                endDateTime = res.GetNextGranularity(actualEndDateTime, NextGranDir.Future);
+                endDateTime = ResourceManager.GetNextGranularity(res, actualEndDateTime, NextGranDir.Future);
 
                 // Find and End reservations that are in progress (Endable) for this resource
-                IList<Reservation> endableReservations = DA.Scheduler.Reservation.SelectEndableReservations(res.ResourceID);
+                IList<Reservation> endableReservations = ReservationManager.SelectEndableReservations(res.ResourceID);
                 foreach (Reservation endable in endableReservations.Where(x => x.ReservationID != rsv.ReservationID))
                 {
-                    endable.EndForRepair(CurrentUser.ClientID, CurrentUser.ClientID);
-                    EmailUtility.EmailOnCanceledByRepair(endable, false, "Offline", txtNotes.Text, endDateTime);
+                    ReservationManager.EndForRepair(endable, CurrentUser.ClientID, CurrentUser.ClientID);
+                    EmailManager.EmailOnCanceledByRepair(endable, false, "Offline", txtNotes.Text, endDateTime);
                 }
 
                 // Find and Remove any un-started reservations made during time of repair
-                IList<Reservation> unstartedReservations = DA.Scheduler.Reservation.SelectByResource(res.ResourceID, beginDatetime, endDateTime, false);
-                foreach (Reservation unstartedRsv in unstartedReservations.Where(x => !x.ActualBeginDateTime.HasValue && x.ReservationID != rsv.ReservationID))
+                IList<Reservation> unstartedReservations = ReservationManager.SelectByResource(res.ResourceID, beginDatetime, endDateTime, false);
+                foreach (Reservation unstarted in unstartedReservations.Where(x => !x.ActualBeginDateTime.HasValue && x.ReservationID != rsv.ReservationID))
                 {
-                    unstartedRsv.Delete(CurrentUser.ClientID);
-                    EmailUtility.EmailOnCanceledByRepair(unstartedRsv, true, "Offline", txtNotes.Text, endDateTime);
+                    ReservationManager.Delete(unstarted, CurrentUser.ClientID);
+                    EmailManager.EmailOnCanceledByRepair(unstarted, true, "Offline", txtNotes.Text, endDateTime);
                 }
 
-                IList<Reservation> query = ReservationUtility.SelectHistoryToForgiveForRepair(res.ResourceID, actualBeginDateTime, DateTime.Now);
+                IList<Reservation> query = ReservationManager.SelectHistoryToForgiveForRepair(res.ResourceID, actualBeginDateTime, DateTime.Now);
                 ForgiveReservationsForRepair(query, actualBeginDateTime);
 
                 // Modify Existing Repair Reservation
                 rsv.EndDateTime = endDateTime;
                 rsv.Notes = txtNotes.Text;
-                rsv.Update(CurrentUser.ClientID);
+                ReservationManager.Update(rsv, CurrentUser.ClientID);
             }
             else
             {
@@ -356,17 +359,19 @@ namespace LNF.Web.Scheduler.Pages
 
             if (res.HasState(ResourceState.Offline))
             {
-                Reservation rsv = DA.Scheduler.Reservation.GetRepairReservationInProgress(res.ResourceID);
+                var rip = ReservationManager.GetRepairReservationInProgress(res.ResourceID);
+                var rsv = DA.Current.Single<Reservation>(rip.ReservationID);
+
                 if (rsv != null)
                 {
                     if (res.IsSchedulable)
                     {
                         // Set Scheduled EndDateTime = next grain boundary in future
-                        rsv.EndDateTime = res.GetNextGranularity(DateTime.Now, NextGranDir.Future);
-                        rsv.Update(CurrentUser.ClientID);
+                        rsv.EndDateTime = ResourceManager.GetNextGranularity(res, DateTime.Now, NextGranDir.Future);
+                        ReservationManager.Update(rsv, CurrentUser.ClientID);
 
                         // End the repair reservation now
-                        rsv.End(CurrentUser.ClientID, CurrentUser.ClientID);
+                        ReservationManager.End(rsv, CurrentUser.ClientID, CurrentUser.ClientID);
 
                         // [2013-05-20 jg] Recheck for any reservations that were not forgiven that should have been.
                         // This can happen when a reservation has a start time that comes after the repair is started.
@@ -374,7 +379,7 @@ namespace LNF.Web.Scheduler.Pages
                         // has a begin date (for example) 5 minutes later it will not be included for forgiving because
                         // it starts 5 minutes after the repair "ends". Now we know the real end date so we can tell
                         // that the we need to forgive that reservation.
-                        IList<Reservation> query = ReservationUtility.SelectHistoryToForgiveForRepair(res.ResourceID, rsv.ActualBeginDateTime.Value, rsv.ActualEndDateTime.Value);
+                        IList<Reservation> query = ReservationManager.SelectHistoryToForgiveForRepair(res.ResourceID, rsv.ActualBeginDateTime.Value, rsv.ActualEndDateTime.Value);
                         ForgiveReservationsForRepair(query, rsv.ActualEndDateTime.GetValueOrDefault());
                     }
                 }
@@ -402,13 +407,13 @@ namespace LNF.Web.Scheduler.Pages
                     chargeMultiplier = 0;
                 }
 
-                rsv.UpdateCharges(chargeMultiplier, true, CurrentUser.ClientID);
+                ReservationManager.UpdateCharges(rsv, chargeMultiplier, true, CurrentUser.ClientID);
 
                 // We have to delete those reservations as well, so it won't conflict with Repair and produce multiple reservation issue
                 //rsvDB.Delete(ReservationID); // why was this commented out? because the reservation should already have been ended or canceled
 
                 // Email User after everything is done.
-                EmailUtility.EmailOnForgiveCharge(rsv, 100, true, CurrentUser.ClientID);
+                EmailManager.EmailOnForgiveCharge(rsv, 100, true, CurrentUser.ClientID);
 
                 // Make the change to two ToolData tables.
                 // The session variable is set now and then checked for on the next page load.
@@ -425,7 +430,8 @@ namespace LNF.Web.Scheduler.Pages
 
                 if (update)
                 {
-                    Reservation rsv = DA.Scheduler.Reservation.GetRepairReservationInProgress(res.ResourceID);
+                    var rip = ReservationManager.GetRepairReservationInProgress(res.ResourceID);
+                    var rsv = DA.Current.Single<Reservation>(rip.ReservationID);
 
                     if (rsv != null)
                     {

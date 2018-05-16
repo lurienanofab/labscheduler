@@ -8,6 +8,12 @@ Namespace Pages
 
         Protected Sub Page_Load(ByVal sender As Object, ByVal e As EventArgs) Handles Me.Load
             If Not Page.IsPostBack Then
+
+                If Request.QueryString("ClearSession") = "1" Then
+                    Session.Abandon()
+                    Response.Redirect("~")
+                End If
+
                 litDisplayName.Text = CurrentUser.DisplayName
 
                 ' If client logged in from a Kiosk (or is in a lab), then display My Reservations page

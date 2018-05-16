@@ -23,7 +23,7 @@ namespace LNF.Web.Scheduler.Tests
                 Privs = (ClientPrivilege)1541
             });
 
-            using (Providers.DataAccess.StartUnitOfWork())
+            using (ServiceProvider.Current.DataAccess.StartUnitOfWork())
             {
                 var accts = CacheManager.Current.CurrentUserActiveClientAccounts();
                 Assert.IsNotNull(accts);
@@ -41,14 +41,14 @@ namespace LNF.Web.Scheduler.Tests
             int resourceId = 62020;
             DateTime beginDateTime = DateTime.Parse("2016-10-02 08:00:00");
 
-            using (Providers.DataAccess.StartUnitOfWork())
+            using (ServiceProvider.Current.DataAccess.StartUnitOfWork())
             {
                 // Step 0: Purge
                 int purgedRows = PurgeReservations(resourceId, beginDateTime, beginDateTime.AddHours(24));
                 Console.WriteLine("Purged rows: {0}", purgedRows);
 
                 // Step 1: Get a resource
-                res = CacheManager.Current.GetResource(resourceId);
+                res = CacheManager.Current.ResourceTree().GetResource(resourceId);
                 Assert.AreEqual(res.ResourceName, "EnerJet Evaporator");
 
                 // Step 2: Create a reservation
@@ -79,7 +79,7 @@ namespace LNF.Web.Scheduler.Tests
                 Console.WriteLine("Created ReservationID: {0}", rsv1.ReservationID);
             }
 
-            using (Providers.DataAccess.StartUnitOfWork())
+            using (ServiceProvider.Current.DataAccess.StartUnitOfWork())
             {
                 // Step 4: Modify existing
 
@@ -110,10 +110,10 @@ namespace LNF.Web.Scheduler.Tests
                 Console.WriteLine("Modified ReservationID: {0}", rsv2.ReservationID);
             }
 
-            using (Providers.DataAccess.StartUnitOfWork())
+            using (ServiceProvider.Current.DataAccess.StartUnitOfWork())
             {
                 SchedulerUtility.LoadProcessInfo(rsv2.ReservationID);
-                Assert.AreEqual(1, CacheManager.Current.ReservationProcessInfos().Count);
+                Assert.AreEqual(1, CacheManager.Current.ReservationProcessInfos().Count());
                 Assert.AreEqual(200, CacheManager.Current.ReservationProcessInfos().First().Value);
             }
         }
@@ -127,14 +127,14 @@ namespace LNF.Web.Scheduler.Tests
             int resourceId = 62020;
             DateTime beginDateTime = DateTime.Parse("2016-10-02 08:00:00");
 
-            using (Providers.DataAccess.StartUnitOfWork())
+            using (ServiceProvider.Current.DataAccess.StartUnitOfWork())
             {
                 // Step 0: Purge
                 int purgedRows = PurgeReservations(resourceId, beginDateTime, beginDateTime.AddHours(24));
                 Console.WriteLine("Purged rows: {0}", purgedRows);
 
                 // Step 1: Get a resource
-                res = CacheManager.Current.GetResource(resourceId);
+                res = CacheManager.Current.ResourceTree().GetResource(resourceId);
                 Assert.AreEqual(res.ResourceName, "EnerJet Evaporator");
 
                 // Step 2: Create a reservation
@@ -165,7 +165,7 @@ namespace LNF.Web.Scheduler.Tests
                 Console.WriteLine("Created ReservationID: {0}", rsv1.ReservationID);
             }
 
-            using (Providers.DataAccess.StartUnitOfWork())
+            using (ServiceProvider.Current.DataAccess.StartUnitOfWork())
             {
                 // Step 4: Modify existing
 
@@ -196,14 +196,14 @@ namespace LNF.Web.Scheduler.Tests
                 Console.WriteLine("Modified ReservationID: {0}", rsv2.ReservationID);
             }
 
-            using (Providers.DataAccess.StartUnitOfWork())
+            using (ServiceProvider.Current.DataAccess.StartUnitOfWork())
             {
                 SchedulerUtility.LoadProcessInfo(rsv1.ReservationID);
-                Assert.AreEqual(1, CacheManager.Current.ReservationProcessInfos().Count);
+                Assert.AreEqual(1, CacheManager.Current.ReservationProcessInfos().Count());
                 Assert.AreEqual(100, CacheManager.Current.ReservationProcessInfos().First().Value);
 
                 SchedulerUtility.LoadProcessInfo(rsv2.ReservationID);
-                Assert.AreEqual(1, CacheManager.Current.ReservationProcessInfos().Count);
+                Assert.AreEqual(1, CacheManager.Current.ReservationProcessInfos().Count());
                 Assert.AreEqual(200, CacheManager.Current.ReservationProcessInfos().First().Value);
             }
         }

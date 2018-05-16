@@ -31,7 +31,7 @@ Public Class ErrorUtility
             .StackTrace = ex.StackTrace,
             .ErrorDateTime = Date.Now,
             .ClientID = clientId,
-            .PageUrl = Providers.Context.Current.GetRequestUrl().ToString()
+            .PageUrl = ServiceProvider.Current.Context.GetRequestUrl().ToString()
         }
 
         list.Add(result)
@@ -45,7 +45,7 @@ Public Class ErrorUtility
                 .StackTrace = ex2.StackTrace,
                 .ErrorDateTime = Date.Now,
                 .ClientID = clientId,
-                .PageUrl = Providers.Context.Current.GetRequestUrl().ToString()
+                .PageUrl = ServiceProvider.Current.Context.GetRequestUrl().ToString()
             })
         End Try
 
@@ -76,14 +76,15 @@ Public Class ErrorUtility
                 body.AppendLine("-------------------------------------------------")
             Next
 
-            Dim args = New SendMessageArgs()
-            args.ClientID = 0
-            args.Subject = appName + " Error"
-            args.Body = body.ToString()
-            args.From = fromAddr
-            args.To = toAddr
+            Dim args = New SendMessageArgs With {
+                .ClientID = 0,
+                .Subject = appName + " Error",
+                .Body = body.ToString(),
+                .From = fromAddr,
+                .To = toAddr
+            }
 
-            Providers.Email.SendMessage(args)
+            ServiceProvider.Current.Email.SendMessage(args)
         Catch ex As Exception
             errors.Add(New ErrorLog() With {
                 .Application = appName,
@@ -91,7 +92,7 @@ Public Class ErrorUtility
                 .StackTrace = ex.StackTrace,
                 .ErrorDateTime = Date.Now,
                 .ClientID = clientId,
-                .PageUrl = Providers.Context.Current.GetRequestUrl().ToString()
+                .PageUrl = ServiceProvider.Current.Context.GetRequestUrl().ToString()
             })
         End Try
     End Sub

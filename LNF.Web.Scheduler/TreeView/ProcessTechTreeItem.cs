@@ -1,8 +1,7 @@
-﻿using LNF.Cache;
-using LNF.Models.Scheduler;
-using LNF.Scheduler;
-using System;
+﻿using LNF.Models.Scheduler;
 using System.Linq;
+using LNF.Scheduler;
+using LNF.Cache;
 
 namespace LNF.Web.Scheduler.TreeView
 {
@@ -19,7 +18,7 @@ namespace LNF.Web.Scheduler.TreeView
             ID = item.ProcessTechID;
             Name = item.ProcessTechName;
             Description = item.ProcessTechDescription;
-            var resources = CacheManager.Current.Resources(x => x.ResourceIsActive && x.ProcessTechID == item.ProcessTechID).ToList();
+            var resources = CacheManager.Current.ResourceTree().Resources().Where(x => x.ResourceIsActive && x.ProcessTechID == item.ProcessTechID).ToList();
             Children = new TreeItemCollection(resources.Select(x => new ResourceTreeItem(x, this)));
         }
     }

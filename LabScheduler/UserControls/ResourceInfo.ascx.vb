@@ -4,10 +4,14 @@ Imports LNF.Scheduler
 Imports LNF.Web
 Imports LNF.Web.Scheduler
 Imports LNF.Web.Scheduler.Content
+Imports StructureMap.Attributes
 
 Namespace UserControls
     Public Class ResourceInfo
         Inherits SchedulerUserControl
+
+        <SetterProperty>
+        Public Property SchedulerRepository As ISchedulerRepository
 
         Protected Sub Page_Load(sender As Object, e As EventArgs) Handles Me.Load
             Dim startTime As Date = Date.Now
@@ -39,7 +43,7 @@ Namespace UserControls
                 Dim perUseCost As Decimal = 0
                 Dim perHourCost As Decimal = 0
 
-                Dim costs As IList(Of ResourceCostModel) = CacheManager.Current.ToolCosts(Date.Now, res.ResourceID, CacheManager.Current.MaxChargeTypeID)
+                Dim costs As IList(Of ResourceCostModel) = Page.ResourceManager.GetToolCosts(DateTime.Now, res.ResourceID, CacheManager.Current.MaxChargeTypeID).ToList()
 
                 If costs.Count > 0 Then
                     perUseCost = costs(0).AddVal
@@ -59,7 +63,7 @@ Namespace UserControls
 
         Private Function GetToolEngineers() As List(Of ToolEngineerItem)
             Dim result As List(Of ToolEngineerItem) = New List(Of ToolEngineerItem)()
-            Dim toolEngineers As IList(Of ResourceClientModel) = CacheManager.Current.ToolEngineers(Request.SelectedPath().ResourceID)
+            Dim toolEngineers As IList(Of ResourceClientModel) = CacheManager.Current.ToolEngineers(Request.SelectedPath().ResourceID).ToList()
 
             If String.IsNullOrEmpty(hidResourceID.Value) OrElse toolEngineers Is Nothing OrElse toolEngineers.Count = 0 Then
                 'tdEngineers.InnerText = "Unknown"
@@ -68,10 +72,11 @@ Namespace UserControls
                 'Resources Administration tab. This means we should always select the engineers for
                 'the current resource.
                 For Each te As ResourceClientModel In toolEngineers
-                    Dim item As New ToolEngineerItem()
-                    item.ClientID = te.ClientID
-                    item.DisplayName = te.DisplayName
-                    item.Email = te.Email
+                    Dim item As New ToolEngineerItem With {
+                        .ClientID = te.ClientID,
+                        .DisplayName = te.DisplayName,
+                        .Email = te.Email
+                    }
                     result.Add(item)
                 Next
             End If

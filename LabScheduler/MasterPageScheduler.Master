@@ -110,7 +110,7 @@
                 </td>
             </tr>
             <tr>
-                <td>
+                <td style="min-width: 1000px;">
                     <table class="scheduler-body">
                         <tr>
                             <td class="left-panel" style="vertical-align: top; padding: 0; width: 256px;">
