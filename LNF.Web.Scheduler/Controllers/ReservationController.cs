@@ -259,7 +259,7 @@ namespace LNF.Web.Scheduler.Controllers
 
         private int GetCurrentUserActiveClientAccountsCount()
         {
-            return CacheManager.Current.CurrentUserActiveClientAccounts().Count;
+            return CacheManager.Current.CurrentUserActiveClientAccounts().Count();
         }
 
         private ClientAuthLevel GetAuthorization(ResourceModel res)

@@ -492,21 +492,21 @@ namespace LNF.Web.Scheduler
         /// <summary>
         /// Loads Reservation Billing Account Dropdownlist
         /// </summary>
-        public static bool LoadAccounts(List<ClientAccountModel> accts, ActivityAccountType acctType, int clientId)
+        public static bool LoadAccounts(List<ClientAccountItem> accts, ActivityAccountType acctType, int clientId)
         {
             bool mustAddInvitee = false;
 
-            IList<ClientAccountModel> activeAccounts = new List<ClientAccountModel>();
+            IList<ClientAccountItem> activeAccounts = new List<ClientAccountItem>();
 
             if (acctType == ActivityAccountType.Reserver || acctType == ActivityAccountType.Both)
                 /// Loads reserver's accounts
-                activeAccounts = CacheManager.Current.ActiveClientAccounts(clientId);
+                activeAccounts = CacheManager.Current.ActiveClientAccounts(clientId).ToList();
 
             if (acctType == ActivityAccountType.Invitee || acctType == ActivityAccountType.Both)
             {
                 // Loads each of the invitee's accounts
 
-                IList<ClientAccountModel> inviteeAccounts = null;
+                IEnumerable<ClientAccountItem> inviteeAccounts = null;
 
                 var invitees = CacheManager.Current.ReservationInvitees();
 

@@ -696,7 +696,7 @@ Namespace Pages
 
         Private Sub LoadAccount()
             Dim act As ActivityModel = CacheManager.Current.GetActivity(Integer.Parse(ddlActivity.SelectedValue))
-            Dim accts As New List(Of ClientAccountModel)
+            Dim accts As New List(Of ClientAccountItem)
             Dim mustAddInvitee As Boolean = SchedulerUtility.LoadAccounts(accts, act.AccountType, CurrentUser.ClientID)
             Dim selectedAccountId As Integer = -1
             LoadAccountScheduledMaintenanceCheck(act.ActivityID, selectedAccountId)
@@ -705,7 +705,7 @@ Namespace Pages
 
         Private Sub LoadAccount(rsv As Scheduler.Reservation)
             If rsv Is Nothing Then Throw New ArgumentNullException("rsv")
-            Dim accts As New List(Of ClientAccountModel)
+            Dim accts As New List(Of ClientAccountItem)
             Dim mustAddInvitee As Boolean = SchedulerUtility.LoadAccounts(accts, rsv.Activity.AccountType, rsv.Client.ClientID)
             Dim selectedAccountId As Integer = rsv.Account.AccountID
             LoadAccountScheduledMaintenanceCheck(rsv.Activity.ActivityID, selectedAccountId)
@@ -732,7 +732,7 @@ Namespace Pages
             End If
         End Sub
 
-        Private Sub FillAccountDropDown(accts As IList(Of ClientAccountModel), selectedAccountId As Integer, mustAddInvitee As Boolean)
+        Private Sub FillAccountDropDown(accts As IList(Of ClientAccountItem), selectedAccountId As Integer, mustAddInvitee As Boolean)
             If mustAddInvitee Then
                 hidMustAddInvitee.Value = "true"
             Else

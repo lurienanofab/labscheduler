@@ -27,8 +27,8 @@ namespace LNF.Web.Scheduler.Tests
             {
                 var accts = CacheManager.Current.CurrentUserActiveClientAccounts();
                 Assert.IsNotNull(accts);
-                Assert.AreEqual(1, accts.Count);
-                Assert.AreEqual(3649, accts[0].ClientAccountID);
+                Assert.AreEqual(1, accts.Count());
+                Assert.AreEqual(3649, accts.First().ClientAccountID);
             }
         }
 
