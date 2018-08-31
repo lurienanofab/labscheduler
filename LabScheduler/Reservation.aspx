@@ -116,7 +116,7 @@
                             <div class="form-group">
                                 <div class="col-sm-offset-2 col-sm-10">
                                     <div class="checkbox">
-                                        <asp:CheckBox runat="server" ID="chkIsRecurring" OnCheckedChanged="chkIsRecurring_CheckedChanged" AutoPostBack="true" Text="Is Recurring" />
+                                        <asp:CheckBox runat="server" ID="chkIsRecurring" OnCheckedChanged="ChkIsRecurring_CheckedChanged" AutoPostBack="true" Text="Is Recurring" />
                                     </div>
                                 </div>
                             </div>
@@ -410,10 +410,10 @@
                     <asp:Label runat="server" ID="lblConfirm" Font-Bold="true" />
                     <div style="text-align: center; margin-top: 10px;">
                         <asp:PlaceHolder runat="server" ID="phConfirmYesAndStart" Visible="false">
-                            <asp:Button runat="server" ID="btnConfirmYesAndStart" Text="Yes and Start Reservation" CssClass="confirm-button btn btn-default" OnClientClick="disable('.confirm-button');" UseSubmitBehavior="false" OnClick="btnConfirmYesAndStart_Click" />
+                            <asp:Button runat="server" ID="btnConfirmYesAndStart" Text="Yes and Start Reservation" CssClass="confirm-button btn btn-default" OnClientClick="disable('.confirm-button');" UseSubmitBehavior="false" OnClick="BtnConfirmYesAndStart_Click" />
                         </asp:PlaceHolder>
-                        <asp:Button runat="server" ID="btnConfirmYes" Text="Yes" CssClass="confirm-button btn btn-default" OnClientClick="disable('.confirm-button');" UseSubmitBehavior="false" OnClick="btnConfirmYes_Click" />
-                        <asp:Button runat="server" ID="btnConfirmNo" Text="No" CssClass="confirm-button btn btn-default" OnClientClick="disable('.confirm-button');" UseSubmitBehavior="false" OnClick="btnConfirmNo_Click" />
+                        <asp:Button runat="server" ID="btnConfirmYes" Text="Yes" CssClass="confirm-button btn btn-default" OnClientClick="disable('.confirm-button');" UseSubmitBehavior="false" OnClick="BtnConfirmYes_Click" />
+                        <asp:Button runat="server" ID="btnConfirmNo" Text="No" CssClass="confirm-button btn btn-default" OnClientClick="disable('.confirm-button');" UseSubmitBehavior="false" OnClick="BtnConfirmNo_Click" />
                     </div>
                 </div>
             </div>

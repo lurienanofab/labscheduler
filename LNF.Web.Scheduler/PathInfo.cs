@@ -11,18 +11,13 @@ namespace LNF.Web.Scheduler
 {
     public struct PathInfo
     {
-        private int _BuildingID;
-        private int _LabID;
-        private int _ProcessTechID;
-        private int _ResourceID;
-
         // only allow the following delimiters
         private readonly static char[] _delimiters = { ':', ',', '-', '|', '$' };
 
-        public int BuildingID { get { return _BuildingID; } }
-        public int LabID { get { return _LabID; } }
-        public int ProcessTechID { get { return _ProcessTechID; } }
-        public int ResourceID { get { return _ResourceID; } }
+        public int BuildingID { get; private set; }
+        public int LabID { get; private set; }
+        public int ProcessTechID { get; private set; }
+        public int ResourceID { get; private set; }
 
         public static string PathDelimiter
         {
@@ -51,75 +46,75 @@ namespace LNF.Web.Scheduler
 
             if (splitter.Length > 3)
             {
-                result._BuildingID = int.Parse(splitter[0]);
-                result._LabID = int.Parse(splitter[1]);
-                result._ProcessTechID = int.Parse(splitter[2]);
-                result._ResourceID = int.Parse(splitter[3]);
+                result.BuildingID = int.Parse(splitter[0]);
+                result.LabID = int.Parse(splitter[1]);
+                result.ProcessTechID = int.Parse(splitter[2]);
+                result.ResourceID = int.Parse(splitter[3]);
             }
             else if (splitter.Length > 2)
             {
-                result._BuildingID = int.Parse(splitter[0]);
-                result._LabID = int.Parse(splitter[1]);
-                result._ProcessTechID = int.Parse(splitter[2]);
+                result.BuildingID = int.Parse(splitter[0]);
+                result.LabID = int.Parse(splitter[1]);
+                result.ProcessTechID = int.Parse(splitter[2]);
             }
             else if (splitter.Length > 1)
             {
-                result._BuildingID = int.Parse(splitter[0]);
-                result._LabID = int.Parse(splitter[1]);
+                result.BuildingID = int.Parse(splitter[0]);
+                result.LabID = int.Parse(splitter[1]);
             }
             else if (splitter.Length > 0)
-                result._BuildingID = int.Parse(splitter[0]);
+                result.BuildingID = int.Parse(splitter[0]);
 
             return result;
         }
 
-        public static PathInfo Create(BuildingModel bldg)
+        public static PathInfo Create(BuildingItem bldg)
         {
             PathInfo result = new PathInfo();
 
             if (bldg != null)
-                result._BuildingID = bldg.BuildingID;
+                result.BuildingID = bldg.BuildingID;
 
             return result;
         }
 
-        public static PathInfo Create(LabModel lab)
+        public static PathInfo Create(LabItem lab)
         {
             PathInfo result = new PathInfo();
 
             if (lab != null)
             {
-                result._BuildingID = lab.BuildingID;
-                result._LabID = lab.LabID;
+                result.BuildingID = lab.BuildingID;
+                result.LabID = lab.LabID;
             }
 
             return result;
         }
 
-        public static PathInfo Create(ProcessTechModel pt)
+        public static PathInfo Create(ProcessTechItem pt)
         {
             PathInfo result = new PathInfo();
 
             if (pt != null)
             {
-                result._BuildingID = pt.BuildingID;
-                result._LabID = pt.LabID;
-                result._ProcessTechID = pt.ProcessTechID;
+                result.BuildingID = pt.BuildingID;
+                result.LabID = pt.LabID;
+                result.ProcessTechID = pt.ProcessTechID;
             }
 
             return result;
         }
 
-        public static PathInfo Create(ResourceModel res)
+        public static PathInfo Create(IResource res)
         {
             PathInfo result = new PathInfo();
 
             if (res != null)
             {
-                result._BuildingID = res.BuildingID;
-                result._LabID = res.LabID;
-                result._ProcessTechID = res.ProcessTechID;
-                result._ResourceID = res.ResourceID;
+                result.BuildingID = res.BuildingID;
+                result.LabID = res.LabID;
+                result.ProcessTechID = res.ProcessTechID;
+                result.ResourceID = res.ResourceID;
             }
 
             return result;
@@ -131,19 +126,19 @@ namespace LNF.Web.Scheduler
 
             if (res != null)
             {
-                result._ResourceID = res.ResourceID;
+                result.ResourceID = res.ResourceID;
 
                 if (res.ProcessTech != null)
                 {
-                    result._ProcessTechID = res.ProcessTech.ProcessTechID;
+                    result.ProcessTechID = res.ProcessTech.ProcessTechID;
 
                     if (res.ProcessTech.Lab != null)
                     {
-                        result._LabID = res.ProcessTech.Lab.LabID;
+                        result.LabID = res.ProcessTech.Lab.LabID;
 
                         if (res.ProcessTech.Lab.Building != null)
                         {
-                            result._BuildingID = res.ProcessTech.Lab.Building.BuildingID;
+                            result.BuildingID = res.ProcessTech.Lab.Building.BuildingID;
                         }
                     }
                 }
@@ -152,7 +147,7 @@ namespace LNF.Web.Scheduler
             return result;
         }
 
-        public BuildingModel GetBuilding()
+        public BuildingItem GetBuilding()
         {
             if (BuildingID > 0)
                 return CacheManager.Current.ResourceTree().GetBuilding(BuildingID);
@@ -160,7 +155,7 @@ namespace LNF.Web.Scheduler
                 return null;
         }
 
-        public LabModel GetLab()
+        public LabItem GetLab()
         {
             if (LabID > 0)
                 return CacheManager.Current.ResourceTree().GetLab(LabID);
@@ -168,7 +163,7 @@ namespace LNF.Web.Scheduler
                 return null;
         }
 
-        public ProcessTechModel GetProcessTech()
+        public ProcessTechItem GetProcessTech()
         {
             if (ProcessTechID > 0)
                 return CacheManager.Current.ResourceTree().GetProcessTech(ProcessTechID);
@@ -176,10 +171,10 @@ namespace LNF.Web.Scheduler
                 return null;
         }
 
-        public ResourceModel GetResource()
+        public ResourceItem GetResource()
         {
             if (ResourceID > 0)
-                return CacheManager.Current.ResourceTree().GetResource(ResourceID);
+                return CacheManager.Current.ResourceTree().GetResource(ResourceID).GetResourceItem();
             else
                 return null;
         }

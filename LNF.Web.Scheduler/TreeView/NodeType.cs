@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace LNF.Web.Scheduler.TreeView
 {
-    public enum TreeItemType
+    public enum NodeType
     {
         Building = 1,
         Lab = 2,

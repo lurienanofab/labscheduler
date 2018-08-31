@@ -14,7 +14,7 @@ Namespace Pages
         End Sub
 
         Private Sub LoadLab(labId As Integer)
-            Dim lab As LabModel = CacheManager.Current.ResourceTree().GetLab(labId)
+            Dim lab As LabItem = CacheManager.Current.ResourceTree().GetLab(labId)
             If lab IsNot Nothing Then
                 lblLabPath.Text = lab.BuildingName + " > "
                 lblLabName.Text = lab.LabDisplayName
@@ -22,7 +22,7 @@ Namespace Pages
                 UploadFileUtility.DisplayImage(imgPicture, "Lab", lab.LabID.ToString())
             End If
 
-            rptResources.DataSource = ResourceListItem.List(lab.BuildingID).Where(Function(x) x.LabID = lab.LabID).OrderBy(Function(x) x.ProcessTechName)
+            rptResources.DataSource = ResourceTableItem.List(lab.BuildingID).Where(Function(x) x.LabID = lab.LabID).OrderBy(Function(x) x.ProcessTechName)
             rptResources.DataBind()
         End Sub
 

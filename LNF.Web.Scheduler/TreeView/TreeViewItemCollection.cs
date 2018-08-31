@@ -7,20 +7,20 @@ using System.Threading.Tasks;
 
 namespace LNF.Web.Scheduler.TreeView
 {
-    public class TreeItemCollection : IEnumerable<ITreeItem>
+    public class TreeViewItemCollection : IEnumerable<INode>
     {
-        private List<ITreeItem> _items = new List<ITreeItem>();
+        private List<INode> _items = new List<INode>();
 
         public int Count
         {
             get { return _items.Count; }
         }
 
-        public TreeItemCollection(IEnumerable<ITreeItem> items)
+        public TreeViewItemCollection(IEnumerable<INode> items)
         {
-            _items = new List<ITreeItem>();
+            _items = new List<INode>();
 
-            ITreeItem prevItem = null;
+            INode prevItem = null;
 
             foreach(var item in items.OrderBy(x=>x.Name))
             {
@@ -34,35 +34,35 @@ namespace LNF.Web.Scheduler.TreeView
             }
         }
 
-        public void Add(ITreeItem item)
+        public void Add(INode item)
         {
             _items.Add(item);
         }
 
-        public void Remove(ITreeItem item)
+        public void Remove(INode item)
         {
             _items.Remove(item);
         }
 
-        public ITreeItem this[int index]
+        public INode this[int index]
         {
             get { return _items[index]; }
             set { _items[index] = value; }
         }
 
-        public ITreeItem Find(int id)
+        public INode Find(int id)
         {
             return _items.FirstOrDefault(x => x.ID == id);
         }
 
-        public void Set(int id, ITreeItem item)
+        public void Set(int id, INode item)
         {
             int index = _items.FindIndex(x => x.ID == id);
             if (index != -1)
                 _items[index] = item;
         }
 
-        public IEnumerator<ITreeItem> GetEnumerator()
+        public IEnumerator<INode> GetEnumerator()
         {
             return _items.GetEnumerator();
         }

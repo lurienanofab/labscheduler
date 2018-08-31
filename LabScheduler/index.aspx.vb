@@ -11,7 +11,7 @@ Namespace Pages
 
                 If Request.QueryString("ClearSession") = "1" Then
                     Session.Abandon()
-                    Response.Redirect("~")
+                    Response.Redirect("~/index.aspx")
                 End If
 
                 litDisplayName.Text = CurrentUser.DisplayName

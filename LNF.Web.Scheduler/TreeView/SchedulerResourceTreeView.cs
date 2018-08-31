@@ -10,33 +10,33 @@ using LNF.Web;
 
 namespace LNF.Web.Scheduler.TreeView
 {
-    public class SchedulerTreeView
+    public class SchedulerResourceTreeView
     {
-        public SchedulerTreeView()
+        public SchedulerResourceTreeView()
         {        
             var buildings = CacheManager.Current.ResourceTree().Buildings().Where(x => x.BuildingIsActive).OrderBy(x => x.BuildingName).ToArray();
-            Buildings = new TreeItemCollection(buildings.Select(x => new BuildingTreeItem(x)));
+            Buildings = new TreeViewItemCollection(buildings.Select(x => new BuildingNode(x)));
         }
 
-        public TreeItemCollection Buildings { get; }
+        public TreeViewItemCollection Buildings { get; }
 
         /// <summary>
         /// The current resource treeview for this request.
         /// </summary>
-        public static SchedulerTreeView Current
+        public static SchedulerResourceTreeView Current
         {
             get
             {
-                SchedulerTreeView result;
+                SchedulerResourceTreeView result;
 
                 if (HttpContext.Current.Items["SchedulerTreeView"] == null)
                 {
-                    result = new SchedulerTreeView();
+                    result = new SchedulerResourceTreeView();
                     HttpContext.Current.Items["SchedulerTreeView"] = result;
                 }
                 else
                 {
-                    result = (SchedulerTreeView)HttpContext.Current.Items["SchedulerTreeView"];
+                    result = (SchedulerResourceTreeView)HttpContext.Current.Items["SchedulerTreeView"];
                 }
 
                 return result;

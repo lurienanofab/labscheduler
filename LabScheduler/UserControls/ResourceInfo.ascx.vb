@@ -23,7 +23,7 @@ Namespace UserControls
                 End If
 
                 ' Resource Engineers
-                Dim res As ResourceModel = Request.SelectedPath().GetResource()
+                Dim res As ResourceItem = Request.SelectedPath().GetResource()
 
                 'Session("tool-engineers") = DA.Current.Query(Of ResourceClient)() _
                 '    .Where(Function(x) x.Resource.ResourceID = res.ResourceID).ToArray() _
@@ -43,11 +43,11 @@ Namespace UserControls
                 Dim perUseCost As Decimal = 0
                 Dim perHourCost As Decimal = 0
 
-                Dim costs As IList(Of ResourceCostModel) = Page.ResourceManager.GetToolCosts(DateTime.Now, res.ResourceID, CacheManager.Current.MaxChargeTypeID).ToList()
+                Dim cost As ResourceCost = CacheManager.Current.GetResourceCost(res.ResourceID)
 
-                If costs.Count > 0 Then
-                    perUseCost = costs(0).AddVal
-                    perHourCost = costs(0).MulVal
+                If cost IsNot Nothing Then
+                    perUseCost = cost.PerUseRate()
+                    perHourCost = cost.HourlyRate()
                 End If
 
                 item.HourlyCost = String.Format("{0:C}/use + {1:C}/hr", perUseCost, perHourCost)
@@ -63,7 +63,7 @@ Namespace UserControls
 
         Private Function GetToolEngineers() As List(Of ToolEngineerItem)
             Dim result As List(Of ToolEngineerItem) = New List(Of ToolEngineerItem)()
-            Dim toolEngineers As IList(Of ResourceClientModel) = CacheManager.Current.ToolEngineers(Request.SelectedPath().ResourceID).ToList()
+            Dim toolEngineers As IList(Of ResourceClientItem) = CacheManager.Current.ToolEngineers(Request.SelectedPath().ResourceID).ToList()
 
             If String.IsNullOrEmpty(hidResourceID.Value) OrElse toolEngineers Is Nothing OrElse toolEngineers.Count = 0 Then
                 'tdEngineers.InnerText = "Unknown"
@@ -71,7 +71,7 @@ Namespace UserControls
                 'Sometimes dtEngineers contains every tool engineer. This happens when we are in the
                 'Resources Administration tab. This means we should always select the engineers for
                 'the current resource.
-                For Each te As ResourceClientModel In toolEngineers
+                For Each te As ResourceClientItem In toolEngineers
                     Dim item As New ToolEngineerItem With {
                         .ClientID = te.ClientID,
                         .DisplayName = te.DisplayName,

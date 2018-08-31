@@ -46,7 +46,7 @@ namespace LNF.Web.Scheduler.Controls
                     hidAjaxUrl.Value = "/ostclient/ajax.aspx";
                     hidHelpdeskQueue.Value = helpdeskEmail;
                     hidHelpdeskResource.Value = ServiceProvider.Current.Serialization.Json.SerializeObject(new { id = res.ResourceID, name = res.ResourceName });
-                    hidHelpdeskFromEmail.Value = CacheManager.Current.Email;
+                    hidHelpdeskFromEmail.Value = CacheManager.Current.CurrentUser.Email;
                     hidHelpdeskFromName.Value = string.Format("{0} {1}", CurrentUser.FName, CurrentUser.LName);
 
                     LoadReservations();
@@ -78,7 +78,7 @@ namespace LNF.Web.Scheduler.Controls
             }
         }
 
-        private string GetHelpdeskEmail(ResourceModel res)
+        private string GetHelpdeskEmail(ResourceItem res)
         {
             if (res != null)
                 return res.HelpdeskEmail;
@@ -88,7 +88,7 @@ namespace LNF.Web.Scheduler.Controls
 
         protected void btnCreateTicket_Click(object sender, EventArgs e)
         {
-            ResourceModel res = CacheManager.Current.ResourceTree().Resources().FirstOrDefault(x => x.ResourceID == ResourceID);
+            var res = CacheManager.Current.ResourceTree().GetResource(ResourceID).GetResourceItem();
 
             litErrMsg.Text = string.Empty;
 
@@ -109,18 +109,18 @@ namespace LNF.Web.Scheduler.Controls
                     rsv = DA.Current.Single<Reservation>(int.Parse(ddlReservations.SelectedValue));
 
                 string subjectText = "[" + res.ResourceID.ToString() + ":" + res.ResourceName + "] " + txtSubject.Text;
-                CreateTicketResult addTicketResult = HelpdeskUtility.CreateTicket(res, rsv, CacheManager.Current.ClientID, ddlReservations.SelectedItem.Text, subjectText, txtMessage.Text, ddlTicketType.SelectedItem.Text);
+                CreateTicketResult addTicketResult = HelpdeskUtility.CreateTicket(res, rsv, CacheManager.Current.CurrentUser.ClientID, ddlReservations.SelectedItem.Text, subjectText, txtMessage.Text, ddlTicketType.SelectedItem.Text);
                 if (addTicketResult.Success)
                 {
-                    litErrMsg.Text = WebUtility.BootstrapAlert("success", string.Format("Your ticket has been created. A confirmation email has been sent to {0}.", CacheManager.Current.Email));
+                    litErrMsg.Text = WebUtility.BootstrapAlert("success", string.Format("Your ticket has been created. A confirmation email has been sent to {0}.", CacheManager.Current.CurrentUser.Email));
                     load = false;
                 }
                 else
                 {
                     StringBuilder sb = new StringBuilder();
-                    sb.AppendLine(string.Format("Create ticket failed. User: {0} ({1}). Resource: {2} ({3})", CurrentUser.DisplayName, CacheManager.Current.ClientID, res.ResourceName, res.ResourceID));
+                    sb.AppendLine(string.Format("Create ticket failed. User: {0} ({1}). Resource: {2} ({3})", CurrentUser.DisplayName, CacheManager.Current.CurrentUser.ClientID, res.ResourceName, res.ResourceID));
                     sb.AppendLine(string.Format("----------{0}{1}", Environment.NewLine, addTicketResult.Exception.Message));
-                    ServiceProvider.Current.Email.SendMessage(CacheManager.Current.ClientID, "LNF.Web.Scheduler.Controls.Helpdesk.btnCreateTicket_Click(object sender, EventArgs e)", "Create Ticket Error", sb.ToString(), SendEmail.SystemEmail, SendEmail.DeveloperEmails);
+                    ServiceProvider.Current.Email.SendMessage(CacheManager.Current.CurrentUser.ClientID, "LNF.Web.Scheduler.Controls.Helpdesk.btnCreateTicket_Click(object sender, EventArgs e)", "Create Ticket Error", sb.ToString(), SendEmail.SystemEmail, SendEmail.DeveloperEmails);
                     litErrMsg.Text = WebUtility.BootstrapAlert("danger", "Sorry, an error occurred and your ticket was not created. A notification has been sent to LNF staff.");
                 }
             }

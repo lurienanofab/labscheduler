@@ -46,17 +46,11 @@ namespace LNF.Web.Scheduler.Pages
 
         protected override void OnLoad(EventArgs e)
         {
-            if (Request.QueryString["Update"] == "1")
+            if (!Page.IsPostBack)
             {
-                Session["UpdateForgivenChargeOnFinOps"] = true;
-                Response.Redirect(string.Format("~/ResourceMaintenance.aspx?Path={0}&Date={1:yyyy-MM-dd}", Request.SelectedPath().UrlEncode(), Request.SelectedDate()), false);
-            }
-            else if (!Page.IsPostBack)
-            {
-                ResourceModel res = Request.SelectedPath().GetResource();
+                ResourceItem res = Request.SelectedPath().GetResource();
                 LoadResourceStatus(res);
                 LoadInterlockState(res);
-                RegisterAsyncTask(new PageAsyncTask(() => UpdateForgivenChargeOnFinOps(res)));
             }
         }
 
@@ -80,7 +74,7 @@ namespace LNF.Web.Scheduler.Pages
             litRepairEndMessage.Text = string.Format("<div>Current scheduled end time: <b>{0} ({1} hours from now)</b>.</div>", rsv.EndDateTime, GetDuration(rsv).TotalHours.ToString("#0.00"));
         }
 
-        private void LoadResourceStatus(ResourceModel res)
+        private void LoadResourceStatus(ResourceItem res)
         {
             if (res.HasState(ResourceState.Online))
             {
@@ -103,7 +97,11 @@ namespace LNF.Web.Scheduler.Pages
             {
                 // Tool state is offline
                 var rip = ReservationManager.GetRepairReservationInProgress(res.ResourceID);
-                var rsv = DA.Current.Single<Reservation>(rip.ReservationID);
+
+                Reservation rsv = null;
+
+                if (rip != null)
+                    rsv = DA.Current.Single<Reservation>(rip.ReservationID);
 
                 if (rsv != null)
                 {
@@ -158,7 +156,7 @@ namespace LNF.Web.Scheduler.Pages
             }
         }
 
-        private void LoadInterlockState(ResourceModel res)
+        private void LoadInterlockState(ResourceItem res)
         {
             divInterlockState.Attributes.Add("data-id", res.ResourceID.ToString());
         }
@@ -175,279 +173,71 @@ namespace LNF.Web.Scheduler.Pages
 
         protected void ResourceStatus_Command(object sender, CommandEventArgs e)
         {
-            litErrMsg.Text = string.Empty;
+            try
+            {
+                litErrMsg.Text = string.Empty;
 
-            ResourceModel res = Request.SelectedPath().GetResource();
+                ResourceItem res = Request.SelectedPath().GetResource();
+                Reservation repair;
 
-            if (e.CommandName == "start")
-                StartRepair(res);
-            else if (e.CommandName == "update")
-                UpdateRepair(res);
-            else if (e.CommandName == "end")
-                EndRepair(res);
-            else
-                throw new InvalidOperationException("Unknown command: " + e.CommandName);
+                switch(e.CommandName)
+                {
+                    case "start":
+                        repair = RepairUtility.StartRepair(res, GetSelectedState(), GetRepairActualBeginDateTime(), GetRepairActualEndDateTime(), txtNotes.Text);
+                        break;
+                    case "update":
+                        repair = RepairUtility.UpdateRepair(res, GetRepairActualBeginDateTime(), GetRepairActualEndDateTime(), txtNotes.Text);
+                        break;
+                    case "end":
+                        repair = RepairUtility.EndRepair(res);
+                        break;
+                    default:
+                        throw new InvalidOperationException("Unknown command: " + e.CommandName);
+                }
+
+                RepairUtility.UpdateAffectedReservations(repair);
+                RepairUtility.UpdateForgivenChargeOnFinOps(repair);
+
+                RefreshAndRedirect(res);
+            }
+            catch(Exception ex)
+            {
+                litErrMsg.Text = WebUtility.BootstrapAlert("danger", ex.Message, true);
+            }
         }
 
-        private void StartRepair(ResourceModel res)
+        private DateTime GetRepairActualBeginDateTime()
         {
-            if (res.HasState(ResourceState.Online))
-            {
-                // Create new offline reservation or new limited mode status
-                ResourceState resourceState = rdoStatusOffline.Checked ? ResourceState.Offline : ResourceState.Limited;
+            EnsureRepairDurationEnteredByUser();
 
-                if (ResourceState.Offline == GetSelectedState())
-                {
-                    // User wants to create new offline reservation
+            DateTime actualBeginDateTime = DateTime.Now;
 
-                    // Make sure needed data are entered by user
-                    if ((string.IsNullOrEmpty(txtRepairStart.Text) && string.IsNullOrEmpty(txtRepairTime.Text)) || (txtRepairStart.Text == "0" && txtRepairTime.Text == "0"))
-                    {
-                        litErrMsg.Text = WebUtility.BootstrapAlert("danger", "You must specify the start time and estimated time to repair.", true);
-                        return;
-                    }
+            if (!string.IsNullOrEmpty(txtRepairStart.Text))
+                actualBeginDateTime = actualBeginDateTime.AddMinutes(Convert.ToDouble(txtRepairStart.Text) * (rdoRepairStartUnitMinutes.Checked ? -1.0 : -60.0));
 
-                    // Determine BeginDateTime for repair reservation
-                    DateTime beginDateTime, endDateTime;
-                    DateTime actualBeginDateTime = DateTime.Now;
-                    DateTime actualEndDateTime = DateTime.Now;
-
-                    // Calculate the actual time the machine went off
-                    if (!string.IsNullOrEmpty(txtRepairStart.Text))
-                        actualBeginDateTime = actualBeginDateTime.AddMinutes(Convert.ToDouble(txtRepairStart.Text) * (rdoRepairStartUnitMinutes.Checked ? -1.0 : -60.0));
-
-                    // [2016-05-04 jg] The following code was already commented out prior to moving this to LNF.Web.Scheduler
-                    // Check that this time is after the end of the last completed repair
-                    //DateTime? lastRepairEndTime = Reservation.SelectLastRepairEndTime(res.ResourceID);
-                    //if (lastRepairEndTime > actualBeginDateTime)
-                    //{
-                    //    // The tool is broken before we finished repairing it last time
-                    //    // so we have to set the actual time to be right after that repair time
-                    //    actualBeginDateTime = lastRepairEndTime.Value.AddSeconds(1);
-                    //}
-
-                    beginDateTime = ResourceManager.GetNextGranularity(res, actualBeginDateTime, NextGranDir.Previous);
-
-                    if (!string.IsNullOrEmpty(txtRepairTime.Text))
-                        actualEndDateTime = actualEndDateTime.AddMinutes(Convert.ToDouble(txtRepairTime.Text) * (rdoRepairTimeUnitMinutes.Checked ? 1.0 : 60.0));
-
-                    endDateTime = ResourceManager.GetNextGranularity(res, actualEndDateTime, NextGranDir.Future);
-
-                    // Find and End reservations that are in progress (Endable) for this resource
-                    IList<Reservation> endableRsvQuery = ReservationManager.SelectEndableReservations(res.ResourceID);
-                    foreach (Reservation endableRsv in endableRsvQuery)
-                    {
-                        ReservationManager.EndForRepair(endableRsv, CurrentUser.ClientID, CurrentUser.ClientID);
-                        //endableRsv.EndForRepair(CurrentUser.ClientID, CurrentUser.ClientID);    
-                        EmailManager.EmailOnCanceledByRepair(endableRsv, false, "Offline", txtNotes.Text, endDateTime);
-                    }
-
-                    // Find and Remove any un-started reservations made during time of repair
-                    IList<Reservation> unstartedReservations = ReservationManager.SelectByResource(res.ResourceID, beginDateTime, endDateTime, false);
-                    foreach (Reservation unstartedRsv in unstartedReservations)
-                    {
-                        // If the reservation has not begun
-                        if (!unstartedRsv.ActualBeginDateTime.HasValue)
-                        {
-                            ReservationManager.DeleteAndForgive(unstartedRsv, CurrentUser.ClientID);
-                            EmailManager.EmailOnCanceledByRepair(unstartedRsv, true, "Offline", txtNotes.Text, endDateTime);
-                        }
-                        else
-                        {
-                            // We have to disable all those reservations that have been activated by setting IsActive to 0.  
-                            // The catch here is that we must compare the "Actual" usage time with the repair time because
-                            // if the user ends the reservation before the repair starts, we still  have to charge the user
-                            // for that reservation
-                        }
-                    }
-
-                    // 2009-05-21 Make the old reservations that were covered by the repair to be forgiven
-                    // Get all the past active reservations that were covered by this specific repair period
-                    // [2013-05-20 jg] We also need cancelled reservations so booking fee is forgiven
-                    //IList<Reservation> query = ReservationUtility.SelectHistoryToForgiveForRepair(res.ResourceID, actualBeginDateTime, DateTime.Now);
-
-                    // [2017-08-24 jg] Changing to beginDateTime and endDateTime so that any existing reservations in the entire repair range are forgiven.
-                    //      The previous date range only covered reservations scheduled to start between the actualBeginDateTime (the time the repair began
-                    //      without going to the previous granularity) and the current time. The range is now between the repair begin (to previous granularity)
-                    //      to repair end (to next granularity).
-                    IList<Reservation> query = ReservationManager.SelectHistoryToForgiveForRepair(res.ResourceID, beginDateTime, endDateTime);
-
-                    ForgiveReservationsForRepair(query, actualBeginDateTime);
-
-                    // Remove invitees and process info that might be in the session
-                    CacheManager.Current.RemoveSessionValue("ReservationInvitees");
-                    CacheManager.Current.RemoveSessionValue("ReservationProcessInfos");
-
-                    // Insert the new repair reservation
-                    ReservationManager.InsertRepair(res.ResourceID, CurrentUser.ClientID, beginDateTime, endDateTime, actualBeginDateTime, txtNotes.Text, CurrentUser.ClientID);
-
-                    // Set the state into resource table and session object
-                    ResourceUtility.UpdateState(res.ResourceID, ResourceState.Offline, string.Empty);
-                }
-                else
-                {
-                    // User sets the tool into limited mode
-                    // Set Resource State, txtNotes.Text is saved with Resource table only in limited mode, since limited mode has no reservation record
-                    ResourceUtility.UpdateState(res.ResourceID, ResourceState.Limited, txtNotes.Text);
-                }
-            }
-
-            RefreshAndRedirect(res);
+            return actualBeginDateTime;
         }
 
-        private void UpdateRepair(ResourceModel res)
+        private DateTime GetRepairActualEndDateTime()
         {
-            if (res.HasState(ResourceState.Offline))
-            {
-                // User set the tool into offline mode
-                if ((string.IsNullOrEmpty(txtRepairStart.Text) && string.IsNullOrEmpty(txtRepairTime.Text)) || (txtRepairStart.Text == "0" && txtRepairTime.Text == "0"))
-                {
-                    litErrMsg.Text = WebUtility.BootstrapAlert("danger", "You must specify the start time and estimated time to repair.", true);
-                    return;
-                }
+            EnsureRepairDurationEnteredByUser();
 
-                // Determine BeginDateTime for repair reservation
-                DateTime beginDatetime, endDateTime;
-                DateTime actualBeginDateTime = DateTime.Now;
-                DateTime actualEndDateTime = DateTime.Now;
+            DateTime actualEndDateTime = DateTime.Now;
 
-                var rip = ReservationManager.GetRepairReservationInProgress(res.ResourceID);
-                var rsv = DA.Current.Single<Reservation>(rip.ReservationID);
-                beginDatetime = rip.BeginDateTime;
+            if (!string.IsNullOrEmpty(txtRepairTime.Text))
+                actualEndDateTime = actualEndDateTime.AddMinutes(Convert.ToDouble(txtRepairTime.Text) * (rdoRepairTimeUnitMinutes.Checked ? 1.0 : 60.0));
 
-                if (!string.IsNullOrEmpty(txtRepairTime.Text))
-                    actualEndDateTime = actualEndDateTime.AddMinutes(Convert.ToDouble(txtRepairTime.Text) * (rdoRepairTimeUnitMinutes.Checked ? 1.0 : 60.0));
-
-                endDateTime = ResourceManager.GetNextGranularity(res, actualEndDateTime, NextGranDir.Future);
-
-                // Find and End reservations that are in progress (Endable) for this resource
-                IList<Reservation> endableReservations = ReservationManager.SelectEndableReservations(res.ResourceID);
-                foreach (Reservation endable in endableReservations.Where(x => x.ReservationID != rsv.ReservationID))
-                {
-                    ReservationManager.EndForRepair(endable, CurrentUser.ClientID, CurrentUser.ClientID);
-                    EmailManager.EmailOnCanceledByRepair(endable, false, "Offline", txtNotes.Text, endDateTime);
-                }
-
-                // Find and Remove any un-started reservations made during time of repair
-                IList<Reservation> unstartedReservations = ReservationManager.SelectByResource(res.ResourceID, beginDatetime, endDateTime, false);
-                foreach (Reservation unstarted in unstartedReservations.Where(x => !x.ActualBeginDateTime.HasValue && x.ReservationID != rsv.ReservationID))
-                {
-                    ReservationManager.Delete(unstarted, CurrentUser.ClientID);
-                    EmailManager.EmailOnCanceledByRepair(unstarted, true, "Offline", txtNotes.Text, endDateTime);
-                }
-
-                IList<Reservation> query = ReservationManager.SelectHistoryToForgiveForRepair(res.ResourceID, actualBeginDateTime, DateTime.Now);
-                ForgiveReservationsForRepair(query, actualBeginDateTime);
-
-                // Modify Existing Repair Reservation
-                rsv.EndDateTime = endDateTime;
-                rsv.Notes = txtNotes.Text;
-                ReservationManager.Update(rsv, CurrentUser.ClientID);
-            }
-            else
-            {
-                // modifying limited mode, only StateNotes is modifiable in this case
-                ResourceUtility.UpdateState(res.ResourceID, ResourceState.Limited, txtNotes.Text);
-            }
-
-            RefreshAndRedirect(res);
+            return actualEndDateTime;
         }
 
-        private void EndRepair(ResourceModel res)
+        private void EnsureRepairDurationEnteredByUser()
         {
-            litErrMsg.Text = string.Empty;
-
-            if (res.HasState(ResourceState.Offline))
-            {
-                var rip = ReservationManager.GetRepairReservationInProgress(res.ResourceID);
-                var rsv = DA.Current.Single<Reservation>(rip.ReservationID);
-
-                if (rsv != null)
-                {
-                    if (res.IsSchedulable)
-                    {
-                        // Set Scheduled EndDateTime = next grain boundary in future
-                        rsv.EndDateTime = ResourceManager.GetNextGranularity(res, DateTime.Now, NextGranDir.Future);
-                        ReservationManager.Update(rsv, CurrentUser.ClientID);
-
-                        // End the repair reservation now
-                        ReservationManager.End(rsv, CurrentUser.ClientID, CurrentUser.ClientID);
-
-                        // [2013-05-20 jg] Recheck for any reservations that were not forgiven that should have been.
-                        // This can happen when a reservation has a start time that comes after the repair is started.
-                        // When the repair is started DateTime.Now is used as the repair end date. So if a reservation
-                        // has a begin date (for example) 5 minutes later it will not be included for forgiving because
-                        // it starts 5 minutes after the repair "ends". Now we know the real end date so we can tell
-                        // that the we need to forgive that reservation.
-                        IList<Reservation> query = ReservationManager.SelectHistoryToForgiveForRepair(res.ResourceID, rsv.ActualBeginDateTime.Value, rsv.ActualEndDateTime.Value);
-                        ForgiveReservationsForRepair(query, rsv.ActualEndDateTime.GetValueOrDefault());
-                    }
-                }
-            }
-
-            // Set Resource State
-            ResourceUtility.UpdateState(res.ResourceID, ResourceState.Online, string.Empty);
-
-            RefreshAndRedirect(res);
+            // Make sure needed data are entered by user
+            if ((string.IsNullOrEmpty(txtRepairStart.Text) && string.IsNullOrEmpty(txtRepairTime.Text)) || (txtRepairStart.Text == "0" && txtRepairTime.Text == "0"))
+                throw new Exception("You must specify the start time and estimated time to repair.");
         }
 
-        private void ForgiveReservationsForRepair(IList<Reservation> reservations, DateTime actualBeginDateTime)
-        {
-            Session["UpdateForgivenChargeOnFinOps"] = false;
-
-            double chargeMultiplier = 0;
-
-            foreach (Reservation rsv in reservations)
-            {
-                // The following doesn't do anything because the variable chargeMultiplier will always be zero, I think this can be safely removed.
-                double timediff = (rsv.BeginDateTime - actualBeginDateTime).TotalMinutes;
-                if (timediff < 0)
-                {
-                    // If the repair starts right in the middle of a past reservation, should we just prorate it?  
-                    chargeMultiplier = 0;
-                }
-
-                ReservationManager.UpdateCharges(rsv, chargeMultiplier, true, CurrentUser.ClientID);
-
-                // We have to delete those reservations as well, so it won't conflict with Repair and produce multiple reservation issue
-                //rsvDB.Delete(ReservationID); // why was this commented out? because the reservation should already have been ended or canceled
-
-                // Email User after everything is done.
-                EmailManager.EmailOnForgiveCharge(rsv, 100, true, CurrentUser.ClientID);
-
-                // Make the change to two ToolData tables.
-                // The session variable is set now and then checked for on the next page load.
-                Session["UpdateForgivenChargeOnFinOps"] = true;
-            }
-        }
-
-        private async Task UpdateForgivenChargeOnFinOps(ResourceModel res)
-        {
-            if (Session["UpdateForgivenChargeOnFinOps"] != null)
-            {
-                bool update = Convert.ToBoolean(Session["UpdateForgivenChargeOnFinOps"]);
-                Session.Remove("UpdateForgivenChargeOnFinOps");
-
-                if (update)
-                {
-                    var rip = ReservationManager.GetRepairReservationInProgress(res.ResourceID);
-                    var rsv = DA.Current.Single<Reservation>(rip.ReservationID);
-
-                    if (rsv != null)
-                    {
-                        DateTime sd = rsv.BeginDateTime.FirstOfMonth();
-                        DateTime ed = rsv.EndDateTime.FirstOfMonth().AddMonths(1);
-
-                        var updateBillingResult = await ReservationHistoryUtility.UpdateBilling(sd, ed, 0);
-
-                        if (!updateBillingResult.HasError())
-                            throw new Exception(updateBillingResult.GetErrorMessage());
-                    }
-                }
-            }
-        }
-
-        private void RefreshAndRedirect(ResourceModel res)
+        private void RefreshAndRedirect(ResourceItem res)
         {
             // Last, reload and refresh everything to reflect the new change made
             Response.Redirect(string.Format("~/ResourceMaintenance.aspx?Path={0}&Date={1:yyyy-MM-dd}", PathInfo.Create(res), Request.SelectedDate()), false);

@@ -34,18 +34,18 @@ namespace LNF.Web.Scheduler
             }
         }
 
-        private IList<ResourceTreeItem> _items;
+        private IList<ResourceTree> _items;
 
         public ResourceTreeManager()
         {
             // create a new ResourceTreeManager based on the currently logged in user
             var clientId = CacheManager.Current.CurrentUser.ClientID;
-            _items = DA.Current.Query<ResourceTreeItem>().Where(x => x.ClientID == clientId).ToList();
+            _items = DA.Current.Query<ResourceTree>().Where(x => x.ClientID == clientId).ToList();
         }
 
-        public static ResourceModel CreateResourceModel(ResourceTreeItem item)
+        public static ResourceItem CreateResourceModel(ResourceTree item)
         {
-            return new ResourceModel()
+            return new ResourceItem()
             {
                 ResourceID = item.ResourceID,
                 ResourceName = item.ResourceName,
@@ -79,9 +79,9 @@ namespace LNF.Web.Scheduler
             };
         }
 
-        public static ProcessTechModel CreateProcessTechModel(ResourceTreeItem item)
+        public static ProcessTechItem CreateProcessTechModel(ResourceTree item)
         {
-            return new ProcessTechModel()
+            return new ProcessTechItem()
             {
                 ProcessTechID = item.ProcessTechID,
                 ProcessTechName = item.ProcessTechName,
@@ -99,9 +99,9 @@ namespace LNF.Web.Scheduler
             };
         }
 
-        public static LabModel CreateLabModel(ResourceTreeItem item)
+        public static LabItem CreateLabModel(ResourceTree item)
         {
-            return new LabModel()
+            return new LabItem()
             {
                 LabID = item.LabID,
                 LabName = item.LabName,
@@ -116,9 +116,9 @@ namespace LNF.Web.Scheduler
             };
         }
 
-        public static BuildingModel CreateBuildingModel(ResourceTreeItem item)
+        public static BuildingItem CreateBuildingModel(ResourceTree item)
         {
-            return new BuildingModel()
+            return new BuildingItem()
             {
                 BuildingID = item.BuildingID,
                 BuildingName = item.BuildingName,
@@ -127,39 +127,39 @@ namespace LNF.Web.Scheduler
             };
         }
 
-        public IEnumerable<ResourceTreeItem> GetItems()
+        public IEnumerable<ResourceTree> GetItems()
         {
             return _items.AsEnumerable();
         }
 
-        public IEnumerable<ResourceModel> GetResources()
+        public IEnumerable<ResourceItem> GetResources()
         {
             var result = _items.Select(CreateResourceModel).OrderBy(x => x.BuildingID).ThenBy(x => x.LabID).ThenBy(x => x.ProcessTechID).ThenBy(x => x.ResourceID);
             return result;
         }
 
-        public IEnumerable<ProcessTechModel> GetProcessTechs()
+        public IEnumerable<ProcessTechItem> GetProcessTechs()
         {
             var distinct = _items.Select(CreateProcessTechModel).Distinct();
             var result = distinct.OrderBy(x => x.BuildingID).ThenBy(x => x.LabID).ThenBy(x => x.ProcessTechID).ToList();
             return result;
         }
 
-        public IEnumerable<LabModel> GetLabs()
+        public IEnumerable<LabItem> GetLabs()
         {
             var distinct = _items.Select(CreateLabModel).Distinct();
             var result = distinct.OrderBy(x => x.BuildingID).ThenBy(x => x.LabID).ToList();
             return result;
         }
 
-        public IEnumerable<BuildingModel> GetBuildings()
+        public IEnumerable<BuildingItem> GetBuildings()
         {
             var distinct = _items.Select(CreateBuildingModel).Distinct();
             var result = distinct.OrderBy(x => x.BuildingID).ToList();
             return result;
         }
 
-        public ResourceModel GetResource(int resourceId)
+        public ResourceItem GetResource(int resourceId)
         {
             var item = _items.FirstOrDefault(x => x.ResourceID == resourceId);
 
@@ -170,7 +170,7 @@ namespace LNF.Web.Scheduler
             return result;
         }
 
-        public ProcessTechModel GetProcessTech(int procTechId)
+        public ProcessTechItem GetProcessTech(int procTechId)
         {
             var item = _items.FirstOrDefault(x => x.ProcessTechID == procTechId);
 
@@ -181,7 +181,7 @@ namespace LNF.Web.Scheduler
             return result;
         }
 
-        public LabModel GetLab(int labId)
+        public LabItem GetLab(int labId)
         {
             var item = _items.FirstOrDefault(x => x.LabID == labId);
 
@@ -192,7 +192,7 @@ namespace LNF.Web.Scheduler
             return result;
         }
 
-        public BuildingModel GetBuilding(int buildingId)
+        public BuildingItem GetBuilding(int buildingId)
         {
             var item = _items.FirstOrDefault(x => x.BuildingID == buildingId);
 

@@ -2,6 +2,7 @@
 
 using LNF;
 using LNF.Control;
+using Newtonsoft.Json;
 using System;
 using System.ServiceModel;
 using System.Threading.Tasks;
@@ -34,7 +35,7 @@ namespace LabScheduler.Api
                     throw new Exception("Invalid command: " + command);
             }
 
-            context.Response.Write(Providers.Serialization.Json.SerializeObject(result));
+            context.Response.Write(JsonConvert.SerializeObject(result));
         }
     }
 
@@ -47,15 +48,15 @@ namespace LabScheduler.Api
                 var inst = ActionInstanceUtility.Find(ActionType.Interlock, resourceId);
                 var point = inst.GetPoint();
                 var block = point.Block;
-                var pointResponse = (await Providers.Control.SetPointState(point, state, 0)).EnsureSuccess();
+                var pointResponse = (await ServiceProvider.Current.Control.SetPointState(point, state, 0)).EnsureSuccess();
 
                 return new
                 {
-                    BlockID = block.BlockID,
-                    BlockName = block.BlockName,
-                    PointID = point.PointID,
+                    block.BlockID,
+                    block.BlockName,
+                    point.PointID,
                     InstanceName = inst.Name,
-                    ActionID = inst.ActionID,
+                    inst.ActionID,
                     TimeTaken = (DateTime.Now - pointResponse.StartTime).TotalSeconds
                 };
             }
@@ -65,7 +66,7 @@ namespace LabScheduler.Api
             }
             catch (Exception ex)
             {
-                return new { Error = true, Message = ex.Message };
+                return new { Error = true, ex.Message };
             }
         }
 
@@ -76,16 +77,16 @@ namespace LabScheduler.Api
                 var inst = ActionInstanceUtility.Find(ActionType.Interlock, resourceId);
                 var point = inst.GetPoint();
                 var block = point.Block;
-                var blockResponse = (await Providers.Control.GetBlockState(block)).EnsureSuccess();
+                var blockResponse = (await ServiceProvider.Current.Control.GetBlockState(block)).EnsureSuccess();
 
                 return new
                 {
                     State = blockResponse.BlockState.GetPointState(point.PointID),
-                    BlockID = block.BlockID,
-                    BlockName = block.BlockName,
-                    PointID = point.PointID,
+                    block.BlockID,
+                    block.BlockName,
+                    point.PointID,
                     InstanceName = inst.Name,
-                    ActionID = inst.ActionID,
+                    inst.ActionID,
                     TimeTaken = (DateTime.Now - blockResponse.StartTime).TotalSeconds
                 };
             }
@@ -95,7 +96,7 @@ namespace LabScheduler.Api
             }
             catch (Exception ex)
             {
-                return new { Error = true, Message = ex.Message };
+                return new { Error = true, ex.Message };
             }
         }
     }

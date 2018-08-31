@@ -242,67 +242,23 @@ namespace LNF.Web.Scheduler.Tests
 
             DateTime period = rsv.ChargeBeginDateTime.FirstOfMonth();
 
-            ReservationHistoryUtility.UpdateBillingResult updateBillingResult;
+            //ReservationHistoryUtility.UpdateBillingResult updateBillingResult;
 
             // Step 3: updating billing to make the change propagate through the billing data
-            updateBillingResult = await ReservationHistoryUtility.UpdateBilling(period, period.AddMonths(1), rsv.ClientID);
-            Assert.IsFalse(updateBillingResult.HasError());
-            Console.WriteLine("[1] Time taken: {0}", updateBillingResult.TotalTimeTaken());
+            ReservationHistoryUtility.SendUpdateBillingRequest(period, period.AddMonths(1), rsv.ClientID, new[] { "tool", "room" });
 
-            using (var bc = new BillingClient())
-            {
-                // Step 4: check if tool billing was updated (should have the incorrect acct)
-                var toolBilling = await bc.GetToolBilling(period, rsv.ClientID);
-                var tb = toolBilling.FirstOrDefault(x => x.ReservationID == rsv.ReservationID);
-                Assert.IsNotNull(tb);
-                Assert.AreEqual(1056, tb.AccountID);
-
-                // Step 5: check if room billing was updated - incorrect acct should have 1 AccountDay for this reservation
-                var roomBilling = await bc.GetRoomBilling(period, rsv.ClientID);
-                var rb = roomBilling.FirstOrDefault(x => x.AccountID == 1056 && x.RoomID == 154);
-                Assert.IsNotNull(rb);
-                Assert.AreEqual(1, rb.AccountDays);
-
-                // Step 6: check if room billing was updated - correct acct should have 8 AccountDay (was used on 8 different days in August)
-                rb = roomBilling.FirstOrDefault(x => x.AccountID == 1071 && x.RoomID == 154);
-                Assert.IsNotNull(rb);
-                Assert.AreEqual(8, rb.AccountDays);
-            }
-
-            // Step 7: save reservation history with correct acct
+            // Step 4: save reservation history with correct acct
             result = await ReservationHistoryUtility.SaveReservationHistory(687470, 1071, 1, "On The Fly Reservation", false);
 
-            // Step 8: check to see if the acct was changed
+            // Step 5: check to see if the acct was changed
             using (var sc = new SchedulerClient())
             {
                 rsv = await sc.GetReservation(687470);
                 Assert.AreEqual(1071, rsv.AccountID);
             }
 
-            // Step 9: updating billing to make the change propagate through the billing data
-            updateBillingResult = await ReservationHistoryUtility.UpdateBilling(period, period.AddMonths(1), rsv.ClientID);
-            Assert.IsFalse(updateBillingResult.HasError());
-            Console.WriteLine("[2] Time taken: {0}", updateBillingResult.TotalTimeTaken());
-
-            using (var bc = new BillingClient())
-            {
-                // Step 10: check if tool billing was updated (should have the correct acct)
-                var toolBilling = await bc.GetToolBilling(period, rsv.ClientID);
-                var tb = toolBilling.FirstOrDefault(x => x.ReservationID == rsv.ReservationID);
-                Assert.IsNotNull(tb);
-                Assert.AreEqual(1071, tb.AccountID);
-
-                // Step 11: check if room billing was updated - incorrect acct should have 0 AccountDay
-                var roomBilling = await bc.GetRoomBilling(period, rsv.ClientID);
-                var rb = roomBilling.FirstOrDefault(x => x.AccountID == 1056 && x.RoomID == 154);
-                Assert.IsNotNull(rb);
-                Assert.AreEqual(0, rb.AccountDays);
-
-                // Step 6: check if room billing was updated - correct acct should still have 8 AccountDay (the reservation happened on the same day as other reservations on the correct acct)
-                rb = roomBilling.FirstOrDefault(x => x.AccountID == 1071 && x.RoomID == 154);
-                Assert.IsNotNull(rb);
-                Assert.AreEqual(8, rb.AccountDays);
-            }
+            // Step 6: updating billing to make the change propagate through the billing data
+            ReservationHistoryUtility.SendUpdateBillingRequest(period, period.AddMonths(1), rsv.ClientID, new[] { "tool", "room" });
         }
     }
 }

@@ -28,7 +28,7 @@
                     </div>
                     <div class="ical-url">
                         <img src="//ssel-apps.eecs.umich.edu/static/images/ical-icon.png" alt="ical" />
-                        <asp:TextBox runat="server" ID="txtCalendarURL" Width="650" CssClass="calendar-feed-url"></asp:TextBox>
+                        <asp:TextBox runat="server" ID="txtCalendarURL" Width="650" CssClass="calendar-feed-url form-control" Style="display: inline-block;"></asp:TextBox>
                     </div>
                 </div>
             </div>

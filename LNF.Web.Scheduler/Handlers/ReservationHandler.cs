@@ -64,12 +64,11 @@ namespace LNF.Web.Scheduler.Handlers
 
                         break;
                     case "update-billing":
-                        clientId = Utility.ConvertTo(context.Request["ClientID"], 0);
                         DateTime sd = Convert.ToDateTime(context.Request["StartDate"]);
                         DateTime ed = Convert.ToDateTime(context.Request["EndDate"]);
-
-                        var updateBillingResult = await ReservationHistoryUtility.UpdateBilling(sd, ed, clientId);
-                        result = new { Error = updateBillingResult.HasError(), Message = updateBillingResult.GetErrorMessage() };
+                        clientId = Utility.ConvertTo(context.Request["ClientID"], 0);
+                        ReservationHistoryUtility.SendUpdateBillingRequest(sd, ed, clientId, new[] { "tool", "room" });
+                        result = new { Error = false, Message = "ok" };
                         break;
                     case "test":
                         result = new { Error = false, Message = "ok" };

@@ -15,7 +15,7 @@ Namespace UserControls
         Inherits SchedulerUserControl
 
         Public Property View As ViewType
-        Public Property Resource As ResourceModel
+        Public Property Resource As ResourceItem
         Public Property LabID As Integer
         Public Property ProcessTechID As Integer
 
@@ -199,15 +199,15 @@ Namespace UserControls
                     Next
                     _minGran = Convert.ToInt32(Resource.Granularity.TotalMinutes)
                 Case ViewType.ProcessTechView
-                    Dim query As IList(Of ResourceModel) = CacheManager.Current.ResourceTree().Resources().Where(Function(x) x.ProcessTechID = ProcessTechID AndAlso x.ResourceIsActive).OrderBy(Function(x) x.ResourceName).ToList()
+                    Dim query As IList(Of ResourceTreeItem) = CacheManager.Current.ResourceTree().Resources().Where(Function(x) x.ProcessTechID = ProcessTechID AndAlso x.ResourceIsActive).OrderBy(Function(x) x.ResourceName).ToList()
 
                     Dim d As Date = Request.SelectedDate()
 
-                    For Each r As ResourceModel In query
+                    For Each r As IResource In query
                         AddHeaderCell(r.ResourceID, r.ResourceName, d)
                     Next
 
-                    _minGran = Convert.ToInt32(query.Min(Function(x) x.Granularity).TotalMinutes)
+                    _minGran = query.Min(Function(x) x.Granularity)
                     _minGran = If(_minGran > 60, 60, _minGran)
                 Case ViewType.UserView
                     HelpdeskInfo1.Resources = New List(Of Integer)()
@@ -252,7 +252,7 @@ Namespace UserControls
                     link.Text = cellDate.ToString("dddd'<br>'MMMM d, yyyy")
                     link.NavigateUrl = String.Format("~/ResourceDayWeek.aspx?Path={0}&Date={1:yyyy-MM-dd}", Request.SelectedPath().UrlEncode(), cellDate)
                 Else
-                    Dim res As ResourceModel = CacheManager.Current.ResourceTree().GetResource(resourceId)
+                    Dim res As IResource = CacheManager.Current.ResourceTree().GetResource(resourceId)
                     link.Text = res.ResourceName
                     link.NavigateUrl = String.Format("~/ResourceDayWeek.aspx?Path={0}&Date={1:yyyy-MM-dd}", PathInfo.Create(res).UrlEncode(), cellDate)
                 End If
@@ -654,7 +654,7 @@ Namespace UserControls
         End Sub
 
         Private Sub SetReservationActionCellAttributes(cell As CustomTableCell, command As String, state As ReservationState)
-            Dim res As ResourceModel = CacheManager.Current.ResourceTree().GetResource(cell.ResourceID)
+            Dim res As IResource = CacheManager.Current.ResourceTree().GetResource(cell.ResourceID)
             cell.CssClass = (cell.CssClass + " reservation-action").Trim()
             cell.Attributes.Add("data-command", command)
             cell.Attributes.Add("data-reservation-id", cell.ReservationID.ToString())
@@ -684,7 +684,7 @@ Namespace UserControls
         End Function
 
         Private Function GetAuthorization(resourceId As Integer) As ClientAuthLevel
-            Return CacheManager.Current.GetAuthLevel(resourceId, CacheManager.Current.ClientID)
+            Return CacheManager.Current.GetAuthLevel(resourceId, CacheManager.Current.CurrentUser.ClientID)
         End Function
 
         Public Async Function StartReservationAsync(rsv As Scheduler.Reservation, clientId As Integer) As Task

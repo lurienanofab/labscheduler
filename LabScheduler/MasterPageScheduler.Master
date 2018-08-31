@@ -9,7 +9,7 @@
 
 <script runat="server">
     Sub Page_Init(sender As Object, e As EventArgs) Handles Me.Init
-        Dim postData As String = String.Format("v=1&t=pageview&tid=UA-23459384-2&uid={0}&dl={1}&dt={2}", CacheManager.Current.CurrentUser.UserName, Uri.EscapeDataString(Request.Url.ToString()), Uri.EscapeDataString(Page.Title))
+        Dim postData As String = String.Format("v=1&t=pageview&tid=UA-23459384-2&uid={0}&dl={1}&dt={2}", Context.User.Identity.Name, Uri.EscapeDataString(Request.Url.ToString()), Uri.EscapeDataString(Page.Title))
 
         Dim req As HttpWebRequest = CType(WebRequest.Create("https://www.google-analytics.com/collect"), HttpWebRequest)
 

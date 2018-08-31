@@ -34,7 +34,7 @@ namespace LNF.Web.Scheduler.Content
             get { return PageSecurity.DefaultAuthTypes; }
         }
 
-        public virtual ResourceModel GetCurrentResource()
+        public virtual ResourceItem GetCurrentResource()
         {
             return Request.SelectedPath().GetResource();
         }

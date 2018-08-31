@@ -54,7 +54,7 @@ namespace LNF.Web.Scheduler.Handlers
             if (!int.TryParse(context.Request["resourceId"], out int resourceId))
                 throw new Exception("Invalid parameter: resourceId");
 
-            ResourceModel res = CacheManager.Current.ResourceTree().GetResource(resourceId);
+            var res = CacheManager.Current.ResourceTree().GetResource(resourceId).GetResourceItem();
 
             HelpdeskUtility.SendHardwareIssueEmail(res, CacheManager.Current.CurrentUser.ClientID, subject, message);
         }

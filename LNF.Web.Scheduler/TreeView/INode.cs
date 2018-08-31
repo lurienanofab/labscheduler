@@ -1,10 +1,10 @@
 ﻿namespace LNF.Web.Scheduler.TreeView
 {
-    public interface ITreeItem
+    public interface INode
     {
-        ITreeItem Parent { get; }
-        TreeItemCollection Children { get; }
-        TreeItemType Type { get; }
+        INode Parent { get; }
+        TreeViewItemCollection Children { get; }
+        NodeType Type { get; }
         int ID { get; }
         string Name { get; }
         string Description { get; }

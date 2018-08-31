@@ -19,6 +19,7 @@ namespace LNF.Web.Scheduler
 {
     public static class SchedulerUtility
     {
+        public static IContext Context => ServiceProvider.Current.Context;
         public static IReservationManager ReservationManager => DA.Use<IReservationManager>();
         public static IReservationInviteeManager ReservationInviteeManager => DA.Use<IReservationInviteeManager>();
         public static IEmailManager EmailManager => DA.Use<IEmailManager>();
@@ -328,7 +329,7 @@ namespace LNF.Web.Scheduler
             // Delete Button
             // 2/11/05 - GPR: allow tool engineers to cancel any non-started, non-repair reservation in the future
             ClientAuthLevel authLevel = CacheManager.Current.GetAuthLevel(resourceId, clientId);
-            ResourceModel res = CacheManager.Current.ResourceTree().GetResource(rsv.Resource.ResourceID);
+            var res = CacheManager.Current.ResourceTree().GetResource(rsv.Resource.ResourceID);
 
             if (state == ReservationState.Editable || state == ReservationState.StartOrDelete || state == ReservationState.StartOnly || (authLevel == ClientAuthLevel.ToolEngineer && DateTime.Now < rsv.BeginDateTime && rsv.ActualBeginDateTime == null && state != ReservationState.Repair))
             {
@@ -412,7 +413,7 @@ namespace LNF.Web.Scheduler
         public static void LoadProcessInfo(int reservationId)
         {
             // Reservation Process Info
-            var items = ReservationProcessInfoUtility.SelectByReservation(reservationId).Select(ReservationProcessInfoItem.Create).ToList();
+            var items = ReservationProcessInfoUtility.SelectByReservation(reservationId).Select(LNF.Scheduler.ReservationProcessInfoItem.Create).ToList();
             CacheManager.Current.ReservationProcessInfos(items);
         }
 
@@ -437,7 +438,7 @@ namespace LNF.Web.Scheduler
             bool isSpecial = !string.IsNullOrEmpty(pi.Special);
 
             // ReservationProcessInfo
-            ReservationProcessInfoItem rpi;
+            LNF.Scheduler.ReservationProcessInfoItem rpi;
 
             rpi = CacheManager.Current.ReservationProcessInfos().FirstOrDefault(x => x.ProcessInfoLineID == processInfoLineId);
 
@@ -450,7 +451,7 @@ namespace LNF.Web.Scheduler
                 if (rpi == null)
                 {
                     // Create new ProcessInfo
-                    rpi = new ReservationProcessInfoItem()
+                    rpi = new LNF.Scheduler.ReservationProcessInfoItem()
                     {
                         ReservationProcessInfoID = 0,
                         ReservationID = reservationId,
@@ -500,7 +501,7 @@ namespace LNF.Web.Scheduler
 
             if (acctType == ActivityAccountType.Reserver || acctType == ActivityAccountType.Both)
                 /// Loads reserver's accounts
-                activeAccounts = CacheManager.Current.ActiveClientAccounts(clientId).ToList();
+                activeAccounts = CacheManager.Current.GetClientAccounts(clientId).ToList();
 
             if (acctType == ActivityAccountType.Invitee || acctType == ActivityAccountType.Both)
             {
@@ -514,7 +515,7 @@ namespace LNF.Web.Scheduler
                 {
                     foreach (var inv in invitees)
                     {
-                        inviteeAccounts = CacheManager.Current.ActiveClientAccounts(inv.InviteeID);
+                        inviteeAccounts = CacheManager.Current.GetClientAccounts(inv.InviteeID);
                         foreach (var invAcct in inviteeAccounts)
                         {
                             if (!activeAccounts.Any(x => x.AccountID == invAcct.AccountID))

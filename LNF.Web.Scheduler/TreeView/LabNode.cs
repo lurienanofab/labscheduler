@@ -5,19 +5,19 @@ using System.Linq;
 
 namespace LNF.Web.Scheduler.TreeView
 {
-    public class LabTreeItem : TreeItem<LabModel>
+    public class LabNode : TreeViewNode<LabItem>
     {
-        public LabTreeItem(LabModel item, ITreeItem parent) : base(item, parent) { }
+        public LabNode(LabItem item, INode parent) : base(item, parent) { }
 
-        public override TreeItemType Type { get { return TreeItemType.Lab; } }
+        public override NodeType Type { get { return NodeType.Lab; } }
 
-        protected override void Load(LabModel item)
+        protected override void Load(LabItem item)
         {
             ID = item.LabID;
             Name = item.LabDisplayName;
             Description = item.LabDescription;
             var procTechs = CacheManager.Current.ResourceTree().ProcessTechs().Where(x => x.ProcessTechIsActive && x.LabID == item.LabID).ToList();
-            Children = new TreeItemCollection(procTechs.Select(x => new ProcessTechTreeItem(x, this)));
+            Children = new TreeViewItemCollection(procTechs.Select(x => new ProcessTechNode(x, this)));
         }
     }
 }

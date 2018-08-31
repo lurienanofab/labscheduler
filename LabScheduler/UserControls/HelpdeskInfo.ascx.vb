@@ -24,14 +24,14 @@ Namespace UserControls
             Dim list As New ArrayList()
             If MultiTool Then
                 If Resources IsNot Nothing Then
-                    Dim resList As IList(Of ResourceModel) = CacheManager.Current.ResourceTree().Resources().Where(Function(x) Resources.Contains(x.ResourceID)).ToList()
-                    For Each res As ResourceModel In resList
+                    Dim resList As IEnumerable(Of ResourceTreeItem) = CacheManager.Current.ResourceTree().Resources().Where(Function(x) Resources.Contains(x.ResourceID))
+                    For Each res As IResource In resList
                         list.Add(New With {.id = res.ResourceID, .name = res.ResourceName})
                     Next
                 End If
             Else
                 If Request.SelectedPath().ResourceID > 0 Then
-                    Dim res As ResourceModel = Request.SelectedPath().GetResource()
+                    Dim res As ResourceItem = Request.SelectedPath().GetResource()
                     If res IsNot Nothing Then
                         list.Add(New With {.id = res.ResourceID, .name = res.ResourceName})
                     End If

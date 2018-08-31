@@ -9,8 +9,8 @@ Namespace Pages
     Public Class ResourceDayWeek
         Inherits SchedulerPage
 
-        Protected Sub Page_Load(ByVal sender As Object, ByVal e As System.EventArgs) Handles Me.Load
-            Dim res As ResourceModel = GetCurrentResource()
+        Protected Sub Page_Load(ByVal sender As Object, ByVal e As EventArgs) Handles Me.Load
+            Dim res As ResourceItem = GetCurrentResource()
 
             If Not IsPostBack Then
                 If res IsNot Nothing Then
@@ -28,7 +28,7 @@ Namespace Pages
             End If
         End Sub
 
-        Private Sub LoadReservationView(res As ResourceModel)
+        Private Sub LoadReservationView(res As ResourceItem)
             If res.IsSchedulable Then
                 'Initialize the ReservationView UserControl
                 Dim index As Integer

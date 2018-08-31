@@ -7,11 +7,14 @@ using LNF.Models.Scheduler;
 using LNF.Repository;
 using LNF.Repository.Scheduler;
 using LNF.Scheduler;
+using LNF.Service;
+using Newtonsoft.Json;
 using OnlineServices.Api.Billing;
 using OnlineServices.Api.Scheduler;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.Messaging;
 using System.Threading.Tasks;
 
 namespace LNF.Web.Scheduler
@@ -145,128 +148,46 @@ namespace LNF.Web.Scheduler
             }
         }
 
-        public static async Task<UpdateBillingResult> UpdateBilling(DateTime sd, DateTime ed, int clientId)
+        /// <summary>
+        /// Enqueue an UpdateBilling request. This will return immediately and the update will process in the background using OnlineServicesWorker.
+        /// </summary>
+        public static void SendUpdateBillingRequest(DateTime sd, DateTime ed, int clientId, string[] billingCategories)
         {
-            bool isTemp = sd == DateTime.Now.FirstOfMonth();
+            MessageQueue msgq = GetMessageQueue();
 
-            using (var bc = new BillingClient())
+            var body = new WorkerRequest()
             {
-                BillingProcessResult toolDataCleanResult = null;
-                BillingProcessResult toolDataResult = null;
-                BillingProcessResult toolStep1Result = null;
-                BillingProcessResult roomDataCleanResult = null;
-                BillingProcessResult roomDataResult = null;
-                BillingProcessResult roomStep1Result = null;
-                BillingProcessResult subsidyResult = null;
+                Command = "UpdateBilling",
+                Args = new string[]
+                {
+                    sd.ToString("yyyy-MM-dd"),
+                    ed.ToString("yyyy-MM-dd"),
+                    clientId.ToString(),
+                    string.Join(",", billingCategories)
+                }
+            };
 
-                // Tool
-                toolDataCleanResult = await bc.BillingProcessDataClean(BillingCategory.Tool, sd, ed, clientId, 0);
-                toolDataResult = await bc.BillingProcessData(BillingCategory.Tool, sd, ed, clientId, 0);
-                toolStep1Result = await bc.BillingProcessStep1(BillingCategory.Tool, sd, ed, clientId, 0, isTemp, true);
+            Message msg = GetMessage(body);
 
-                // Room
-                roomDataCleanResult = await bc.BillingProcessDataClean(BillingCategory.Room, sd, ed, clientId, 0);
-                roomDataResult = await bc.BillingProcessData(BillingCategory.Room, sd, ed, clientId, 0);
-                roomStep1Result = await bc.BillingProcessStep1(BillingCategory.Room, sd, ed, clientId, 0, isTemp, true);
-
-                // Subsidy
-                if (!isTemp)
-                    subsidyResult = await bc.BillingProcessStep4("subsidy", sd, clientId);
-
-                var result = new UpdateBillingResult(toolDataCleanResult, toolDataResult, toolStep1Result, roomDataCleanResult, roomDataResult, roomStep1Result, subsidyResult);
-
-                return result;
-            }
+            msgq.Send(msg);
         }
 
-        public struct UpdateBillingResult
+        private static Message GetMessage(WorkerRequest body)
         {
-            public UpdateBillingResult(BillingProcessResult toolDataClean, BillingProcessResult toolData, BillingProcessResult toolStep1, BillingProcessResult roomDataClean, BillingProcessResult roomData, BillingProcessResult roomStep1, BillingProcessResult subsidy)
+            return new Message(body)
             {
-                ToolDataClean = toolDataClean;
-                ToolData = toolData;
-                ToolStep1 = toolStep1;
-                RoomDataClean = roomDataClean;
-                RoomData = roomData;
-                RoomStep1 = roomStep1;
-                Subsidy = subsidy;
-            }
+                Formatter = new XmlMessageFormatter(new[] { typeof(WorkerRequest) })
+            };
+        }
 
-            public readonly BillingProcessResult ToolDataClean;
-            public readonly BillingProcessResult ToolData;
-            public readonly BillingProcessResult ToolStep1;
-            public readonly BillingProcessResult RoomDataClean;
-            public readonly BillingProcessResult RoomData;
-            public readonly BillingProcessResult RoomStep1;
-            public readonly BillingProcessResult Subsidy;
+        private static MessageQueue GetMessageQueue()
+        {
+            var queuePath = @".\private$\osw";
 
-            public bool HasError()
-            {
-                bool result = !ToolDataClean.Success
-                     || !ToolData.Success
-                     || !ToolStep1.Success
-                     || !RoomDataClean.Success
-                     || !RoomData.Success
-                     || !RoomStep1.Success;
-
-                if (Subsidy != null)
-                    result = result || !Subsidy.Success;
-
-                return result;
-            }
-
-            public TimeSpan TotalTimeTaken()
-            {
-                double totalSeconds = ToolDataClean.TimeTaken
-                    + ToolData.TimeTaken
-                    + ToolStep1.TimeTaken
-                    + RoomDataClean.TimeTaken
-                    + RoomData.TimeTaken
-                    + RoomStep1.TimeTaken;
-
-                if (Subsidy != null)
-                    totalSeconds += Subsidy.TimeTaken;
-
-                TimeSpan result = TimeSpan.FromSeconds(totalSeconds);
-
-                return result;
-            }
-
-            public string GetErrorMessage()
-            {
-                string result = "OK";
-
-                List<string> errors = new List<string>();
-
-                if (!ToolDataClean.Success)
-                    errors.Add(ToolDataClean.ErrorMessage);
-
-                if (!ToolData.Success)
-                    errors.Add(ToolData.ErrorMessage);
-
-                if (!ToolStep1.Success)
-                    errors.Add(ToolStep1.ErrorMessage);
-
-                if (!RoomDataClean.Success)
-                    errors.Add(RoomDataClean.ErrorMessage);
-
-                if (!RoomData.Success)
-                    errors.Add(RoomData.ErrorMessage);
-
-                if (!RoomStep1.Success)
-                    errors.Add(RoomStep1.ErrorMessage);
-
-                if (Subsidy != null)
-                {
-                    if (!Subsidy.Success)
-                        errors.Add(Subsidy.ErrorMessage);
-                }
-
-                if (errors.Count > 0)
-                    result = string.Join(", ", errors);
-
-                return result;
-            }
+            if (MessageQueue.Exists(queuePath))
+                return new MessageQueue(queuePath);
+            else
+                throw new Exception("Queue not found.");
         }
     }
 }

@@ -47,7 +47,7 @@ Namespace Pages
         End Property
 
         Protected Sub Page_Load(sender As Object, e As EventArgs) Handles Me.Load
-            divReservationHistory.Attributes("data-client-id") = CacheManager.Current.ClientID.ToString()
+            divReservationHistory.Attributes("data-client-id") = CacheManager.Current.CurrentUser.ClientID.ToString()
 
             Dim reservationId As Integer
 

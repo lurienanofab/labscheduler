@@ -77,7 +77,7 @@ namespace LNF.Web.Scheduler.Controls
             divTreeView.Controls.Add(hidSelectedPath);
             divTreeView.Controls.Add(hidPathDelimiter);
 
-            TreeItemCollection buildingItems = SchedulerTreeView.Current.Buildings;
+            var buildingItems = SchedulerResourceTreeView.Current.Buildings;
 
             if (buildingItems != null)
             {
@@ -88,7 +88,7 @@ namespace LNF.Web.Scheduler.Controls
             Controls.Add(divTreeView);
         }
 
-        private HtmlGenericControl CreateTreeView(TreeItemCollection buildings)
+        private HtmlGenericControl CreateTreeView(TreeViewItemCollection buildings)
         {
             HtmlGenericControl ulBuildings = new HtmlGenericControl("ul");
             ulBuildings.Attributes.Add("class", "root buildings");
@@ -147,7 +147,7 @@ namespace LNF.Web.Scheduler.Controls
             return ulBuildings;
         }
 
-        private HtmlGenericControl CreateNode(ITreeItem item, string current)
+        private HtmlGenericControl CreateNode(INode item, string current)
         {
             var result = new HtmlGenericControl("li");
             result.Attributes.Add("data-id", item.ID.ToString());
@@ -175,9 +175,13 @@ namespace LNF.Web.Scheduler.Controls
             cell.Attributes.Add("class", item.CssClass);
             var img = GetImage(item);
             if (img != null) cell.Controls.Add(img);
-            var a = new HtmlAnchor();
-            a.HRef = GetNodeUrl(item);
-            a.InnerText = item.Name;
+
+            var a = new HtmlAnchor
+            {
+                HRef = GetNodeUrl(item),
+                InnerText = item.Name
+            };
+
             cell.Controls.Add(a);
             row.Cells.Add(cell);
 
@@ -199,9 +203,10 @@ namespace LNF.Web.Scheduler.Controls
         {
             if (e.Item.ItemType == ListItemType.Item || e.Item.ItemType == ListItemType.AlternatingItem)
             {
-                ITreeItem parent = (ITreeItem)e.Item.DataItem;
-                Repeater rptLab = (Repeater)e.Item.FindControl("rptLab");
-                TreeItemCollection items = parent.Children;
+                var parent = (INode)e.Item.DataItem;
+                var rptLab = (Repeater)e.Item.FindControl("rptLab");
+                var items = parent.Children;
+
                 if (items != null)
                 {
                     rptLab.DataSource = items;
@@ -214,9 +219,10 @@ namespace LNF.Web.Scheduler.Controls
         {
             if (e.Item.ItemType == ListItemType.Item || e.Item.ItemType == ListItemType.AlternatingItem)
             {
-                ITreeItem parent = (ITreeItem)e.Item.DataItem;
-                Repeater rptProcessTech = (Repeater)e.Item.FindControl("rptProcessTech");
-                TreeItemCollection items = parent.Children;
+                var parent = (INode)e.Item.DataItem;
+                var rptProcessTech = (Repeater)e.Item.FindControl("rptProcessTech");
+                var items = parent.Children;
+
                 if (items != null)
                 {
                     rptProcessTech.DataSource = items;
@@ -229,9 +235,10 @@ namespace LNF.Web.Scheduler.Controls
         {
             if (e.Item.ItemType == ListItemType.Item || e.Item.ItemType == ListItemType.AlternatingItem)
             {
-                ITreeItem parent = (ITreeItem)e.Item.DataItem;
-                Repeater rptResource = (Repeater)e.Item.FindControl("rptResource");
-                TreeItemCollection items = parent.Children;
+                var parent = (INode)e.Item.DataItem;
+                var rptResource = (Repeater)e.Item.FindControl("rptResource");
+                var items = parent.Children;
+
                 if (items != null)
                 {
                     HandleSpecialCases(parent, items);
@@ -246,23 +253,23 @@ namespace LNF.Web.Scheduler.Controls
             }
         }
 
-        private void HandleSpecialCases(ITreeItem parent, TreeItemCollection items)
+        private void HandleSpecialCases(INode parent, TreeViewItemCollection items)
         {
             // We want Plasmatherm 790 (10030) to also show up under PECVD in addition to Plasma Etch, so same tool under two process techs.
-            if (parent.Type == TreeItemType.ProcessTech)
+            if (parent.Type == NodeType.ProcessTech)
             {
                 if (parent.ID == 21)
                 {
                     // only add if it isn't there already
                     if (!items.Any(x => x.ID == 10030))
                     {
-                        ResourceModel plasma790 = CacheManager.Current.ResourceTree().Resources().FirstOrDefault(x => x.ResourceID == 10030);
-
+                        var plasma790 = CacheManager.Current.ResourceTree().GetResource(10030);
+                        
                         if (plasma790 != null)
                         {
                             ClientAuthLevel auth = GetCurrentUserAuthLevel(plasma790.ResourceID);
                             if ((plasma790.IsReady && plasma790.IsSchedulable) || auth == ClientAuthLevel.ToolEngineer)
-                                items.Add(new ResourceTreeItem(plasma790, parent));
+                                items.Add(new ResourceNode(plasma790, parent));
                         }
                     }
                 }
@@ -271,7 +278,7 @@ namespace LNF.Web.Scheduler.Controls
 
         private ClientAuthLevel GetCurrentUserAuthLevel(int resourceId)
         {
-            return CacheManager.Current.GetAuthLevel(resourceId, CacheManager.Current.ClientID);
+            return CacheManager.Current.GetAuthLevel(resourceId, CacheManager.Current.CurrentUser.ClientID);
         }
 
         private bool ShowImages()
@@ -283,7 +290,7 @@ namespace LNF.Web.Scheduler.Controls
                 return false;
         }
 
-        private HtmlImage GetImage(ITreeItem item)
+        private HtmlImage GetImage(INode item)
         {
             if (ShowImages())
             {
@@ -298,7 +305,7 @@ namespace LNF.Web.Scheduler.Controls
                 return null;
         }
 
-        protected string GetNodeCssClass(ITreeItem item, string current)
+        protected string GetNodeCssClass(INode item, string current)
         {
             bool expanded = false;
             bool selected = false;
@@ -323,19 +330,19 @@ namespace LNF.Web.Scheduler.Controls
 
             switch (item.Type)
             {
-                case TreeItemType.Building:
+                case NodeType.Building:
                     expanded = buildingId == item.ID;
                     selected = SelectedPath.ToString() == item.Value;
                     break;
-                case TreeItemType.Lab:
+                case NodeType.Lab:
                     expanded = labId == item.ID;
                     selected = SelectedPath.ToString() == item.Value;
                     break;
-                case TreeItemType.ProcessTech:
+                case NodeType.ProcessTech:
                     expanded = procTechId == item.ID;
                     selected = SelectedPath.ToString() == item.Value;
                     break;
-                case TreeItemType.Resource:
+                case NodeType.Resource:
                     expanded = resourceId == item.ID;
                     selected = SelectedPath.ToString() == item.Value;
                     break;
@@ -344,17 +351,17 @@ namespace LNF.Web.Scheduler.Controls
             return string.Format("node{0}{1} {2}", expanded ? " expanded" : " collapsed", selected ? " selected" : string.Empty, current).Trim();
         }
 
-        protected string GetNodeUrl(ITreeItem item)
+        protected string GetNodeUrl(INode item)
         {
             switch (item.Type)
             {
-                case TreeItemType.Building:
+                case NodeType.Building:
                     return VirtualPathUtility.ToAbsolute(string.Format("~/Building.aspx?Path={0}&Date={1:yyyy-MM-dd}", HttpUtility.UrlEncode(item.Value), Page.Request.SelectedDate()));
-                case TreeItemType.Lab:
+                case NodeType.Lab:
                     return VirtualPathUtility.ToAbsolute(string.Format("~/Lab.aspx?Path={0}&Date={1:yyyy-MM-dd}", HttpUtility.UrlEncode(item.Value), Page.Request.SelectedDate()));
-                case TreeItemType.ProcessTech:
+                case NodeType.ProcessTech:
                     return VirtualPathUtility.ToAbsolute(string.Format("~/ProcessTech.aspx?Path={0}&Date={1:yyyy-MM-dd}", HttpUtility.UrlEncode(item.Value), Page.Request.SelectedDate()));
-                case TreeItemType.Resource:
+                case NodeType.Resource:
                     return VirtualPathUtility.ToAbsolute(string.Format("~/ResourceDayWeek.aspx?Path={0}&Date={1:yyyy-MM-dd}", HttpUtility.UrlEncode(item.Value), Page.Request.SelectedDate()));
                 default:
                     return VirtualPathUtility.ToAbsolute(string.Format("~/?Date={0:yyyy-MM-dd}", Page.Request.SelectedDate()));

@@ -38,7 +38,7 @@ namespace LabScheduler.Api
         public TreeViewPartial()
         {
             ResourceTreeView treeview = (ResourceTreeView)LoadControl("~/UserControls/ResourceTreeView.ascx");
-            treeview.SelectedPath = PathInfo.Current;
+            treeview.SelectedPath = Request.SelectedPath();
             Controls.Add(treeview);
         }
     }

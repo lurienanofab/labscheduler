@@ -73,7 +73,7 @@ Namespace Pages
         End Sub
 
         Private Sub LoadTools()
-            Dim resources As IList(Of ResourceModel) = CacheManager.Current.ResourceTree().Resources().ToList()
+            Dim resources As IEnumerable(Of ResourceTreeItem) = CacheManager.Current.ResourceTree().Resources()
             ddlGranularityTool.AppendDataBoundItems = True
             ddlGranularityTool.DataSource = resources.OrderBy(Function(x) x.ResourceName)
             ddlGranularityTool.DataBind()

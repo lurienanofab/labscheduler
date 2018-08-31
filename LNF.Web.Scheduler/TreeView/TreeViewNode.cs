@@ -1,10 +1,10 @@
 ﻿namespace LNF.Web.Scheduler.TreeView
 {
-    public abstract class TreeItem<T> : ITreeItem
+    public abstract class TreeViewNode<T> : INode
     {
-        public ITreeItem Parent { get; }
-        public TreeItemCollection Children { get; protected set; }
-        public abstract TreeItemType Type { get; }
+        public INode Parent { get; }
+        public TreeViewItemCollection Children { get; protected set; }
+        public abstract NodeType Type { get; }
         public int ID { get; protected set; }
         public string Name { get; protected set; }
         public string Description { get; protected set; }
@@ -36,7 +36,7 @@
             return PathInfo.Parse(Value);
         }
 
-        protected TreeItem(T item, ITreeItem parent)
+        protected TreeViewNode(T item, INode parent)
         {
             Parent = parent;
             Load(item);

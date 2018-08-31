@@ -2,6 +2,7 @@
 using LNF.Data;
 using LNF.Models.Data;
 using LNF.Models.Scheduler;
+using LNF.Repository;
 using LNF.Repository.Scheduler;
 using LNF.Scheduler;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -14,7 +15,7 @@ namespace LNF.Web.Scheduler.Tests
     public class SchedulerUtilityTests : TestBase
     {
         [TestMethod]
-        public void SchedulerUtilityTests_CanGetCurrentUserActiveClientAccounts()
+        public void CanGetCurrentUserActiveClientAccounts()
         {
             ContextManager.StartRequest(new ClientItem()
             {
@@ -25,7 +26,7 @@ namespace LNF.Web.Scheduler.Tests
 
             using (ServiceProvider.Current.DataAccess.StartUnitOfWork())
             {
-                var accts = CacheManager.Current.CurrentUserActiveClientAccounts();
+                var accts = CacheManager.Current.GetCurrentUserClientAccounts();
                 Assert.IsNotNull(accts);
                 Assert.AreEqual(1, accts.Count());
                 Assert.AreEqual(3649, accts.First().ClientAccountID);
@@ -33,10 +34,10 @@ namespace LNF.Web.Scheduler.Tests
         }
 
         [TestMethod]
-        public void SchedulerUtilityTests_CanCreateAndModifyReservationWithoutInsertForModification()
+        public void CanCreateAndModifyReservationWithoutInsertForModification()
         {
             Reservation rsv1, rsv2;
-            ResourceModel res;
+            ResourceItem res;
 
             int resourceId = 62020;
             DateTime beginDateTime = DateTime.Parse("2016-10-02 08:00:00");
@@ -48,7 +49,7 @@ namespace LNF.Web.Scheduler.Tests
                 Console.WriteLine("Purged rows: {0}", purgedRows);
 
                 // Step 1: Get a resource
-                res = CacheManager.Current.ResourceTree().GetResource(resourceId);
+                res = CacheManager.Current.ResourceTree().GetResource(resourceId).GetResourceItem();
                 Assert.AreEqual(res.ResourceName, "EnerJet Evaporator");
 
                 // Step 2: Create a reservation
@@ -119,10 +120,10 @@ namespace LNF.Web.Scheduler.Tests
         }
 
         [TestMethod]
-        public void SchedulerUtilityTests_CanCreateAndModifyReservationWithInsertForModification()
+        public void CanCreateAndModifyReservationWithInsertForModification()
         {
             Reservation rsv1, rsv2;
-            ResourceModel res;
+            ResourceItem res;
 
             int resourceId = 62020;
             DateTime beginDateTime = DateTime.Parse("2016-10-02 08:00:00");
@@ -134,7 +135,7 @@ namespace LNF.Web.Scheduler.Tests
                 Console.WriteLine("Purged rows: {0}", purgedRows);
 
                 // Step 1: Get a resource
-                res = CacheManager.Current.ResourceTree().GetResource(resourceId);
+                res = CacheManager.Current.ResourceTree().GetResource(resourceId).GetResourceItem();
                 Assert.AreEqual(res.ResourceName, "EnerJet Evaporator");
 
                 // Step 2: Create a reservation

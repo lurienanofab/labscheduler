@@ -174,7 +174,7 @@ namespace LNF.Web.Scheduler.Controllers
                     else
                     {
                         var isInLab = CacheManager.Current.ClientInLab(rsv.Resource.ProcessTech.Lab.LabID);
-                        await ReservationManager.StartReservation(rsv, CacheManager.Current.ClientID, isInLab);
+                        await ReservationManager.StartReservation(rsv, CacheManager.Current.CurrentUser.ClientID, isInLab);
                     }
                     break;
                 case ReservationState.Endable:
@@ -205,8 +205,6 @@ namespace LNF.Web.Scheduler.Controllers
 
         private bool CanCreateNewReservation(HttpContext context)
         {
-            ResourceModel res = CacheManager.Current.ResourceTree().GetResource(context.Request.SelectedPath().ResourceID);
-
             var currentView = CacheManager.Current.CurrentViewType();
 
             // copied from the old EmptyCell_Click event handler in ReservationView.ascx.vb
@@ -230,6 +228,8 @@ namespace LNF.Web.Scheduler.Controllers
 
             // The reservation fence cannot truly be checked until the activity type is selected
             // however, authorized users are always impacted by it/
+
+            var res = CacheManager.Current.ResourceTree().GetResource(context.Request.SelectedPath().ResourceID).GetResourceItem();
 
             ClientAuthLevel authLevel = GetAuthorization(res);
 
@@ -259,12 +259,12 @@ namespace LNF.Web.Scheduler.Controllers
 
         private int GetCurrentUserActiveClientAccountsCount()
         {
-            return CacheManager.Current.CurrentUserActiveClientAccounts().Count();
+            return CacheManager.Current.GetCurrentUserClientAccounts().Count();
         }
 
-        private ClientAuthLevel GetAuthorization(ResourceModel res)
+        private ClientAuthLevel GetAuthorization(ResourceItem res)
         {
-            ClientAuthLevel result = CacheManager.Current.GetAuthLevel(res.ResourceID, CacheManager.Current.ClientID);
+            ClientAuthLevel result = CacheManager.Current.GetAuthLevel(res.ResourceID, CacheManager.Current.CurrentUser.ClientID);
             return result;
         }
 

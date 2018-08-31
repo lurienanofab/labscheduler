@@ -6,7 +6,7 @@ using System;
 
 namespace LNF.Web.Scheduler.TreeView
 {
-    public class ResourceTreeItem : TreeItem<ResourceModel>
+    public class ResourceNode : TreeViewNode<ResourceTreeItem>
     {
         protected IReservationManager ReservationManager => DA.Use<IReservationManager>();
 
@@ -15,12 +15,15 @@ namespace LNF.Web.Scheduler.TreeView
         public string StateNotes { get; private set; }
         public DateTime? RepairEndDateTime { get; private set; }
         public string RepairNotes { get; private set; }
+        public ClientAuthLevel AuthLevel { get; private set; }
+        public ClientAuthLevel EveryoneAuthLevel { get; private set; }
+        public ClientAuthLevel EffectiveAuthLevel { get; private set; }
 
-        public ResourceTreeItem(ResourceModel item, ITreeItem parent) : base(item, parent) { }
+        public ResourceNode(ResourceTreeItem item, INode parent) : base(item, parent) { }
 
-        public override TreeItemType Type { get { return TreeItemType.Resource; } }
+        public override NodeType Type { get { return NodeType.Resource; } }
 
-        protected override void Load(ResourceModel item)
+        protected override void Load(ResourceTreeItem item)
         {
             ID = item.ResourceID;
             Name = item.ResourceName;
@@ -30,6 +33,9 @@ namespace LNF.Web.Scheduler.TreeView
             StateNotes = item.StateNotes;
             RepairEndDateTime = null;
             RepairNotes = string.Empty;
+            AuthLevel = item.AuthLevel;
+            EveryoneAuthLevel = item.EveryoneAuthLevel;
+            EffectiveAuthLevel = item.EffectiveAuthLevel;
 
             if (State == ResourceState.Online && !IsSchedulable)
             {
@@ -44,12 +50,13 @@ namespace LNF.Web.Scheduler.TreeView
 
         public ClientAuthLevel GetClientAuth()
         {
-            var rc = CacheManager.Current.GetCurrentResourceClient(ID);
+            return EffectiveAuthLevel;
+            //var rc = CacheManager.Current.GetCurrentResourceClient(ID);
 
-            if (rc != null)
-                return rc.AuthLevel;
-            else
-                return ClientAuthLevel.UnauthorizedUser;
+            //if (rc != null)
+            //    return rc.AuthLevel;
+            //else
+            //    return ClientAuthLevel.UnauthorizedUser;
         }
 
         public override string CssClass

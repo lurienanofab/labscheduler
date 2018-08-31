@@ -36,7 +36,7 @@ namespace LNF.Web.Scheduler
                     case "resourcemaintenance.aspx":
                         if (HttpContext.Current.Request.SelectedPath().ResourceID > 0)
                         {
-                            ClientAuthLevel authLevel = CacheManager.Current.GetAuthLevel(page.Request.SelectedPath().ResourceID, CacheManager.Current.ClientID);
+                            ClientAuthLevel authLevel = CacheManager.Current.GetAuthLevel(page.Request.SelectedPath().ResourceID, CacheManager.Current.CurrentUser.ClientID);
                             // So far, only Tool Engineer can see the 3 pages
                             return (authLevel & ClientAuthLevel.ToolEngineer) > 0;
                         }

@@ -76,6 +76,7 @@
     <Compile Include="ClientTests.cs" />
     <Compile Include="FacilityDownTimeUtilityTests.cs" />
     <Compile Include="ReservationTests.cs" />
+    <Compile Include="RepairUtilityTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\lnf\LNF.Impl\LNF.Impl.csproj">

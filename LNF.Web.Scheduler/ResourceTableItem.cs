@@ -7,7 +7,7 @@ using System.Web;
 
 namespace LNF.Web.Scheduler
 {
-    public class ResourceListItem
+    public class ResourceTableItem
     {
         public int BuildingID { get; set; }
         public int LabID { get; set; }
@@ -21,28 +21,31 @@ namespace LNF.Web.Scheduler
         public string ProcessTechUrl { get; set; }
         public string ResourceUrl { get; set; }
 
-        private ResourceListItem() { }
+        private ResourceTableItem() { }
 
-        public static ResourceListItem Create(BuildingModel bld, LabModel lab, ProcessTechModel pt, ResourceModel res)
+        public static ResourceTableItem Create(BuildingItem bld, LabItem lab, ProcessTechItem pt, IResource res)
         {
-            ResourceListItem result = new ResourceListItem();
-            result.BuildingID = bld.BuildingID;
-            result.LabID = lab.LabID;
-            result.ProcessTechID = pt.ProcessTechID;
-            result.ResourceID = res.ResourceID;
-            result.BuildingName = bld.BuildingName;
-            result.LabName = lab.LabDisplayName;
-            result.ProcessTechName = pt.ProcessTechName;
-            result.ResourceName = res.ResourceName;
-            result.LabUrl = VirtualPathUtility.ToAbsolute(string.Format("~/Lab.aspx?Path={0}&Date={1:yyyy-MM-dd}", PathInfo.Create(lab), HttpContext.Current.Request.SelectedDate()));
-            result.ProcessTechUrl = VirtualPathUtility.ToAbsolute(string.Format("~/ProcessTech.aspx?Path={0}&Date={1:yyyy-MM-dd}", PathInfo.Create(pt), HttpContext.Current.Request.SelectedDate()));
-            result.ResourceUrl = VirtualPathUtility.ToAbsolute(string.Format("~/ResourceDayWeek.aspx?Path={0}&Date={1:yyyy-MM-dd}", PathInfo.Create(res), HttpContext.Current.Request.SelectedDate()));
+            ResourceTableItem result = new ResourceTableItem
+            {
+                BuildingID = bld.BuildingID,
+                LabID = lab.LabID,
+                ProcessTechID = pt.ProcessTechID,
+                ResourceID = res.ResourceID,
+                BuildingName = bld.BuildingName,
+                LabName = lab.LabDisplayName,
+                ProcessTechName = pt.ProcessTechName,
+                ResourceName = res.ResourceName,
+                LabUrl = VirtualPathUtility.ToAbsolute(string.Format("~/Lab.aspx?Path={0}&Date={1:yyyy-MM-dd}", PathInfo.Create(lab), HttpContext.Current.Request.SelectedDate())),
+                ProcessTechUrl = VirtualPathUtility.ToAbsolute(string.Format("~/ProcessTech.aspx?Path={0}&Date={1:yyyy-MM-dd}", PathInfo.Create(pt), HttpContext.Current.Request.SelectedDate())),
+                ResourceUrl = VirtualPathUtility.ToAbsolute(string.Format("~/ResourceDayWeek.aspx?Path={0}&Date={1:yyyy-MM-dd}", PathInfo.Create(res), HttpContext.Current.Request.SelectedDate()))
+            };
+
             return result;
         }
 
-        public static List<ResourceListItem> List(int buildingId)
+        public static List<ResourceTableItem> List(int buildingId)
         {
-            List<ResourceListItem> result = new List<ResourceListItem>();
+            List<ResourceTableItem> result = new List<ResourceTableItem>();
             var bldg = CacheManager.Current.ResourceTree().GetBuilding(buildingId);
 
             if (bldg != null)

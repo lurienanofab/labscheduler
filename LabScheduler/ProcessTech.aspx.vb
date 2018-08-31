@@ -9,7 +9,7 @@ Namespace Pages
         Inherits SchedulerPage
 
         Protected Sub Page_Load(sender As Object, e As EventArgs) Handles Me.Load
-            Dim pt As ProcessTechModel = Request.SelectedPath().GetProcessTech()
+            Dim pt As ProcessTechItem = Request.SelectedPath().GetProcessTech()
 
             If Not Page.IsPostBack Then
                 lblDate.Text = Request.SelectedDate().ToLongDateString()
@@ -23,14 +23,14 @@ Namespace Pages
             SetCurrentView(ViewType.ProcessTechView)
         End Sub
 
-        Private Sub LoadProcessTech(pt As ProcessTechModel)
+        Private Sub LoadProcessTech(pt As ProcessTechItem)
             If pt IsNot Nothing Then
                 lblProcessTechPath.Text = pt.BuildingName + " > " + pt.LabDisplayName + " > "
                 lblProcessTechName.Text = pt.ProcessTechName
             End If
         End Sub
 
-        Private Sub LoadReservationView(pt As ProcessTechModel)
+        Private Sub LoadReservationView(pt As ProcessTechItem)
             rvReserv.ProcessTechID = pt.ProcessTechID
             rvReserv.LabID = pt.LabID
         End Sub

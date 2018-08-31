@@ -244,9 +244,9 @@ Namespace UserControls
                 If ddlSendTo.SelectedValue = "Administrator" Then
                     receiverAddr = Properties.Current.SchedulerEmail
                 ElseIf ddlSendTo.SelectedValue = "Tool Engineers" Then
-                    Dim res As ResourceModel = Request.SelectedPath().GetResource()
+                    Dim res As ResourceItem = Request.SelectedPath().GetResource()
                     If res IsNot Nothing Then
-                        Dim toolEng As IList(Of ResourceClientModel) = CacheManager.Current.ToolEngineers(res.ResourceID).ToList()
+                        Dim toolEng As IList(Of ResourceClientItem) = CacheManager.Current.ToolEngineers(res.ResourceID).ToList()
                         If toolEng.Count > 0 Then
                             receiverAddr = String.Join(",", toolEng.Select(Function(x) x.Email))
                         End If
@@ -283,7 +283,7 @@ Namespace UserControls
                 Dim body As String = String.Empty
                 Dim sb As New StringBuilder()
 
-                Dim res As ResourceModel = Request.SelectedPath().GetResource()
+                Dim res As ResourceItem = Request.SelectedPath().GetResource()
 
                 If res IsNot Nothing Then
                     sb.AppendLine("Resource: " + res.ResourceName)
@@ -309,16 +309,16 @@ Namespace UserControls
 
                 Dim cc As String() = Nothing
                 If chkCC.Checked Then
-                    cc = {Request.GetCurrentUser().Email}
+                    cc = {Page.CurrentUser.Email}
                 End If
 
                 ' Send Email
                 Dim args As New SendMessageArgs With {
                     .Caller = "LabScheduler.UserControls.Contact.btnSend_Click(object sender, EventArgs e)",
-                    .ClientID = Request.GetCurrentUser().ClientID,
+                    .ClientID = Page.CurrentUser.ClientID,
                     .Subject = txtSubject.Text,
                     .Body = body,
-                    .From = Request.GetCurrentUser().Email,
+                    .From = Page.CurrentUser.Email,
                     .To = receiverAddr.Split(","c),
                     .Cc = cc,
                     .Bcc = GetContactBccEmails(),

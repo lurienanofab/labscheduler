@@ -109,7 +109,7 @@ Namespace Pages
         End Function
 
         Private Sub RefreshInvitees()
-            Dim res As ResourceModel = GetCurrentResource()
+            Dim res As ResourceItem = GetCurrentResource()
             Dim rsv As Scheduler.Reservation = GetCurrentReservation()
 
             Dim reservationId As Integer
@@ -122,7 +122,7 @@ Namespace Pages
                 reservationId = 0
                 resourceId = res.ResourceID
                 activityId = Integer.Parse(ddlActivity.SelectedValue)
-                clientId = CacheManager.Current.ClientID
+                clientId = CacheManager.Current.CurrentUser.ClientID
             Else
                 reservationId = rsv.ReservationID
                 resourceId = rsv.Resource.ResourceID
@@ -164,7 +164,7 @@ Namespace Pages
 
             'This variables must be set every time
             Dim rsv As Scheduler.Reservation = GetCurrentReservation()
-            Dim res As ResourceModel = GetCurrentResource()
+            Dim res As ResourceItem = GetCurrentResource()
 
             RequestLog.Append("     GetCurrentReservation and GetCurrentResource: {0}", Date.Now - startTime)
 
@@ -319,7 +319,7 @@ Namespace Pages
             End If
         End Function
 
-        Public Overrides Function GetCurrentResource() As ResourceModel
+        Public Overrides Function GetCurrentResource() As ResourceItem
             Dim resourceId As Integer = 0
 
             Dim rsv As Scheduler.Reservation = GetCurrentReservation()
@@ -330,7 +330,7 @@ Namespace Pages
                 resourceId = rsv.Resource.ResourceID
             End If
 
-            Return CacheManager.Current.ResourceTree().GetResource(resourceId)
+            Return CacheManager.Current.ResourceTree().GetResource(resourceId).GetResourceItem()
         End Function
 
         Private Function GetCurrentClient() As ClientItem
@@ -343,18 +343,18 @@ Namespace Pages
             Return CacheManager.Current.CurrentUser
         End Function
 
-        Private Function GetCurrentActivity() As ActivityModel
+        Private Function GetCurrentActivity() As ActivityItem
             ' always get from the select - even when modifying
             Dim activityId As Integer = Integer.Parse(ddlActivity.SelectedValue)
             Return CacheManager.Current.GetActivity(activityId)
         End Function
 
 #Region " Resource Info Events and Functions "
-        Protected Sub ddlStartTimeHour_SelectedIndexChanged(sender As Object, e As EventArgs) Handles ddlStartTimeHour.SelectedIndexChanged
+        Protected Sub DdlStartTimeHour_SelectedIndexChanged(sender As Object, e As EventArgs) Handles ddlStartTimeHour.SelectedIndexChanged
             GetMaxDuration(True)
         End Sub
 
-        Protected Sub ddlStartTimeMin_SelectedIndexChanged(sender As Object, e As EventArgs) Handles ddlStartTimeMin.SelectedIndexChanged
+        Protected Sub DdlStartTimeMin_SelectedIndexChanged(sender As Object, e As EventArgs) Handles ddlStartTimeMin.SelectedIndexChanged
             Dim res As Scheduler.Resource = Nothing
             Dim rsv As Scheduler.Reservation = Nothing
             GetMaxDuration(True)
@@ -393,7 +393,7 @@ Namespace Pages
                 btnSubmit.CommandName = "Update"
             End If
 
-            Dim res As ResourceModel = GetCurrentResource()
+            Dim res As ResourceItem = GetCurrentResource()
             litCreateModifyReservation.Text = String.Format("{0} <span class=""resource-name"">{1} [{2}]</span>", headerText, res.ResourceName, res.ResourceID)
         End Sub
 
@@ -401,7 +401,7 @@ Namespace Pages
         ''' Returns the earliest possible reservation time
         ''' </summary>
         ''' <returns>A DateTime value</returns>
-        Private Function GetMinimumStartTime(selectedDate As Date, selectedTime As Date, res As ResourceModel) As TimeSpan
+        Private Function GetMinimumStartTime(selectedDate As Date, selectedTime As Date, res As ResourceItem) As TimeSpan
             ' First check if the selected date is in the future. If so the result is 00:00:00
             If selectedDate > Date.Now.Date Then
                 Return TimeSpan.Zero
@@ -438,7 +438,7 @@ Namespace Pages
 
         ' Loads Reservation Start Time Dropdownlist
         Private Sub LoadBeginTime(rsv As Scheduler.Reservation)
-            Dim res As ResourceModel = GetCurrentResource()
+            Dim res As ResourceItem = GetCurrentResource()
 
             ' Restrictions: Start Time either = end of previous reservation or
             ' the gap between reservations has to be multiples of Min Reserv Time
@@ -526,7 +526,7 @@ Namespace Pages
             selectedDateTime = selectedDateTime.AddHours(Convert.ToInt32(ddlStartTimeHour.SelectedValue))
             selectedDateTime = selectedDateTime.AddMinutes(Convert.ToInt32(ddlStartTimeMin.SelectedValue))
 
-            Dim res As ResourceModel = GetCurrentResource()
+            Dim res As ResourceItem = GetCurrentResource()
             Dim rsv As Scheduler.Reservation = GetCurrentReservation()
             Dim client As ClientItem = GetCurrentClient()
 
@@ -553,8 +553,8 @@ Namespace Pages
         End Sub
 
         Private Function GetCurrentDurationMinutes(activityId As Integer) As Integer
-            Dim res As ResourceModel = GetCurrentResource()
-            Dim act As ActivityModel = CacheManager.Current.GetActivity(activityId)
+            Dim res As ResourceItem = GetCurrentResource()
+            Dim act As ActivityItem = CacheManager.Current.GetActivity(activityId)
             If GetDurationType(act.NoMaxSchedAuth, act.ActivityID) Then
                 ' allow privileged users to type in reservation duration
                 If String.IsNullOrEmpty(txtDuration.Text.Trim()) Then txtDuration.Text = res.MinReservTime.ToString()
@@ -569,7 +569,7 @@ Namespace Pages
         End Function
 
         Private Function GetCurrentAuthLevel() As ClientAuthLevel
-            Dim res As ResourceModel = GetCurrentResource()
+            Dim res As ResourceItem = GetCurrentResource()
             Dim client As ClientItem = GetCurrentClient()
             Dim result As ClientAuthLevel = CacheManager.Current.GetAuthLevel(res.ResourceID, client.ClientID)
             Return result
@@ -584,7 +584,7 @@ Namespace Pages
         ' Loads Reservation Duration Dropdownlist
         Private Sub LoadDuration(maxDuration As Double, showLimitMsg As Boolean)
 
-            Dim res As ResourceModel = GetCurrentResource()
+            Dim res As ResourceItem = GetCurrentResource()
 
             ' Duration ranges from Min Reserv Time to Max Reserv Time
             ' or until the start of the next reservation
@@ -617,7 +617,7 @@ Namespace Pages
 
             lblMaxSchedLimit.Visible = showLimitMsg
 
-            Dim act As ActivityModel = GetCurrentActivity()
+            Dim act As ActivityItem = GetCurrentActivity()
             Dim rsv As Scheduler.Reservation = GetCurrentReservation()
 
             If GetDurationType(act.NoMaxSchedAuth, act.ActivityID) Then
@@ -659,14 +659,14 @@ Namespace Pages
             End If
         End Sub
 
-        Private Sub ddlActivity_SelectedIndexChanged(sender As Object, e As EventArgs) Handles ddlActivity.SelectedIndexChanged
+        Private Sub DdlActivity_SelectedIndexChanged(sender As Object, e As EventArgs) Handles ddlActivity.SelectedIndexChanged
             ' Change Activity DDL Description
             Dim activityId As Integer = Convert.ToInt32(ddlActivity.SelectedValue)
-            Dim activity As ActivityModel = CacheManager.Current.GetActivity(activityId)
+            Dim activity As ActivityItem = CacheManager.Current.GetActivity(activityId)
             ddlActivity.Attributes.Add("title", activity.Description)
 
             Dim rsv As Scheduler.Reservation = GetCurrentReservation()
-            Dim res As ResourceModel = GetCurrentResource()
+            Dim res As ResourceItem = GetCurrentResource()
 
             If rsv IsNot Nothing Then
                 ' Load Billing Accounts
@@ -695,7 +695,7 @@ Namespace Pages
         End Sub
 
         Private Sub LoadAccount()
-            Dim act As ActivityModel = CacheManager.Current.GetActivity(Integer.Parse(ddlActivity.SelectedValue))
+            Dim act As ActivityItem = CacheManager.Current.GetActivity(Integer.Parse(ddlActivity.SelectedValue))
             Dim accts As New List(Of ClientAccountItem)
             Dim mustAddInvitee As Boolean = SchedulerUtility.LoadAccounts(accts, act.AccountType, CurrentUser.ClientID)
             Dim selectedAccountId As Integer = -1
@@ -764,7 +764,7 @@ Namespace Pages
             Return String.Empty
         End Function
 
-        Protected Sub rptProcessInfo_ItemDataBound(sender As Object, e As RepeaterItemEventArgs) Handles rptProcessInfo.ItemDataBound
+        Protected Sub RptProcessInfo_ItemDataBound(sender As Object, e As RepeaterItemEventArgs) Handles rptProcessInfo.ItemDataBound
             If e.Item.ItemType = ListItemType.Item OrElse e.Item.ItemType = ListItemType.AlternatingItem Then
                 ' Populate Process Info
                 Dim di As New DataItemHelper(e.Item.DataItem)
@@ -787,7 +787,7 @@ Namespace Pages
                 End If
 
                 ' Process Info Param dropdownlist
-                Dim pils As IEnumerable(Of ProcessInfoLineModel) = CacheManager.Current.ProcessInfoLines(di.Value("ProcessInfoID", 0)).OrderBy(Function(x) x.Param)
+                Dim pils As IEnumerable(Of ProcessInfoLineItem) = CacheManager.Current.ProcessInfoLines(di.Value("ProcessInfoID", 0)).OrderBy(Function(x) x.Param)
 
                 Dim ddlParam As DropDownList = CType(e.Item.FindControl("ddlParam"), DropDownList)
 
@@ -810,7 +810,7 @@ Namespace Pages
                 ' Reservation Process Info
                 ' This set the textbox and "special" checkbox (if available)
                 ' There may be items with ProcessInfoLineID = 0 if there were previosly added by have now been changed to "None" (i.e. removed)
-                Dim rpi As ReservationProcessInfoItem = CacheManager.Current.ReservationProcessInfos().FirstOrDefault(Function(x) x.ProcessInfoID = di.Value("ProcessInfoID", 0) AndAlso x.ProcessInfoLineID > 0)
+                Dim rpi As LNF.Scheduler.ReservationProcessInfoItem = CacheManager.Current.ReservationProcessInfos().FirstOrDefault(Function(x) x.ProcessInfoID = di.Value("ProcessInfoID", 0) AndAlso x.ProcessInfoLineID > 0)
                 If rpi IsNot Nothing Then
                     ddlParam.Items.FindByValue(rpi.ProcessInfoLineID.ToString()).Selected = True
                     CType(e.Item.FindControl("txtValue"), TextBox).Text = rpi.Value.ToString()
@@ -821,21 +821,21 @@ Namespace Pages
             End If
         End Sub
 
-        Private Sub LoadProcessInfo(res As ResourceModel)
+        Private Sub LoadProcessInfo(res As ResourceItem)
             If res Is Nothing Then Throw New ArgumentNullException("res")
             SchedulerUtility.LoadProcessInfo(0)
-            Dim items As IList(Of ProcessInfoModel) = CacheManager.Current.ProcessInfos(res.ResourceID).ToList()
+            Dim items As IList(Of ProcessInfoItem) = CacheManager.Current.ProcessInfos(res.ResourceID).ToList()
             FillProcessInfoRepeater(items)
         End Sub
 
         Private Sub LoadProcessInfo(rsv As Scheduler.Reservation)
             If rsv Is Nothing Then Throw New ArgumentNullException("rsv")
             SchedulerUtility.LoadProcessInfo(rsv.ReservationID)
-            Dim items As IList(Of ProcessInfoModel) = CacheManager.Current.ProcessInfos(rsv.Resource.ResourceID).ToList()
+            Dim items As IList(Of ProcessInfoItem) = CacheManager.Current.ProcessInfos(rsv.Resource.ResourceID).ToList()
             FillProcessInfoRepeater(items)
         End Sub
 
-        Private Sub FillProcessInfoRepeater(items As IList(Of ProcessInfoModel))
+        Private Sub FillProcessInfoRepeater(items As IList(Of ProcessInfoItem))
             If items.Count = 0 Then
                 phProcessInfo.Visible = False
             Else
@@ -846,7 +846,7 @@ Namespace Pages
 #End Region
 
 #Region " Invitation Events and Functions "
-        Protected Sub dgInvitees_ItemCommand(source As Object, e As DataGridCommandEventArgs) Handles dgInvitees.ItemCommand
+        Protected Sub DgInvitees_ItemCommand(source As Object, e As DataGridCommandEventArgs) Handles dgInvitees.ItemCommand
             Dim ddlInvitees As DropDownList = CType(e.Item.FindControl("ddlInvitees"), DropDownList)
             Dim lblInviteeID As Label = CType(e.Item.FindControl("lblInviteeID"), Label)
             Dim lblInviteeName As Label = CType(e.Item.FindControl("lblInviteeName"), Label)
@@ -902,7 +902,7 @@ Namespace Pages
             litInviteeWarning.Text = String.Format("Please be aware that the following invitees have made another reservation at this time: <ul>{0}</ul>", String.Join(Environment.NewLine, names.Select(Function(x) String.Format("<li>{0}</li>", x))))
         End Sub
 
-        Private Sub InviteeModification(res As ResourceModel, rsv As Scheduler.Reservation, actionType As String, ddlInvitees As DropDownList, lblInviteeID As Label, lblInviteeName As Label)
+        Private Sub InviteeModification(res As ResourceItem, rsv As Scheduler.Reservation, actionType As String, ddlInvitees As DropDownList, lblInviteeID As Label, lblInviteeName As Label)
             Dim invitees As IList(Of LNF.Scheduler.ReservationInviteeItem) = GetReservationInvitees()
             Dim available As IList(Of AvailableInviteeItem) = GetAvailableInvitees()
             Dim removed As IList(Of LNF.Scheduler.ReservationInviteeItem) = GetRemovedInvitees()
@@ -970,7 +970,7 @@ Namespace Pages
             dgInvitees.DataBind()
         End Sub
 
-        Protected Sub dgInvitees_ItemCreated(sender As Object, e As DataGridItemEventArgs) Handles dgInvitees.ItemCreated
+        Protected Sub DgInvitees_ItemCreated(sender As Object, e As DataGridItemEventArgs) Handles dgInvitees.ItemCreated
             If e.Item.ItemType = ListItemType.Footer Then
                 ' Select Available Invitees and Remove already Selected Invitees
 
@@ -989,7 +989,7 @@ Namespace Pages
             End If
         End Sub
 
-        Protected Sub dgInvitees_ItemDataBound(sender As Object, e As DataGridItemEventArgs) Handles dgInvitees.ItemDataBound
+        Protected Sub DgInvitees_ItemDataBound(sender As Object, e As DataGridItemEventArgs) Handles dgInvitees.ItemDataBound
             If e.Item.ItemType = ListItemType.Item OrElse e.Item.ItemType = ListItemType.AlternatingItem Then
                 Dim item As LNF.Scheduler.ReservationInviteeItem = CType(e.Item.DataItem, LNF.Scheduler.ReservationInviteeItem)
                 CType(e.Item.FindControl("lblInviteeID"), Label).Text = item.InviteeID.ToString()
@@ -999,9 +999,9 @@ Namespace Pages
 
         Private Sub LoadInvitees()
             Dim rsv As Scheduler.Reservation = GetCurrentReservation()
-            Dim res As ResourceModel = GetCurrentResource()
+            Dim res As ResourceItem = GetCurrentResource()
             Dim client As ClientItem = GetCurrentClient()
-            Dim act As ActivityModel = GetCurrentActivity()
+            Dim act As ActivityItem = GetCurrentActivity()
 
             Dim reservationId As Integer = If(rsv Is Nothing, 0, rsv.ReservationID)
 
@@ -1018,14 +1018,14 @@ Namespace Pages
 
 #Region " Reservation Events "
         ' When submit button is clicked, validate reservation and ask for confirmation
-        Protected Sub btnSubmit_Click(sender As Object, e As EventArgs) Handles btnSubmit.Click
+        Protected Sub BtnSubmit_Click(sender As Object, e As EventArgs) Handles btnSubmit.Click
             Try
                 Dim rsv As Scheduler.Reservation = GetCurrentReservation()
-                Dim res As ResourceModel = GetCurrentResource()
+                Dim res As ResourceItem = GetCurrentResource()
 
                 Dim reservationId As Integer
                 Dim client As Client
-                Dim activity As ActivityModel
+                Dim activity As ActivityItem
 
                 If rsv IsNot Nothing Then
                     reservationId = rsv.ReservationID
@@ -1033,7 +1033,7 @@ Namespace Pages
                     activity = CacheManager.Current.GetActivity(rsv.Activity.ActivityID) 'remember, the activity cannot be changed once a reservation is made
                 Else
                     reservationId = 0
-                    client = DA.Current.Single(Of Client)(CacheManager.Current.ClientID)
+                    client = DA.Current.Single(Of Client)(CacheManager.Current.CurrentUser.ClientID)
                     activity = CacheManager.Current.GetActivity(Integer.Parse(ddlActivity.SelectedValue))
                 End If
 
@@ -1367,7 +1367,7 @@ Namespace Pages
         End Sub
 
         Protected Function IsThereAlreadyAnotherReservation(rsv As Scheduler.Reservation) As Boolean
-            Dim res As ResourceModel = GetCurrentResource()
+            Dim res As ResourceItem = GetCurrentResource()
 
             ' Check for other reservations made during this time
             ' Select all reservations for this resource during the time of current reservation
@@ -1399,7 +1399,7 @@ Namespace Pages
         End Function
 
         ' Go back to previous page
-        Protected Sub btnCancel_Click(sender As Object, e As EventArgs) Handles btnCancel.Click
+        Protected Sub BtnCancel_Click(sender As Object, e As EventArgs) Handles btnCancel.Click
             ReturnToResourceDayWeek()
         End Sub
 
@@ -1415,7 +1415,7 @@ Namespace Pages
                     redirectUrl = String.Format("~/UserReservations.aspx?Date={0:yyyy-MM-dd}", Request.SelectedDate())
                 ElseIf view = ViewType.ProcessTechView Then
                     ' When we come from ProcessTech.aspx the full path is used (to avoid a null object error). When returning we just want the ProcessTech path.
-                    Dim pt As ProcessTechModel = Request.SelectedPath().GetProcessTech()
+                    Dim pt As ProcessTechItem = Request.SelectedPath().GetProcessTech()
                     Dim path As PathInfo = PathInfo.Create(pt)
                     redirectUrl = String.Format("~/ProcessTech.aspx?Path={0}&Date={1:yyyy-MM-dd}", path.UrlEncode(), Request.SelectedDate())
                 Else 'ViewType.DayView OrElse Scheduler.ViewType.WeekView
@@ -1427,7 +1427,7 @@ Namespace Pages
         End Sub
 
         ' Store Reservation info in database
-        Protected Sub btnConfirmYes_Click(sender As Object, e As EventArgs)
+        Protected Sub BtnConfirmYes_Click(sender As Object, e As EventArgs)
             Try
                 CreateOrModifyReservation()
             Catch ex As Exception
@@ -1439,19 +1439,15 @@ Namespace Pages
         End Sub
 
         ' Show Reservation Page again and hide confirmation
-        Protected Sub btnConfirmNo_Click(sender As Object, e As EventArgs)
+        Protected Sub BtnConfirmNo_Click(sender As Object, e As EventArgs)
             phConfirm.Visible = False
             phReserve.Visible = True
         End Sub
 
-        Protected Sub btnConfirmYesAndStart_Click(sender As Object, e As EventArgs)
+        Protected Sub BtnConfirmYesAndStart_Click(sender As Object, e As EventArgs)
             Try
                 Dim rsv As Scheduler.Reservation = CreateOrModifyReservation()
-
-                Dim clientId As Integer = CurrentUser.ClientID
-                Dim isInLab As Boolean = CacheManager.Current.ClientInLab(rsv.Resource.ProcessTech.Lab.LabID)
-
-                RegisterAsyncTask(New PageAsyncTask(Function() StartReservationAsync(rsv, clientId)))
+                RegisterAsyncTask(New PageAsyncTask(Function() StartReservationAsync(rsv, CurrentUser.ClientID)))
             Catch ex As Exception
                 Session("ErrorMessage") = ex.Message
             End Try
@@ -1528,7 +1524,7 @@ Namespace Pages
         End Sub
 #End Region
 
-        Protected Sub ddlAccount_DataBound(sender As Object, e As EventArgs) Handles ddlAccount.DataBound
+        Protected Sub DdlAccount_DataBound(sender As Object, e As EventArgs) Handles ddlAccount.DataBound
             If Not _currentAccount Is Nothing Then
                 For Each item As ListItem In ddlAccount.Items
                     If item.Value = _currentAccount Then
@@ -1550,7 +1546,7 @@ Namespace Pages
             End If
         End Function
 
-        Protected Sub chkIsRecurring_CheckedChanged(sender As Object, e As EventArgs)
+        Protected Sub ChkIsRecurring_CheckedChanged(sender As Object, e As EventArgs)
             LoadRecurringReservation()
         End Sub
 

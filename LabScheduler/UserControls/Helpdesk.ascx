@@ -31,7 +31,7 @@
             </div>
             <div class="panel-body">
                 <div class="tickets" style="min-height: 24px;">
-                    <img src="<%=Page.GetStaticUrl("images/ajax-loader-4.gif")%>" border="0" alt="Loading..." />
+                    <img src="//ssel-apps.eecs.umich.edu/static/images/ajax-loader-4.gif" border="0" alt="Loading..." />
                 </div>
             </div>
         </div>

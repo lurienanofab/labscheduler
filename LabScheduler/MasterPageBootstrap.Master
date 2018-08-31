@@ -157,7 +157,7 @@
                             <ul class="dropdown-menu">
                         </HeaderTemplate>
                         <ItemTemplate>
-                            <li><a href='<%#GetMenuUrl(CType(Container.DataItem, LNF.Repository.Data.Menu))%>' target='<%#GetMenuTarget(CType(Container.DataItem, LNF.Repository.Data.Menu))%>'><%#Eval("MenuText")%></a></li>
+                            <li><a href='<%#GetMenuUrl(CType(Container.DataItem, LNF.Models.Data.MenuItem))%>' target='<%#GetMenuTarget(CType(Container.DataItem, LNF.Models.Data.MenuItem))%>'><%#Eval("MenuText")%></a></li>
                         </ItemTemplate>
                         <FooterTemplate>
                             </ul>
@@ -165,7 +165,7 @@
                     </asp:Repeater>
                 </li>
                 <li runat="server" id="liParentLink">
-                    <a href='<%#GetMenuUrl(CType(Container.DataItem, LNF.Repository.Data.Menu))%>' target='<%#GetMenuTarget(CType(Container.DataItem, LNF.Repository.Data.Menu))%>'><%#Eval("MenuText")%></a>
+                    <a href='<%#GetMenuUrl(CType(Container.DataItem, LNF.Models.Data.MenuItem))%>' target='<%#GetMenuTarget(CType(Container.DataItem, LNF.Models.Data.MenuItem))%>'><%#Eval("MenuText")%></a>
                 </li>
             </ItemTemplate>
             <FooterTemplate>

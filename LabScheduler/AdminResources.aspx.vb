@@ -57,7 +57,7 @@ Namespace Pages
             If ResourceID = 0 Then
                 LoadEditForm(Nothing)
             Else
-                Dim res As ResourceModel = CacheManager.Current.ResourceTree().Resources().FirstOrDefault(Function(x) x.ResourceID = ResourceID)
+                Dim res As IResource = CacheManager.Current.ResourceTree().GetResource(ResourceID)
                 If res IsNot Nothing Then
                     LoadEditForm(res)
                 Else
@@ -67,7 +67,7 @@ Namespace Pages
             End If
         End Sub
 
-        Public Sub LoadEditForm(r As ResourceModel)
+        Public Sub LoadEditForm(r As IResource)
             If r IsNot Nothing Then
                 hidResourceID.Value = r.ResourceID.ToString()
                 hidProcTechID.Value = r.ProcessTechID.ToString()
@@ -109,7 +109,7 @@ Namespace Pages
 
         Private Sub LoadResources()
             Dim start As Date = Date.Now
-            Dim query As IList(Of ResourceModel) = CacheManager.Current.ResourceTree().Resources().ToList()
+            Dim query As IEnumerable(Of ResourceTreeItem) = CacheManager.Current.ResourceTree().Resources()
             Dim secondsTaken As Double = (Date.Now - start).TotalSeconds
             Dim items As IList(Of ResourceTableItem) = ResourceTableItem.CreateList(query)
             rptResources.DataSource = items
@@ -119,101 +119,51 @@ Namespace Pages
         End Sub
 
         Private Class ResourceTableItem
-            Private _Resource As ResourceModel
-            Private _ActionLinks As String
-            Private _BuildingName As String
-            Private _LabName As String
-            Private _ProcessTechName As String
-            Private _ResourceID As String
-            Private _ResourceName As String
-            Private _ToolEngineer As String
-            Private _Schedulable As Boolean
-            Private _Picture As String
 
-            Public ReadOnly Property Resource As ResourceModel
-                Get
-                    Return _Resource
-                End Get
-            End Property
+            Public ReadOnly Property Resource As IResource
 
             Public ReadOnly Property ActionLinks As String
-                Get
-                    Return _ActionLinks
-                End Get
-            End Property
 
             Public ReadOnly Property BuildingName As String
-                Get
-                    Return _BuildingName
-                End Get
-            End Property
 
             Public ReadOnly Property LabName As String
-                Get
-                    Return _LabName
-                End Get
-            End Property
 
             Public ReadOnly Property ProcessTechName As String
-                Get
-                    Return _ProcessTechName
-                End Get
-            End Property
 
             Public ReadOnly Property ResourceID As String
-                Get
-                    Return _ResourceID
-                End Get
-            End Property
 
             Public ReadOnly Property ResourceName As String
-                Get
-                    Return _ResourceName
-                End Get
-            End Property
 
             Public ReadOnly Property ToolEngineer As String
-                Get
-                    Return _ToolEngineer
-                End Get
-            End Property
 
             Public ReadOnly Property Schedulable As Boolean
-                Get
-                    Return _Schedulable
-                End Get
-            End Property
 
             Public ReadOnly Property Picture As String
-                Get
-                    Return _Picture
-                End Get
-            End Property
 
-            Public Sub New(r As ResourceModel)
-                _Resource = r
-                _ActionLinks = GetActionLinks()
-                _BuildingName = r.BuildingName
-                _LabName = r.LabName
-                _ProcessTechName = r.ProcessTechName
-                _ResourceID = GetResourceID()
-                _ResourceName = r.ResourceName
-                _ToolEngineer = GetToolEngineer()
-                _Schedulable = r.IsSchedulable
-                _Picture = GetPicture()
+            Public Sub New(r As IResource)
+                Resource = r
+                ActionLinks = GetActionLinks()
+                BuildingName = r.BuildingName
+                LabName = r.LabName
+                ProcessTechName = r.ProcessTechName
+                ResourceID = GetResourceID()
+                ResourceName = r.ResourceName
+                ToolEngineer = GetToolEngineer()
+                Schedulable = r.IsSchedulable
+                Picture = GetPicture()
             End Sub
 
             Private Function GetResourceID() As String
-                Return (_Resource.ResourceID + 1000000).ToString().Substring(1)
+                Return (Resource.ResourceID + 1000000).ToString().Substring(1)
             End Function
 
             Private Function GetActionLinks() As String
-                Return String.Format("<a href=""{0}/AdminResources.aspx?Command=edit&ResourceID={1}""><img src=""{0}/images/edit.gif"" alt=""edit"" border=""0"" /></a>&nbsp;<a href=""{0}/AdminResources.aspx?Command=delete&ResourceID={1}"" class=""delete-resource-link""><img src=""{0}/images/delete.gif"" alt=""delete"" border=""0"" /></a>", VirtualPathUtility.ToAbsolute("~"), _Resource.ResourceID)
+                Return String.Format("<a href=""{0}/AdminResources.aspx?Command=edit&ResourceID={1}""><img src=""{0}/images/edit.gif"" alt=""edit"" border=""0"" /></a>&nbsp;<a href=""{0}/AdminResources.aspx?Command=delete&ResourceID={1}"" class=""delete-resource-link""><img src=""{0}/images/delete.gif"" alt=""delete"" border=""0"" /></a>", VirtualPathUtility.ToAbsolute("~"), Resource.ResourceID)
             End Function
 
             Private Function GetToolEngineer() As String
                 Dim result As String = String.Empty
-                Dim toolEngineers As IList(Of ResourceClientInfo) = DA.Current.Query(Of ResourceClientInfo)().Where(Function(x) x.ResourceID = _Resource.ResourceID).ToList().Where(Function(x) x.HasAuth(Convert.ToInt32(ClientAuthLevel.ToolEngineer))).ToList()
+                Dim toolEngineers As IList(Of ResourceClientInfo) = DA.Current.Query(Of ResourceClientInfo)().Where(Function(x) x.ResourceID = Resource.ResourceID).ToList().Where(Function(x) x.HasAuth(Convert.ToInt32(ClientAuthLevel.ToolEngineer))).ToList()
                 For Each te As ResourceClientInfo In toolEngineers
                     result += String.Format("<div>{0}</div>", te.DisplayName)
                 Next
@@ -224,7 +174,7 @@ Namespace Pages
                 Return String.Format("<img src=""{0}/images/Resource/Resource{1}_icon.png"" alt="""" />", VirtualPathUtility.ToAbsolute("~"), GetResourceID())
             End Function
 
-            Public Shared Function CreateList(source As IList(Of ResourceModel)) As IList(Of ResourceTableItem)
+            Public Shared Function CreateList(source As IEnumerable(Of IResource)) As IList(Of ResourceTableItem)
                 Dim result As New List(Of ResourceTableItem)
                 result = source.Select(Function(x) New ResourceTableItem(x)).ToList()
                 Return result

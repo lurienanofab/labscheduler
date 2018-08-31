@@ -1,17 +1,13 @@
-﻿using LNF.Cache;
-using LNF.CommonTools;
-using LNF.Models.Data;
+﻿using LNF.Models.Data;
 using LNF.Models.Scheduler;
 using LNF.Repository;
-using LNF.Repository.Scheduler;
 using LNF.Repository.Data;
+using LNF.Repository.Scheduler;
 using LNF.Scheduler;
-using LNF.Scheduler.Data;
 using LNF.Web.Scheduler.Content;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Web.UI.HtmlControls;
 using System.Web.UI.WebControls;
 
 namespace LNF.Web.Scheduler.Pages
@@ -52,7 +48,7 @@ namespace LNF.Web.Scheduler.Pages
 
         private IList<ResourceClientItem> CurrentClients { get; set; }
 
-        private ResourceModel CurrentResource => Request.SelectedPath().GetResource();
+        private ResourceItem CurrentResource => Request.SelectedPath().GetResource();
 
         protected void Page_Load(object sender, EventArgs e)
         {
@@ -225,6 +221,16 @@ namespace LNF.Web.Scheduler.Pages
             hyp.NavigateUrl = $"~/Contact.aspx?Privs={(int)authLevel}&Path={Request.SelectedPath()}&Date={Request.SelectedDate():yyyy-MM-dd}";
         }
 
+        private string GetEmailAddress(int clientId)
+        {
+            var c = DA.Current.Single<ClientInfo>(clientId);
+
+            if (c != null)
+                return c.Email;
+            else
+                return string.Empty;
+        }
+
         protected bool CanModify()
         {
             return CanAuthorize();
@@ -250,7 +256,7 @@ namespace LNF.Web.Scheduler.Pages
         protected void ShowErrorMessage(string msg)
         {
             ErrorMessageLiteral.Text = msg;
-            ErrorMessagePlaceHolder.Visible = string.IsNullOrEmpty(msg);
+            ErrorMessagePlaceHolder.Visible = !string.IsNullOrEmpty(msg);
         }
 
         protected void SubmitButton_Command(object sender, CommandEventArgs e)
@@ -289,7 +295,8 @@ namespace LNF.Web.Scheduler.Pages
                         DisplayName = ClientsDropDownList.SelectedItem.Text,
                         Expiration = rc.Expiration,
                         ContactUrl = GetContactUrl(clientId),
-                        AuthDuration = CurrentResource.AuthDuration
+                        AuthDuration = CurrentResource.AuthDuration,
+                        Email = GetEmailAddress(clientId)
                     });
                 }
                 else if (e.CommandName == "Modify")
@@ -324,7 +331,6 @@ namespace LNF.Web.Scheduler.Pages
 
             try
             {
-                throw new Exception("test");
                 CancelEdit();
             }
             catch (Exception ex)
@@ -369,7 +375,18 @@ namespace LNF.Web.Scheduler.Pages
 
         protected void Extend_Command(object sender, CommandEventArgs e)
         {
-            throw new NotImplementedException();
+            var clientId = Convert.ToInt32(e.CommandArgument);
+            var authLevel = (ClientAuthLevel)Enum.Parse(typeof(ClientAuthLevel), e.CommandName);
+            var cc = CurrentClients.FirstOrDefault(x => x.ClientID == clientId);
+
+            if (cc != null)
+            {
+                var rc = DA.Current.Single<ResourceClient>(cc.ResourceClientID);
+                rc.Expiration = DateTime.Now.AddMonths(CurrentResource.AuthDuration);
+            }
+
+            Fill(authLevel);
+            FillClients();
         }
     }
 

@@ -2,16 +2,22 @@
 
 <%@ Import Namespace="System.Net" %>
 <%@ Import Namespace="System.Net.Mail" %>
+<%@ Import Namespace="System.Threading.Tasks" %>
 <%@ Import Namespace="LNF.Cache" %>
+<%@ Import Namespace="LNF.CommonTools" %>
 <%@ Import Namespace="LNF.Scheduler" %>
+<%@ Import Namespace="LNF.Models.Billing.Process" %>
 <%@ Import Namespace="LNF.Models.Scheduler" %>
 <%@ Import Namespace="LNF.Repository" %>
 <%@ Import Namespace="LNF.Repository.Scheduler" %>
+<%@ Import Namespace="LNF.Web.Scheduler" %>
 <%@ Import Namespace="LNF.Web.Scheduler.TreeView" %>
 <%@ Import Namespace="LabScheduler.AppCode" %>
 
 <script runat="server">
     //note: this page does not have a separate CodeBehind file so that server side code can be edited in production
+
+    public IReservationManager ReservationManager { get { return DA.Use<IReservationManager>(); } }
 
     public enum AlertType
     {
@@ -42,15 +48,15 @@
             tab = "reservation-utility";
 
         liReservationUtility.Attributes.Remove("class");
-        liProperties.Attributes.Remove("class");
         liInterlocks.Attributes.Remove("class");
         liEmail.Attributes.Remove("class");
         liJobs.Attributes.Remove("class");
+        liBilling.Attributes.Remove("class");
         panReservationUtility.Visible = false;
-        panProperties.Visible = false;
         panInterlocks.Visible = false;
         panEmail.Visible = false;
         panJobs.Visible = false;
+        panBilling.Visible = false;
 
         switch (tab)
         {
@@ -58,11 +64,6 @@
                 liReservationUtility.Attributes.Add("class", "active");
                 panReservationUtility.Visible = true;
                 LoadReservation(GetReservationID(), Request.QueryString["command"]);
-                break;
-            case "properties":
-                liProperties.Attributes.Add("class", "active");
-                panProperties.Visible = true;
-                LoadPropertiesData(Request.QueryString["load"]);
                 break;
             case "interlocks":
                 liInterlocks.Attributes.Add("class", "active");
@@ -75,6 +76,11 @@
             case "jobs":
                 liJobs.Attributes.Add("class", "active");
                 panJobs.Visible = true;
+                break;
+            case "billing":
+                liBilling.Attributes.Add("class", "active");
+                panBilling.Visible = true;
+                UpdateBilling();
                 break;
         }
     }
@@ -105,13 +111,13 @@
 
         txtReservationID.Text = reservationId.ToString();
 
-        Reservation rsv = DA.Scheduler.Reservation.Single(reservationId);
+        Reservation rsv = DA.Current.Single<Reservation>(reservationId);
 
         if (rsv != null)
         {
             if (command == "history")
             {
-                IList<ReservationHistory> history = DA.Scheduler.ReservationHistory.Query().Where(x => x.Reservation == rsv).ToList();
+                IList<ReservationHistory> history = DA.Current.Query<ReservationHistory>().Where(x => x.Reservation == rsv).ToList();
 
                 if (history.Count > 0)
                 {
@@ -126,7 +132,7 @@
             }
             else if (command == "invitees")
             {
-                IList<ReservationInvitee> invitees = rsv.GetInvitees().ToList();
+                IList<ReservationInvitee> invitees = DA.Current.Query<ReservationInvitee>().Where(x => x.Reservation == rsv).ToList();
 
                 if (invitees.Count > 0)
                 {
@@ -159,12 +165,12 @@
                 if (command == "cancel")
                 {
                     // same method called in ReservationView.ascx.vb when the red X is clicked on the calendar
-                    ReservationUtility.DeleteReservation(reservationId);
+                    ReservationManager.DeleteReservation(reservationId);
                 }
                 else if (command == "delete")
                 {
                     // do a full purge, use at your own risk!
-                    IList<ReservationHistory> history = DA.Scheduler.ReservationHistory.Query().Where(x => x.Reservation == rsv).ToList();
+                    IList<ReservationHistory> history = DA.Current.Query<ReservationHistory>().Where(x => x.Reservation == rsv).ToList();
 
                     using (var dba = DA.Current.GetAdapter())
                     {
@@ -200,17 +206,6 @@
         {
             phNoReservation.Visible = true;
         }
-    }
-
-    private void LoadPropertiesData(string load = null)
-    {
-        if (!string.IsNullOrEmpty(load) && load == "properties")
-            Properties.Load();
-
-        litProperitesTimestamp.Text = string.Format("Timestamp: {0:yyyy-MM-dd HH:mm:ss}", Properties.Current.Timestamp());
-
-        rptProperties.DataSource = new[] { Properties.Current };
-        rptProperties.DataBind();
     }
 
     private void DisplayAlert(AlertType alertType, string msg)
@@ -279,11 +274,6 @@
         }
     }
 
-    protected string GetStaticUrl(string path)
-    {
-        return LNF.CommonTools.Utility.GetStaticUrl(path);
-    }
-
     protected string GetActualDateRange(Reservation rsv)
     {
         string result = string.Empty;
@@ -318,6 +308,83 @@
             return c.DisplayName;
     }
 
+    protected void UpdateBilling()
+    {
+        string command = Request.QueryString["command"];
+
+        DateTime period = GetPeriod();
+        int clientId = GetClientID();
+
+        txtBillingClientID.Value = clientId.ToString();
+        txtBillingPeriod.Value = period.ToString("yyyy-MM-dd");
+
+        DateTime sd = period;
+        DateTime ed = period.AddMonths(1);
+
+        if (command == "update")
+        {
+            ReservationHistoryUtility.SendUpdateBillingRequest(sd, ed, clientId, new[] { "tool", "room" });
+            litBillingOutput.Text = string.Format("UpdateBilling request sent to queue at {0:M/d/yyyy h:mm:ss tt}.", DateTime.Now);
+
+            //var result = await ReservationHistoryUtility.UpdateBilling(sd, ed, clientId);
+            //litBillingOutput.Text = "<hr><ul class=\"list-group\">";
+
+            //AppendBillingProcessResult(result.ToolDataClean, "ToolDataClean");
+            //AppendBillingProcessResult(result.RoomDataClean, "RoomDataClean");
+
+            //AppendBillingProcessResult(result.ToolData, "ToolData");
+            //AppendBillingProcessResult(result.RoomData, "RoomData");
+
+            //AppendBillingProcessResult(result.ToolStep1, "ToolStep1");
+            //AppendBillingProcessResult(result.RoomStep1, "RoomStep1");
+
+            //AppendBillingProcessResult(result.Subsidy, "Subsidy");
+
+            //litBillingOutput.Text += "</ul>";
+
+            //litBillingOutput.Text += string.Format("<hr><div><strong>Total Time Taken: {0}</strong></div>", result.TotalTimeTaken());
+        }
+    }
+
+    private void AppendBillingProcessResult(BillingProcessResult result, string label)
+    {
+
+        litBillingOutput.Text += "<li>";
+        litBillingOutput.Text += string.Format("<strong>{0}:</strong>", label);
+        if (result != null)
+        {
+            if (result.Success)
+                litBillingOutput.Text += string.Format("<div><pre>{0}</pre></div>", result.LogText);
+            else
+                litBillingOutput.Text += string.Format("<div class=\"alert alert-danger\"><pre>{0}</pre></div>", result.ErrorMessage);
+            litBillingOutput.Text += string.Format("<div style=\"margin-bottom: 20px;\">Completed in {0:0.00} seconds", result.TimeTaken);
+        }
+        else
+        {
+            litBillingOutput.Text += " n/a";
+        }
+        litBillingOutput.Text += "</li>";
+
+    }
+
+    private DateTime GetPeriod()
+    {
+        DateTime result;
+        if (DateTime.TryParse(Request.QueryString["period"], out result))
+            return result;
+        else
+            return DateTime.Now.FirstOfMonth().AddMonths(-1);
+    }
+
+    private int GetClientID()
+    {
+        int result;
+        if (int.TryParse(Request.QueryString["clientId"], out result))
+            return result;
+        else
+            return 0;
+    }
+
     public class ReservationProcessInfoItem
     {
         public ReservationProcessInfo ReservationProcessInfo { get; set; }
@@ -335,7 +402,7 @@
     <title></title>
 
     <!-- Bootstrap -->
-    <link href="<%=GetStaticUrl("styles/bootstrap/themes/courier/bootstrap.min.css")%>" rel="stylesheet">
+    <link href="//ssel-apps.eecs.umich.edu/static/styles/bootstrap/themes/courier/bootstrap.min.css" rel="stylesheet">
 
     <style>
         .tab-panel {
@@ -389,6 +456,10 @@
             .reservation-history-detail.toggled {
                 display: table-row;
             }
+
+        pre {
+            font-family: 'Courier New';
+        }
     </style>
 </head>
 <body>
@@ -400,10 +471,10 @@
 
             <ul class="nav nav-tabs">
                 <li runat="server" id="liReservationUtility" role="presentation"><a href="Utility.aspx?tab=reservation-utility">Reservation Utility</a></li>
-                <li runat="server" id="liProperties" role="presentation"><a href="Utility.aspx?tab=properties">Properties</a></li>
                 <li runat="server" id="liInterlocks" role="presentation"><a href="Utility.aspx?tab=interlocks">Interlocks</a></li>
                 <li runat="server" id="liEmail" role="presentation"><a href="Utility.aspx?tab=email">Email</a></li>
                 <li runat="server" id="liJobs" role="presentation"><a href="Utility.aspx?tab=jobs">Jobs</a></li>
+                <li runat="server" id="liBilling" role="presentation"><a href="Utility.aspx?tab=billing">Billing</a></li>
             </ul>
 
             <asp:Panel runat="server" ID="panReservationUtility" Visible="false" CssClass="tab-panel">
@@ -645,54 +716,6 @@
                 </div>
             </asp:Panel>
 
-            <asp:Panel runat="server" ID="panProperties" Visible="false" CssClass="tab-panel">
-                <div style="padding-left: 5px;">
-                    <asp:Literal runat="server" ID="litProperitesTimestamp"></asp:Literal>
-                    |
-                    <a href="?tab=properties&load=properties">Reload</a>
-                </div>
-                <asp:Repeater runat="server" ID="rptProperties">
-                    <HeaderTemplate>
-                        <table>
-                            <tbody>
-                    </HeaderTemplate>
-                    <ItemTemplate>
-                        <tr>
-                            <th style="width: 250px;">LateChargePenaltyMultiplier</th>
-                            <td><%#Eval("LateChargePenaltyMultiplier") %></td>
-                        </tr>
-                        <tr>
-                            <th>AuthExpWarning</th>
-                            <td><%#Eval("AuthExpWarning") %></td>
-                        </tr>
-                        <tr>
-                            <th>Admin</th>
-                            <td><%#Eval("Admin.DisplayName") %></td>
-                        </tr>
-                        <tr>
-                            <th>ResourceIPPrefix</th>
-                            <td><%#Eval("ResourceIPPrefix") %></td>
-                        </tr>
-                        <tr>
-                            <th>AlwaysOnKiosk</th>
-                            <td><%#Eval("AlwaysOnKiosk") %></td>
-                        </tr>
-                        <tr>
-                            <th>SchedulerEmail</th>
-                            <td><%#Eval("SchedulerEmail") %></td>
-                        </tr>
-                        <tr>
-                            <th>LabAccount</th>
-                            <td><%#Eval("LabAccount.Name") %></td>
-                        </tr>
-                    </ItemTemplate>
-                    <FooterTemplate>
-                        </tbody>
-                        </table>
-                    </FooterTemplate>
-                </asp:Repeater>
-            </asp:Panel>
-
             <asp:Panel runat="server" ID="panInterlocks" Visible="false" CssClass="tab-panel">
                 <div class="interlock">
                     <div class="form-group resource-id">
@@ -740,7 +763,7 @@
             <asp:Panel runat="server" ID="panJobs" Visible="false" CssClass="tab-panel">
                 <div class="jobs">
                     <div style="margin-bottom: 10px;">
-                        <a href="hangfire">Hangfire Dashboard</a>
+                        <a href="/tasks/hangfire">Hangfire Dashboard</a>
                     </div>
                     <asp:Repeater runat="server" ID="rptJobs">
                         <HeaderTemplate>
@@ -783,14 +806,39 @@
                     </asp:Repeater>
                 </div>
             </asp:Panel>
+
+            <asp:Panel runat="server" ID="panBilling" Visible="false" CssClass="tab-panel">
+                <div class="billing">
+                    <div class="form-horizontal">
+                        <div class="form-group">
+                            <label class="control-label col-sm-2">ClientID</label>
+                            <div class="col-sm-2">
+                                <input runat="server" type="text" id="txtBillingClientID" class="form-control billing-client-id" />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label col-sm-2">Period</label>
+                            <div class="col-sm-2">
+                                <input runat="server" type="text" id="txtBillingPeriod" class="form-control billing-period" />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-sm-offset-2 col-sm-10">
+                                <button type="button" class="btn btn-default command-button" data-command="update">Update Billing</button>
+                            </div>
+                        </div>
+                    </div>
+                    <asp:Literal runat="server" ID="litBillingOutput"></asp:Literal>
+                </div>
+            </asp:Panel>
         </div>
     </form>
 
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
-    <script src="<%=GetStaticUrl("lib/jquery/jquery.min.js")%>"></script>
+    <script src="//ssel-apps.eecs.umich.edu/static/lib/jquery/jquery.min.js"></script>
 
     <!-- Include all compiled plugins (below), or include individual files as needed -->
-    <script src="<%=GetStaticUrl("lib/bootstrap/js/bootstrap.min.js")%>"></script>
+    <script src="//ssel-apps.eecs.umich.edu/static/lib/bootstrap/js/bootstrap.min.js"></script>
 
     <script>
         (function ($) {
@@ -944,6 +992,18 @@
                         $(this).text("-");
                     else
                         $(this).text("+");
+                });
+            });
+
+
+            var billing = $(".billing").each(function () {
+                var $this = $(this);
+
+                $this.on("click", ".command-button", function (e) {
+                    var command = $(this).data("command");
+                    var clientId = $(".billing-client-id", $this).val();
+                    var period = $(".billing-period", $this).val();
+                    window.location = "Utility.aspx?tab=billing&command=" + command + "&clientId=" + clientId + "&period=" + period;
                 });
             });
         }(jQuery));

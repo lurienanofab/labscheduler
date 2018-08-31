@@ -41,7 +41,7 @@ namespace LNF.Web.Scheduler
 
             object result = null;
             GenericResult gr;
-            ResourceModel model = CacheManager.Current.ResourceTree().GetResource(resourceId);
+            var model = CacheManager.Current.ResourceTree().GetResource(resourceId).GetResourceItem();
 
             switch (action)
             {
@@ -92,13 +92,13 @@ namespace LNF.Web.Scheduler
                     break;
                 case "helpdesk-post-message":
                     message = Utility.ConvertTo(ServiceProvider.Current.Context.GetRequestValue("Message"), string.Empty);
-                    message = string.Format("Posted from scheduler by: {0} ({1})\n----------------------------------------\n{2}", CacheManager.Current.CurrentUser.DisplayName, CacheManager.Current.Email, message);
+                    message = string.Format("Posted from scheduler by: {0} ({1})\n----------------------------------------\n{2}", CacheManager.Current.CurrentUser.DisplayName, CacheManager.Current.CurrentUser.Email, message);
                     result = HelpdeskPostMessage(ticketId, message);
                     break;
                 case "send-hardware-issue-email":
                     message = Utility.ConvertTo(ServiceProvider.Current.Context.GetRequestValue("message"), string.Empty);
                     string subject = Utility.ConvertTo(ServiceProvider.Current.Context.GetRequestValue("subject"), string.Empty);
-                    HelpdeskUtility.SendHardwareIssueEmail(CacheManager.Current.ResourceTree().GetResource(resourceId), CacheManager.Current.CurrentUser.ClientID, subject, message);
+                    HelpdeskUtility.SendHardwareIssueEmail(CacheManager.Current.ResourceTree().GetResource(resourceId).GetResourceItem(), CacheManager.Current.CurrentUser.ClientID, subject, message);
                     break;
                 case "interlock":
                     bool state = Utility.ConvertTo(context.Request["State"], false);
@@ -131,9 +131,9 @@ namespace LNF.Web.Scheduler
             {
                 id = rsv.ReservationID,
                 title = rsv.Client.DisplayName,
-                allDay = allDay,
-                start = start,
-                end = end,
+                allDay,
+                start,
+                end,
                 editable = rsv.ActualBeginDateTime == null && !rsv.IsStarted && rsv.IsActive,
                 resourceId = rsv.Resource.ResourceID,
                 resourceName = rsv.Resource.ResourceName,
@@ -198,7 +198,7 @@ namespace LNF.Web.Scheduler
             TicketDetailResponse response = svc.SelectTicketDetail(ticketId);
             result.Success = !response.Error;
             result.Message = response.Message;
-            result.Data = new { Detail = response.Detail, DisplayName = CacheManager.Current.CurrentUser.DisplayName, Email = CacheManager.Current.Email };
+            result.Data = new { response.Detail, CacheManager.Current.CurrentUser.DisplayName, CacheManager.Current.CurrentUser.Email };
             return result;
         }
 
@@ -209,7 +209,7 @@ namespace LNF.Web.Scheduler
             TicketDetailResponse response = svc.PostMessage(ticketId, message);
             result.Success = !response.Error;
             result.Message = response.Message;
-            result.Data = new { Detail = response.Detail, DisplayName = CacheManager.Current.CurrentUser.DisplayName, Email = CacheManager.Current.Email };
+            result.Data = new { response.Detail, CacheManager.Current.CurrentUser.DisplayName, CacheManager.Current.CurrentUser.Email };
             return result;
         }
 
@@ -403,7 +403,7 @@ namespace LNF.Web.Scheduler
             return result;
         }
 
-        private static void GetToolEngineers(ResourceModel res, GenericResult result)
+        private static void GetToolEngineers(ResourceItem res, GenericResult result)
         {
             object data = null;
 
@@ -415,14 +415,14 @@ namespace LNF.Web.Scheduler
 
                 data = new
                 {
-                    ToolEngineers = toolEng.Select(x => new { ClientID = x.ClientID, DisplayName = x.DisplayName }).OrderBy(x => x.DisplayName),
-                    Staff = staff.Select(x => new { ClientID = x.ClientID, DisplayName = x.DisplayName }).OrderBy(x => x.DisplayName)
+                    ToolEngineers = toolEng.Select(x => new { x.ClientID, x.DisplayName }).OrderBy(x => x.DisplayName),
+                    Staff = staff.Select(x => new { x.ClientID, x.DisplayName }).OrderBy(x => x.DisplayName)
                 };
                 result.Data = data;
             }
         }
 
-        private static void AddToolEngineer(ResourceModel res, Client c, GenericResult result)
+        private static void AddToolEngineer(ResourceItem res, Client c, GenericResult result)
         {
             if (Validate(res, c, result))
             {
@@ -440,7 +440,7 @@ namespace LNF.Web.Scheduler
             }
         }
 
-        private static void DeleteToolEngineer(ResourceModel res, Client c, GenericResult result)
+        private static void DeleteToolEngineer(ResourceItem res, Client c, GenericResult result)
         {
             if (Validate(res, c, result))
             {
@@ -523,7 +523,7 @@ namespace LNF.Web.Scheduler
                     }
                 });
 
-                result.Data = new { ResourceID = r.ResourceID };
+                result.Data = new { r.ResourceID };
             }
 
             return result;
@@ -664,7 +664,7 @@ namespace LNF.Web.Scheduler
             return true;
         }
 
-        private static bool Validate(ResourceModel res, GenericResult result)
+        private static bool Validate(ResourceItem res, GenericResult result)
         {
             if (res == null)
             {
@@ -688,7 +688,7 @@ namespace LNF.Web.Scheduler
             return true;
         }
 
-        private static bool Validate(ResourceModel res, Client c, GenericResult result)
+        private static bool Validate(ResourceItem res, Client c, GenericResult result)
         {
             if (!Validate(res, result)) return false;
             if (!Validate(c, result)) return false;

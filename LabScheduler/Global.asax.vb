@@ -47,13 +47,13 @@ Public Class Global_asax
     End Sub
 
     Sub Application_BeginRequest(ByVal sender As Object, ByVal e As EventArgs)
-        If IO.Path.GetExtension(Request.FilePath) = ".aspx" Then
+        If IO.Path.GetExtension(Request.FilePath) = ".aspx" AndAlso Request.ContentType = "text/html" Then
             RequestLog.Start()
         End If
     End Sub
 
     Sub Application_EndRequest(ByVal sender As Object, ByVal e As EventArgs)
-        If IO.Path.GetExtension(Request.FilePath) = ".aspx" Then
+        If IO.Path.GetExtension(Request.FilePath) = ".aspx" AndAlso Request.ContentType = "text/html" Then
             Response.Write(RequestLog.FlushScript())
         End If
     End Sub

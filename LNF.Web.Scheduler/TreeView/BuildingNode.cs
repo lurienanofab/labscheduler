@@ -5,19 +5,19 @@ using System.Linq;
 
 namespace LNF.Web.Scheduler.TreeView
 {
-    public class BuildingTreeItem : TreeItem<BuildingModel>
+    public class BuildingNode : TreeViewNode<BuildingItem>
     {
-        public BuildingTreeItem(BuildingModel item) : base(item, null) { }
+        public BuildingNode(BuildingItem item) : base(item, null) { }
 
-        public override TreeItemType Type { get { return TreeItemType.Building; } }
+        public override NodeType Type { get { return NodeType.Building; } }
 
-        protected override void Load(BuildingModel item)
+        protected override void Load(BuildingItem item)
         {
             ID = item.BuildingID;
             Name = item.BuildingName;
             Description = item.BuildingDescription;
             var labs = CacheManager.Current.ResourceTree().Labs().Where(x => x.LabIsActive && x.BuildingID == item.BuildingID).ToList();
-            Children = new TreeItemCollection(labs.Select(x => new LabTreeItem(x, this)));
+            Children = new TreeViewItemCollection(labs.Select(x => new LabNode(x, this)));
         }
     }
 }

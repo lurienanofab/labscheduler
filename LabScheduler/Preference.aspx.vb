@@ -60,7 +60,7 @@ Namespace Pages
         End Sub
 
         Private Sub LoadResourceClients()
-            Dim dtResources = ResourceClientData.SelectByClient(CacheManager.Current.ClientID)
+            Dim dtResources = ResourceClientData.SelectByClient(CacheManager.Current.CurrentUser.ClientID)
             dtResources.DefaultView.RowFilter = "ClientID <> -1"
             dgResources.DataSource = dtResources.DefaultView
             dgResources.DataBind()
@@ -95,7 +95,7 @@ Namespace Pages
         End Sub
 
         Private Sub InitSettings()
-            Dim clientId As Integer = CacheManager.Current.ClientID
+            Dim clientId As Integer = CacheManager.Current.CurrentUser.ClientID
 
             Dim cs As ClientSetting = DA.Current.Single(Of ClientSetting)(clientId)
 
@@ -149,7 +149,7 @@ Namespace Pages
         Protected Sub GetAccountOrdering()
             'Dim cp As ClientPreference = ClientPreferenceUtility.Find(ClientUtility.CurrentUser, "common")
             'Dim orderedAccounts As IList(Of Account) = DataUtility.OrderAccountsByUserPreference(cp)
-            Dim orderedAccounts As IList(Of Account) = ClientPreferenceUtility.OrderAccountsByUserPreference(CacheManager.Current.ClientID)
+            Dim orderedAccounts As IList(Of Account) = ClientPreferenceUtility.OrderAccountsByUserPreference(CacheManager.Current.CurrentUser.ClientID)
             Dim resultIdList As New List(Of String)
             Dim resultNamesList As New List(Of String)
 
@@ -165,17 +165,17 @@ Namespace Pages
         Protected Sub SetAccountOrdering()
             'Dim cp As ClientPreference = ClientPreferenceUtility.Find(ClientUtility.CurrentUser, "common")
             'cp.SetPreference("account-order", hidAccountsResult.Value)
-            Dim cs As ClientSetting = DA.Current.Single(Of ClientSetting)(CacheManager.Current.ClientID)
+            Dim cs As ClientSetting = DA.Current.Single(Of ClientSetting)(CacheManager.Current.CurrentUser.ClientID)
             cs.AccountOrder = hidAccountsResult.Value
         End Sub
 
         Protected Sub GetShowTreeviewImages()
-            Dim cp As ClientPreference = ClientPreferenceUtility.Find(CacheManager.Current.ClientID, "scheduler")
+            Dim cp As ClientPreference = ClientPreferenceUtility.Find(CacheManager.Current.CurrentUser.ClientID, "scheduler")
             chkShowTreeViewImages.Checked = cp.GetPreference("show-treeview-images", False)
         End Sub
 
         Protected Sub SetShowTreeviewImages()
-            Dim cp As ClientPreference = ClientPreferenceUtility.Find(CacheManager.Current.ClientID, "scheduler")
+            Dim cp As ClientPreference = ClientPreferenceUtility.Find(CacheManager.Current.CurrentUser.ClientID, "scheduler")
             cp.SetPreference("show-treeview-images", chkShowTreeViewImages.Checked)
         End Sub
 

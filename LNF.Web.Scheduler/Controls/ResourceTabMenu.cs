@@ -72,7 +72,7 @@ namespace LNF.Web.Scheduler.Controls
 
         protected virtual string GetHeaderText()
         {
-            ResourceModel res = Page.Request.SelectedPath().GetResource();
+            ResourceItem res = Page.Request.SelectedPath().GetResource();
 
             if (res == null)
                 return string.Empty;
@@ -83,7 +83,7 @@ namespace LNF.Web.Scheduler.Controls
 
         protected virtual IList<TabItem> GetTabs()
         {
-            ClientAuthLevel authLevel = CacheManager.Current.GetAuthLevel(Page.Request.SelectedPath().ResourceID, CacheManager.Current.ClientID);
+            ClientAuthLevel authLevel = CacheManager.Current.GetAuthLevel(Page.Request.SelectedPath().ResourceID, CacheManager.Current.CurrentUser.ClientID);
             bool authorized = (authLevel & ClientAuthLevel.ToolEngineer) > 0;
 
             List<TabItem> tabs = new List<TabItem>();

@@ -1,5 +1,5 @@
 ﻿using LNF.CommonTools;
-using LNF.Data;
+using LNF.Impl.DependencyInjection.Web;
 using LNF.Models.Data;
 using LNF.Repository;
 using LNF.Repository.Data;
@@ -17,16 +17,13 @@ namespace LNF.Web.Scheduler.Tests
 {
     public abstract class TestBase
     {
-        private ClientInfo _CurrentClient = null;
-        private HttpContextManager _ContextManager;
-
-        public ClientInfo CurrentClient { get { return _CurrentClient; } }
-        public HttpContextManager ContextManager { get { return _ContextManager; } }
+        public ClientInfo CurrentClient { get; } = null;
+        public HttpContextManager ContextManager { get; private set; }
 
         [TestInitialize]
         public void TestInit()
         {
-            _ContextManager = new HttpContextManager();
+            ContextManager = new HttpContextManager();
             Prepare();
         }
 
@@ -78,7 +75,6 @@ namespace LNF.Web.Scheduler.Tests
             _writer = new StringWriter();
             var httpResponse = new HttpResponse(_writer);
             Context = new HttpContext(httpRequest, httpResponse);
-
             SessionStateUtility.AddHttpSessionStateToContext(Context, sessionContainer);
         }
 
@@ -117,6 +113,7 @@ namespace LNF.Web.Scheduler.Tests
             HttpRequestManager result = new HttpRequestManager(filename, url, queryString, _sessionContainer);
             AddCurrentUserToContext(result.Context);
             HttpContext.Current = result.Context;
+            ServiceProvider.Current = IOC.Resolver.GetInstance<ServiceProvider>();
             return result;
         }
 

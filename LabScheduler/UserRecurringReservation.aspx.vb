@@ -73,7 +73,7 @@ Namespace Pages
         End Function
 
         Public Function GetResourceUrl() As String
-            Dim model As ResourceModel = CacheManager.Current.ResourceTree().GetResource(ResourceID)
+            Dim model As ResourceTreeItem = CacheManager.Current.ResourceTree().GetResource(ResourceID)
             Return String.Format("~/ResourceDayWeek.aspx?Path={0}&Date={1:yyyy-MM-dd}", PathInfo.Create(model), HttpContext.Current.Request.SelectedDate())
         End Function
 
