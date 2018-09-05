@@ -1,15 +1,11 @@
 ﻿using LNF.CommonTools;
 using LNF.Data;
-using LNF.Models.Billing;
-using LNF.Models.Billing.Process;
 using LNF.Models.Data;
 using LNF.Models.Scheduler;
+using LNF.Models.Service;
 using LNF.Repository;
 using LNF.Repository.Scheduler;
 using LNF.Scheduler;
-using LNF.Service;
-using Newtonsoft.Json;
-using OnlineServices.Api.Billing;
 using OnlineServices.Api.Scheduler;
 using System;
 using System.Collections.Generic;

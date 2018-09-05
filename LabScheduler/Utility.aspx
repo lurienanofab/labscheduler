@@ -308,6 +308,12 @@
             return c.DisplayName;
     }
 
+    private string GetCurrentUserName()
+    {
+        var name = Context.User.Identity.Name;
+        return name;
+    }
+
     protected void UpdateBilling()
     {
         string command = Request.QueryString["command"];
