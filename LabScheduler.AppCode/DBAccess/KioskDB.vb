@@ -1,46 +1,36 @@
 Imports LNF.Repository
-Imports LNF.CommonTools
 
 Namespace DBAccess
     Public Class KioskDB
         ' Returns all kiosks
         Public Function SelectAll() As DataTable
-            Using dba As New SQLDBAccess("cnSselScheduler")
-                Return dba.MapSchema().ApplyParameters(New With {.Action = "SelectAll"}).FillDataTable("procKioskSelect")
-            End Using
+            Dim dt As DataTable = DA.Command() _
+                .MapSchema() _
+                .Param("Action", "SelectAll") _
+                .FillDataTable("sselScheduler.dbo.procKioskSelect")
+            Return dt
         End Function
 
         ' Returns labs belonging to specified building
         Public Function IpCheck(ByVal ClientID As Integer, ByVal KioskIP As String) As DataTable
-            Using dba As New SQLDBAccess("cnSselScheduler")
-                With dba.SelectCommand
-                    .AddParameter("@Action", "IpCheck")
-                    .AddParameter("@ClientID", ClientID)
-                    .AddParameter("@KioskIP", KioskIP)
-                End With
-
-                Return dba.MapSchema().FillDataTable("procKioskSelect")
-            End Using
+            Return DA.Command().MapSchema().Param(New With {.Action = "IpCheck", ClientID, KioskIP}).FillDataTable("sselScheduler.dbo.procKioskSelect")
         End Function
 
         ' Insert/Update/Delete Kiosks
         Public Sub Update(ByRef dt As DataTable)
-            Using dba As New SQLDBAccess("cnSselScheduler")
-                With dba.InsertCommand
-                    .AddParameter("@KioskName", SqlDbType.NVarChar, 50)
-                    .AddParameter("@KioskIP", SqlDbType.NVarChar, 15)
-                End With
+            DA.Command().Update(dt, Sub(x)
+                                        x.Insert.SetCommandText("sselScheduler.dbo.procKioskInsert")
+                                        x.Insert.AddParameter("KioskName", SqlDbType.NVarChar, 50)
+                                        x.Insert.AddParameter("KioskIP", SqlDbType.NVarChar, 15)
 
-                With dba.UpdateCommand
-                    .AddParameter("@KioskID", SqlDbType.Int)
-                    .AddParameter("@KioskName", SqlDbType.NVarChar, 50)
-                    .AddParameter("@KioskIP", SqlDbType.NVarChar, 15)
-                End With
+                                        x.Update.SetCommandText("sselScheduler.dbo.procKioskUpdate")
+                                        x.Update.AddParameter("KioskID", SqlDbType.Int)
+                                        x.Update.AddParameter("KioskName", SqlDbType.NVarChar, 50)
+                                        x.Update.AddParameter("KioskIP", SqlDbType.NVarChar, 15)
 
-                dba.DeleteCommand.AddParameter("@KioskID", SqlDbType.Int)
-
-                dba.UpdateDataTable(dt, "procKioskInsert", "procKioskUpdate", "procKioskDelete")
-            End Using
+                                        x.Delete.SetCommandText("sselScheduler.dbo.procKioskDelete")
+                                        x.Delete.AddParameter("KioskID", SqlDbType.Int)
+                                    End Sub)
         End Sub
     End Class
 End Namespace

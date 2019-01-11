@@ -36,15 +36,22 @@ Namespace Pages
         End Sub
 
         Private Sub GridDataBind()
-            Dim ClientID As Integer = CType(Session("ClientID"), Integer)
+            Dim clientId As Integer = CacheManager.Current.CurrentUser.ClientID
             Dim rre As IQueryable(Of ReservationRecurrence) = DA.Current.Query(Of ReservationRecurrence)()
 
-            Dim reservations As IList(Of RecurrenceItem) = rre.Where(Function(x) x.IsActive AndAlso x.Client.ClientID = ClientID).Select(Function(x) RecurrenceItem.Create(x)).ToList()
+            Dim reservations As IList(Of RecurrenceItem) = rre.Where(Function(x) x.IsActive AndAlso x.Client.ClientID = clientId).Select(Function(x) RecurrenceItem.Create(x)).ToList()
 
-            'gvRecurring.DataSource = reservations
-            'gvRecurring.DataBind()
             rptRecurringReservations.DataSource = reservations
             rptRecurringReservations.DataBind()
+
+            If reservations.Count > 0 Then
+                rptRecurringReservations.Visible = True
+                phNoData.Visible = False
+            Else
+                rptRecurringReservations.Visible = False
+                phNoData.Visible = True
+            End If
+
         End Sub
 
         Protected Function GetEditUrl(item As RecurrenceItem) As String

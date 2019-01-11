@@ -1,22 +1,21 @@
-﻿using LNF.Cache;
-using LNF.CommonTools;
+﻿using LNF.CommonTools;
 using LNF.Control;
 using LNF.Models.Scheduler;
+using LNF.Models.Worker;
 using LNF.Repository;
 using LNF.Repository.Data;
 using LNF.Repository.Scheduler;
 using LNF.Scheduler;
 using OnlineServices.Api.Scheduler;
 using System;
-using System.Threading.Tasks;
 using System.Web;
 using System.Web.SessionState;
 
 namespace LNF.Web.Scheduler.Handlers
 {
-    public class ReservationHandler : HttpTaskAsyncHandler, IReadOnlySessionState
+    public class ReservationHandler : IHttpHandler, IReadOnlySessionState
     {
-        public override async Task ProcessRequestAsync(HttpContext context)
+        public void ProcessRequest(HttpContext context)
         {
             context.Response.ContentType = "application/json";
 
@@ -25,15 +24,16 @@ namespace LNF.Web.Scheduler.Handlers
             object result = null;
 
             int clientId;
-            bool isInLab = CacheManager.Current.IsOnKiosk();
 
             if (int.TryParse(context.Request["ReservationID"], out int reservationId))
             {
+                var rsv = DA.Current.Single<Reservation>(reservationId);
+
                 switch (command)
                 {
                     case "start-reservation":
-                        clientId = CacheManager.Current.CurrentUser.ClientID;
-                        result = await ReservationHandlerUtility.Start(reservationId, clientId);
+                        clientId = context.CurrentUser().ClientID;
+                        result = ReservationHandlerUtility.Start(reservationId, clientId, context.Request.UserHostAddress);
                         break;
                     case "get-reservation":
                         result = ReservationHandlerUtility.GetReservation(context, reservationId);
@@ -46,28 +46,27 @@ namespace LNF.Web.Scheduler.Handlers
 
                         double chargeMultiplier = 1.00 - (forgivenPct / 100.0);
 
-                        using (var sc = new SchedulerClient())
-                        {
-                            var model = new ReservationHistoryUpdate()
-                            {
-                                ReservationID = reservationId,
-                                AccountID = accountId,
-                                ChargeMultiplier = chargeMultiplier,
-                                Notes = notes,
-                                EmailClient = emailClient
-                            };
+                        var sc = new SchedulerClient();
 
-                            bool updateResult = await sc.UpdateHistory(model);
-                            string msg = updateResult ? "OK" : "An error occurred.";
-                            result = new { Error = !updateResult, Message = msg };
-                        }
+                        var model = new ReservationHistoryUpdate()
+                        {
+                            ReservationID = reservationId,
+                            AccountID = accountId,
+                            ChargeMultiplier = chargeMultiplier,
+                            Notes = notes,
+                            EmailClient = emailClient
+                        };
+
+                        bool updateResult = sc.UpdateReservationHistory(model);
+                        string msg = updateResult ? "OK" : "An error occurred.";
+                        result = new { Error = !updateResult, Message = msg };
 
                         break;
                     case "update-billing":
                         DateTime sd = Convert.ToDateTime(context.Request["StartDate"]);
                         DateTime ed = Convert.ToDateTime(context.Request["EndDate"]);
                         clientId = Utility.ConvertTo(context.Request["ClientID"], 0);
-                        ReservationHistoryUtility.SendUpdateBillingRequest(sd, ed, clientId, new[] { "tool", "room" });
+                        ServiceProvider.Current.Worker.Execute(new UpdateBillingWorkerRequest(sd, clientId, new[] { "tool", "room" }));
                         result = new { Error = false, Message = "ok" };
                         break;
                     case "test":
@@ -86,44 +85,49 @@ namespace LNF.Web.Scheduler.Handlers
 
             context.Response.Write(ServiceProvider.Current.Serialization.Json.SerializeObject(result));
         }
+
+        public bool IsReusable => false;
     }
 
     public static class ReservationHandlerUtility
     {
-        public static IReservationManager ReservationManager => DA.Use<IReservationManager>();
+        public static IReservationManager ReservationManager => ServiceProvider.Current.Use<IReservationManager>();
 
-        public static async Task<object> Start(int reservationId, int clientId)
+        public static object Start(int reservationId, int clientId, string kioskIp)
         {
             try
             {
                 var rsv = DA.Current.Single<Reservation>(reservationId);
+                var client = DA.Current.Single<Client>(clientId);
+
                 if (rsv != null)
                 {
-                    bool isInLab = CacheManager.Current.ClientInLab(rsv.Resource.ProcessTech.Lab.LabID);
-                    await DA.Use<IReservationManager>().StartReservation(rsv, clientId, isInLab);
+                    ReservationManager.StartReservation(rsv, client, kioskIp);
                     return new { Error = false, Message = "OK" };
                 }
                 else
                 {
-                    return new { Error = true, Message = string.Format("Cannot find record for ReservationID {0}", reservationId) };
+                    return new { Error = true, Message = $"Cannot find record for ReservationID {reservationId}" };
                 }
             }
             catch (Exception ex)
             {
-                return new { Error = true, Message = ex.Message };
+                return new { Error = true, ex.Message };
             }
         }
 
         public static object GetReservation(HttpContext context, int reservationId)
         {
             var rsv = DA.Current.Single<Reservation>(reservationId);
+            var client = DA.Current.Single<Client>(context.CurrentUser().ClientID);
+
             if (rsv != null)
-                return CreateStartReservationItem(context, rsv);
+                return CreateStartReservationItem(context, rsv, client);
             else
                 return new { Error = true, Message = string.Format("Cannot find record for ReservationID {0}", reservationId) };
         }
 
-        public static StartReservationItem CreateStartReservationItem(HttpContext context, Reservation rsv)
+        public static StartReservationItem CreateStartReservationItem(HttpContext context, Reservation rsv, Client client)
         {
             var item = new StartReservationItem
             {
@@ -150,12 +154,12 @@ namespace LNF.Web.Scheduler.Handlers
             }
             else
             {
-                item.StartedByClientID = CacheManager.Current.CurrentUser.ClientID;
-                item.StartedByClientName = string.Format("{0} {1}", CacheManager.Current.CurrentUser.FName, CacheManager.Current.CurrentUser.LName);
+                item.StartedByClientID = context.CurrentUser().ClientID;
+                item.StartedByClientName = string.Format("{0} {1}", context.CurrentUser().FName, context.CurrentUser().LName);
             }
 
-            bool isInLab = CacheManager.Current.ClientInLab(rsv.Resource.ProcessTech.Lab.LabID);
-            ReservationState state = ReservationManager.GetReservationState(rsv.ReservationID, CacheManager.Current.CurrentUser.ClientID, isInLab);
+            var args = ReservationManager.CreateReservationStateArgs(rsv, client, context.Request.UserHostAddress);
+            ReservationState state = ReservationManager.GetReservationState(args);
             item.Startable = ReservationManager.IsStartable(state);
             item.NotStartableMessage = GetNotStartableMessage(state);
 

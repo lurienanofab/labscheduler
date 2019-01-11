@@ -1,12 +1,7 @@
-Imports System.Collections.Generic
-Imports System.Linq
-Imports System.Security
-Imports System.Security.Principal
+Imports System.Configuration
 Imports System.Web
-Imports LNF.Repository.Data
 Imports LNF.Repository
 Imports LNF.Repository.Scheduler
-Imports System.Configuration
 
 Public Class ReservationOnTheFlyUtil
 
@@ -111,14 +106,12 @@ Public Class ResRequest
     Public OnTheFlyName As String
 
     Public Function GetDataObject() As Object
-        '.AccountName = AccountName, _
-        Dim Data As Object = New With {
-            .Status = Status,
-            .Details = Details,
-            .ReservationTime = ReservationTime,
-            .ReservationID = ReservationID
+        Return New With {
+            Status,
+            Details,
+            ReservationTime,
+            ReservationID
         }
-        Return Data
     End Function
 End Class
 

@@ -1,5 +1,6 @@
 ﻿using LNF.Cache;
 using LNF.Models.Data;
+using LNF.Models.Scheduler;
 using LNF.Repository;
 using LNF.Repository.Scheduler;
 using LNF.Scheduler;
@@ -15,31 +16,32 @@ namespace LNF.Web.Scheduler.Tests
         [TestMethod]
         public void CanUpdateReservationsAffectedByRepair()
         {
-            ContextManager.StartRequest(new ClientItem()
-            {
-                ClientID = 1301,
-                UserName = "jgett",
-                Privs = (ClientPrivilege)3942
-            });
-
-            // There is an existing repair reservation (859058) on the STS Pegasus 4 that begins on 8/28 at 8:45 am
-            // and ends on 8/29 at 4:15 pm.
-            //
-            // There is another existing reservation 
-            //
-            // Now this repair is getting extended by 2 hours to 7:15 pm and there is a unstarted reservation scheduled
-            // on 8/29 at 8:30 pm.
-
-            int resourceId = 14021;
-            DateTime sd = DateTime.Parse("2018-08-28 08:45:00");
-            DateTime ed = DateTime.Parse("2018-08-29 19:15:00");
-
-            // add the 7:15 pm reservation
+            int resourceId = 80010;
+            int id1 = 0;
+            int id2 = 0;
+            int repairId = 0;
             Reservation rsv = null;
-            int reservationId = 0;
-            using (ServiceProvider.Current.DataAccess.StartUnitOfWork())
+            Reservation repair = null;
+            ResourceItem res = null;
+
+            // actual repair start and end
+            DateTime sd = DateTime.Now.AddHours(-1);
+            DateTime ed = DateTime.Now.AddHours(2);
+
+            using (ContextManager.StartRequest(1301))
             {
-                rsv = SchedulerUtility.CreateNewReservation(new SchedulerUtility.ReservationData()
+                // Start with a clean slate
+                PurgeReservations(resourceId, DateTime.Now.Date, DateTime.Now.Date.AddDays(2));
+                ResourceUtility.UpdateState(resourceId, ResourceState.Online, string.Empty);
+            }
+
+            using (ContextManager.StartRequest(1301))
+            {
+                // Create two reservations, one that will be canceled/forgiven when the repair is created, and one that
+                // is canceled/forgiven when the repair is extended
+
+                // First reservation starts one hour from now, lasting for 15 minutes
+                rsv = SchedulerUtility.CreateNewReservation(new SchedulerUtility.ReservationData(null, null)
                 {
                     ResourceID = resourceId,
                     ClientID = 1301,
@@ -47,34 +49,82 @@ namespace LNF.Web.Scheduler.Tests
                     ActivityID = 6,
                     AutoEnd = true,
                     KeepAlive = true,
-                    Notes = "test reservation",
-                    ReservationDuration = new ReservationDuration(DateTime.Parse("2018-08-29 19:15:00"), TimeSpan.FromMinutes(15))
+                    Notes = "test reservation #1",
+                    ReservationDuration = new ReservationDuration(DateTime.Now.Date.AddHours(DateTime.Now.Hour).AddHours(1), TimeSpan.FromMinutes(15))
                 });
 
-                reservationId = rsv.ReservationID;
+                id1 = rsv.ReservationID;
+
+                // Second reservation starts 3 hours from now, lasting for 15 minutes
+
+                rsv = SchedulerUtility.CreateNewReservation(new SchedulerUtility.ReservationData(null, null)
+                {
+                    ResourceID = resourceId,
+                    ClientID = 1301,
+                    AccountID = 67,
+                    ActivityID = 6,
+                    AutoEnd = true,
+                    KeepAlive = true,
+                    Notes = "test reservation #1",
+                    ReservationDuration = new ReservationDuration(DateTime.Now.Date.AddHours(DateTime.Now.Hour).AddHours(3), TimeSpan.FromMinutes(15))
+                });
+
+                id2 = rsv.ReservationID;
             }
 
-            using (ServiceProvider.Current.DataAccess.StartUnitOfWork())
+
+            using (ContextManager.StartRequest(1301))
             {
-                var res = CacheManager.Current.ResourceTree().GetResource(resourceId).GetResourceItem();
-                var repair = RepairUtility.UpdateRepair(res, sd, ed, "Extending to 7:15 pm.");
-                RepairUtility.UpdateAffectedReservations(repair);
+                // Create a repair that started one hour ago and lasts until two hours from now. This will overlap with the first reservation
+                // that starts one hour from now but not the second that starts 3 hours from now.
+
+                res = CacheManager.Current.ResourceTree().GetResource(resourceId).GetResourceItem();
+                repair = RepairUtility.StartRepair(res, ResourceState.Offline, sd, ed, "test repair");
+
+                Assert.IsNotNull(repair);
+
+                repairId = repair.ReservationID;
+            }
+
+            using (ContextManager.StartRequest(1301))
+            {
+                // Make sure the first reservation is canceled/forgiven, but not the second.
+
+                rsv = DA.Current.Single<Reservation>(id1);
+                Assert.AreEqual(0, rsv.ChargeMultiplier);
+                Assert.AreEqual(false, rsv.IsActive);
+
+                rsv = DA.Current.Single<Reservation>(id2);
+                Assert.AreEqual(1, rsv.ChargeMultiplier);
+                Assert.AreEqual(true, rsv.IsActive);
+            }
+
+            using (ContextManager.StartRequest(1301))
+            {
+                // Extend the repair over the second reservation.
+
+                res = CacheManager.Current.ResourceTree().GetResource(resourceId).GetResourceItem();
+                repair = RepairUtility.UpdateRepair(res, sd, ed.AddHours(5), "Extending three additional hours");
+                Assert.IsNotNull(repair);
             }
 
             // make sure the reservation was forgiven
-            using (ServiceProvider.Current.DataAccess.StartUnitOfWork())
+            using (ContextManager.StartRequest(1301))
             {
-                rsv = DA.Current.Single<Reservation>(reservationId);
+                rsv = DA.Current.Single<Reservation>(id1);
                 Assert.AreEqual(0, rsv.ChargeMultiplier);
+                Assert.AreEqual(false, rsv.IsActive);
+
+                rsv = DA.Current.Single<Reservation>(id2);
+                Assert.AreEqual(0, rsv.ChargeMultiplier);
+                Assert.AreEqual(false, rsv.IsActive);
             }
 
             // clean up
-            using (ServiceProvider.Current.DataAccess.StartUnitOfWork())
+            using (ContextManager.StartRequest(1301))
             {
-                rsv = DA.Current.Single<Reservation>(reservationId);
-                DA.Current.Delete(rsv);
-                var hist = DA.Current.Query<ReservationHistory>().Where(x => x.Reservation.ReservationID == reservationId);
-                DA.Current.Delete(hist);
+                PurgeReservations(new[] { id1, id2, repairId });
+                ResourceUtility.UpdateState(resourceId, ResourceState.Online, string.Empty);
             }
         }
     }

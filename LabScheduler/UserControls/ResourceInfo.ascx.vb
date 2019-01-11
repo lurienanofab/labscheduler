@@ -23,7 +23,16 @@ Namespace UserControls
                 End If
 
                 ' Resource Engineers
-                Dim res As ResourceItem = Request.SelectedPath().GetResource()
+                Dim res As ResourceItem = Nothing
+
+                Try
+                    res = Request.SelectedPath().GetResource()
+                    If res Is Nothing Then
+                        Return
+                    End If
+                Catch ex As Exception
+                    Return
+                End Try
 
                 'Session("tool-engineers") = DA.Current.Query(Of ResourceClient)() _
                 '    .Where(Function(x) x.Resource.ResourceID = res.ResourceID).ToArray() _

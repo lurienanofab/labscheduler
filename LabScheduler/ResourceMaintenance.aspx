@@ -1,4 +1,4 @@
-﻿<%@ Page Language="C#" Title="Resource Maintenance" Inherits="LNF.Web.Scheduler.Pages.ResourceMaintenance" MasterPageFile="~/MasterPageScheduler.Master" Async="true" %>
+﻿<%@ Page Language="C#" Title="Resource Maintenance" Inherits="LNF.Web.Scheduler.Pages.ResourceMaintenance" MasterPageFile="~/MasterPageScheduler.Master" %>
 
 <%@ Register TagPrefix="lnf" Assembly="LNF.Web.Scheduler" Namespace="LNF.Web.Scheduler.Controls" %>
 

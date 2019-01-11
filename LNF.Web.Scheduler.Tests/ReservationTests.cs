@@ -1,10 +1,12 @@
 ﻿using LNF.Impl.DependencyInjection.Default;
+using LNF.Models.Data;
 using LNF.Repository;
 using LNF.Repository.Data;
 using LNF.Repository.Scheduler;
 using LNF.Scheduler;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.Linq;
 using System.Security.Principal;
 
 namespace LNF.Web.Scheduler.Tests
@@ -14,13 +16,18 @@ namespace LNF.Web.Scheduler.Tests
     {
         private IUnitOfWork _uow;
 
+        private void LogIn(int clientId)
+        {
+            var client = DA.Current.Single<Client>(clientId);
+            var ident = new GenericIdentity(client.UserName);
+            var roles = client.Roles();
+            var user = new GenericPrincipal(ident, roles);
+            ServiceProvider.Current.Context.User = user;
+        }
+
         public ReservationTests()
         {
             ServiceProvider.Current = IOC.Resolver.GetInstance<ServiceProvider>();
-            var ident = new GenericIdentity("jgett");
-            var roles = new[] { "Staff", "LabUser", "StoreUser", "StoreAdmin", "Developer" };
-            var user = new GenericPrincipal(ident, roles);
-            ServiceProvider.Current.Context.User = user;
         }
 
         [TestInitialize]
@@ -37,8 +44,10 @@ namespace LNF.Web.Scheduler.Tests
         }
 
         [TestMethod]
-        public void ReservationTests_CanCreateCheck()
+        public void CanCreateCheck()
         {
+            LogIn(1301);
+
             // in the past
             DateTime sd = DateTime.Parse("2017-01-17 08:00:00");
             DateTime ed = DateTime.Parse("2017-01-17 08:30:00");
@@ -68,9 +77,10 @@ namespace LNF.Web.Scheduler.Tests
                 Notes = string.Empty
             };
 
+            var mgr = ServiceProvider.Current.Use<IReservationManager>();
+
             try
             {
-                var mgr = DA.Use<IReservationManager>();
                 mgr.CanCreateCheck(rsv);
             }
             catch (Exception ex)
@@ -84,7 +94,7 @@ namespace LNF.Web.Scheduler.Tests
 
             try
             {
-                DA.Use<IReservationManager>().CanCreateCheck(rsv);
+                mgr.CanCreateCheck(rsv);
             }
             catch (Exception ex)
             {
@@ -93,7 +103,7 @@ namespace LNF.Web.Scheduler.Tests
         }
 
         [TestMethod]
-        public void ReservationTests_CanModify()
+        public void CanModify()
         {
             var rsv1 = DA.Current.Single<Reservation>(835041);
 
@@ -108,10 +118,17 @@ namespace LNF.Web.Scheduler.Tests
                 selectedDate: DateTime.Parse("2018-08-02"),
                 startTimeHour: 10,
                 startTimeMinute: 0,
-                duration: 0);
+                duration: 5);
 
             var rsv2 = SchedulerUtility.ModifyExistingReservation(rsv1, data);
 
+            Assert.AreNotEqual(rsv1.ReservationID, rsv2.ReservationID);
+            Assert.AreEqual(DateTime.Parse("2018-08-02 10:00:00"), rsv2.BeginDateTime);
+            Assert.AreEqual(DateTime.Parse("2018-08-02 10:05:00"), rsv2.EndDateTime);
+
+            int deleted = ServiceProvider.Current.Use<IReservationManager>().PurgeReservation(rsv2.ReservationID);
+
+            Console.WriteLine("Deleted: {0}", deleted);
         }
 
         private SchedulerUtility.ReservationData GetReservationData(int resourceId, int clientId, int accountId, int activityId, bool autoEnd, bool keepAlive, string notes, DateTime selectedDate, int startTimeHour, int startTimeMinute, int duration)
@@ -119,7 +136,7 @@ namespace LNF.Web.Scheduler.Tests
             var beginDateTime = selectedDate.AddHours(startTimeHour).AddMinutes(startTimeMinute);
             var rd = ReservationDuration.FromMinutes(beginDateTime, duration);
 
-            var result = new SchedulerUtility.ReservationData
+            var result = new SchedulerUtility.ReservationData()
             {
                 ResourceID = resourceId,
                 ClientID = clientId,

@@ -15,31 +15,85 @@ Namespace Pages
     Partial Public Class Reservation
         
         '''<summary>
-        '''hidMustAddInvitee control.
+        '''litHeader control.
         '''</summary>
         '''<remarks>
         '''Auto-generated field.
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
-        Protected WithEvents hidMustAddInvitee As Global.System.Web.UI.HtmlControls.HtmlInputHidden
+        Protected WithEvents litHeader As Global.System.Web.UI.WebControls.Literal
         
         '''<summary>
-        '''litCreateModifyReservation control.
+        '''litResourceName control.
         '''</summary>
         '''<remarks>
         '''Auto-generated field.
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
-        Protected WithEvents litCreateModifyReservation As Global.System.Web.UI.WebControls.Literal
+        Protected WithEvents litResourceName As Global.System.Web.UI.WebControls.Literal
         
         '''<summary>
-        '''phReserve control.
+        '''phLoadError control.
         '''</summary>
         '''<remarks>
         '''Auto-generated field.
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
-        Protected WithEvents phReserve As Global.System.Web.UI.WebControls.PlaceHolder
+        Protected WithEvents phLoadError As Global.System.Web.UI.WebControls.PlaceHolder
+        
+        '''<summary>
+        '''litLoadError control.
+        '''</summary>
+        '''<remarks>
+        '''Auto-generated field.
+        '''To modify move field declaration from designer file to code-behind file.
+        '''</remarks>
+        Protected WithEvents litLoadError As Global.System.Web.UI.WebControls.Literal
+        
+        '''<summary>
+        '''phReservationAlert control.
+        '''</summary>
+        '''<remarks>
+        '''Auto-generated field.
+        '''To modify move field declaration from designer file to code-behind file.
+        '''</remarks>
+        Protected WithEvents phReservationAlert As Global.System.Web.UI.WebControls.PlaceHolder
+        
+        '''<summary>
+        '''divReservationAlert control.
+        '''</summary>
+        '''<remarks>
+        '''Auto-generated field.
+        '''To modify move field declaration from designer file to code-behind file.
+        '''</remarks>
+        Protected WithEvents divReservationAlert As Global.System.Web.UI.HtmlControls.HtmlGenericControl
+        
+        '''<summary>
+        '''btnReservationAlertClose control.
+        '''</summary>
+        '''<remarks>
+        '''Auto-generated field.
+        '''To modify move field declaration from designer file to code-behind file.
+        '''</remarks>
+        Protected WithEvents btnReservationAlertClose As Global.System.Web.UI.HtmlControls.HtmlButton
+        
+        '''<summary>
+        '''litReservationAlert control.
+        '''</summary>
+        '''<remarks>
+        '''Auto-generated field.
+        '''To modify move field declaration from designer file to code-behind file.
+        '''</remarks>
+        Protected WithEvents litReservationAlert As Global.System.Web.UI.WebControls.Literal
+        
+        '''<summary>
+        '''phReservation control.
+        '''</summary>
+        '''<remarks>
+        '''Auto-generated field.
+        '''To modify move field declaration from designer file to code-behind file.
+        '''</remarks>
+        Protected WithEvents phReservation As Global.System.Web.UI.WebControls.PlaceHolder
         
         '''<summary>
         '''litClientName control.
@@ -60,13 +114,22 @@ Namespace Pages
         Protected WithEvents litStartDate As Global.System.Web.UI.WebControls.Literal
         
         '''<summary>
-        '''phPastSelectedDateWarning control.
+        '''phPastSelectedDateError control.
         '''</summary>
         '''<remarks>
         '''Auto-generated field.
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
-        Protected WithEvents phPastSelectedDateWarning As Global.System.Web.UI.WebControls.PlaceHolder
+        Protected WithEvents phPastSelectedDateError As Global.System.Web.UI.WebControls.PlaceHolder
+        
+        '''<summary>
+        '''litPastSelectedDateError control.
+        '''</summary>
+        '''<remarks>
+        '''Auto-generated field.
+        '''To modify move field declaration from designer file to code-behind file.
+        '''</remarks>
+        Protected WithEvents litPastSelectedDateError As Global.System.Web.UI.WebControls.Literal
         
         '''<summary>
         '''phStartTimeAndDuration control.
@@ -141,13 +204,13 @@ Namespace Pages
         Protected WithEvents txtDuration As Global.System.Web.UI.WebControls.TextBox
         
         '''<summary>
-        '''phIsRecurring control.
+        '''phRecurring control.
         '''</summary>
         '''<remarks>
         '''Auto-generated field.
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
-        Protected WithEvents phIsRecurring As Global.System.Web.UI.WebControls.PlaceHolder
+        Protected WithEvents phRecurring As Global.System.Web.UI.WebControls.PlaceHolder
         
         '''<summary>
         '''chkIsRecurring control.
@@ -384,13 +447,13 @@ Namespace Pages
         Protected WithEvents ddlMonthly2 As Global.System.Web.UI.WebControls.DropDownList
         
         '''<summary>
-        '''txtStartDate control.
+        '''txtRecurringStartDate control.
         '''</summary>
         '''<remarks>
         '''Auto-generated field.
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
-        Protected WithEvents txtStartDate As Global.System.Web.UI.WebControls.TextBox
+        Protected WithEvents txtRecurringStartDate As Global.System.Web.UI.WebControls.TextBox
         
         '''<summary>
         '''rdoRecurringRangeInfinite control.
@@ -490,15 +553,6 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents btnCancel As Global.System.Web.UI.WebControls.Button
-        
-        '''<summary>
-        '''litReservationAlert control.
-        '''</summary>
-        '''<remarks>
-        '''Auto-generated field.
-        '''To modify move field declaration from designer file to code-behind file.
-        '''</remarks>
-        Protected WithEvents litReservationAlert As Global.System.Web.UI.WebControls.Literal
         
         '''<summary>
         '''phConfirm control.

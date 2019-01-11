@@ -28,7 +28,6 @@ Namespace Pages
                 LoadAccounts()
                 LoadKiosks()
                 LoadProperties()
-                LoadTools()
             Else
                 dtKiosk = CType(Session("dtKiosk"), DataTable)
             End If
@@ -71,17 +70,10 @@ Namespace Pages
             Dim itemAccount As ListItem = ddlAccount.Items.FindByValue(Properties.Current.LabAccount.AccountID.ToString())
             If Not itemAccount Is Nothing Then itemAccount.Selected = True
         End Sub
-
-        Private Sub LoadTools()
-            Dim resources As IEnumerable(Of ResourceTreeItem) = CacheManager.Current.ResourceTree().Resources()
-            ddlGranularityTool.AppendDataBoundItems = True
-            ddlGranularityTool.DataSource = resources.OrderBy(Function(x) x.ResourceName)
-            ddlGranularityTool.DataBind()
-        End Sub
 #End Region
 
 #Region " Kiosk DataGrid Events "
-        Private Sub dgKiosk_ItemCommand(ByVal source As Object, ByVal e As DataGridCommandEventArgs) Handles dgKiosk.ItemCommand
+        Protected Sub DgKiosk_ItemCommand(ByVal source As Object, ByVal e As DataGridCommandEventArgs)
             Dim KioskID As Integer
             Select Case e.CommandName
                 Case "AddNewRow"
@@ -114,15 +106,15 @@ Namespace Pages
             LoadKiosks()
         End Sub
 
-        Private Sub dgKiosk_ItemDataBound(ByVal sender As Object, ByVal e As System.Web.UI.WebControls.DataGridItemEventArgs) Handles dgKiosk.ItemDataBound
+        Protected Sub DgKiosk_ItemDataBound(ByVal sender As Object, ByVal e As DataGridItemEventArgs)
             If e.Item.ItemType = ListItemType.AlternatingItem Or e.Item.ItemType = ListItemType.Item Then
                 Dim di As New DataItemHelper(e.Item.DataItem)
-                CType(e.Item.FindControl("lblKioskName"), Label).Text = di("KioskName").ToString()
-                CType(e.Item.FindControl("lblKioskIP"), Label).Text = di("KioskIP").ToString()
+                CType(e.Item.FindControl("lblKioskName"), Label).Text = di("KioskName").AsString
+                CType(e.Item.FindControl("lblKioskIP"), Label).Text = di("KioskIP").AsString
             ElseIf e.Item.ItemType = ListItemType.EditItem Then
                 Dim di As New DataItemHelper(e.Item.DataItem)
-                CType(e.Item.FindControl("txbKioskName"), TextBox).Text = di("KioskName").ToString()
-                CType(e.Item.FindControl("txbKioskIP"), TextBox).Text = di("KioskIP").ToString()
+                CType(e.Item.FindControl("txbKioskName"), TextBox).Text = di("KioskName").AsString
+                CType(e.Item.FindControl("txbKioskIP"), TextBox).Text = di("KioskIP").AsString
             End If
         End Sub
 #End Region
@@ -135,7 +127,7 @@ Namespace Pages
             End If
         End Sub
 
-        Private Sub btnSubmit_Click(ByVal sender As Object, ByVal e As EventArgs) Handles btnSubmit.Click
+        Protected Sub BtnSubmit_Click(ByVal sender As Object, ByVal e As EventArgs)
             SetAlertMessage(String.Empty)
 
             ' Error Checking
@@ -164,12 +156,9 @@ Namespace Pages
             ' Update Database
             Properties.Current.Save()
             kioskDB.Update(dtKiosk)
+            KioskUtility.ClearCache()
 
             SetAlertMessage("Global Properties have been successfully modified.", "success")
-        End Sub
-
-        Protected Sub ddlGranularityTool_SelectedIndexChanged(sender As Object, e As EventArgs)
-
         End Sub
     End Class
 End Namespace

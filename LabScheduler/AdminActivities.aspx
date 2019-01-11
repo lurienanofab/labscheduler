@@ -111,7 +111,7 @@
                                                         <tr>
                                                             <th>Authorization</th>
                                                             <th>
-                                                                <img src='<%#GetStaticUrl("images/locked.png")%>' alt="Locked" title="Locked" />
+                                                                <img src="//ssel-apps.eecs.umich.edu/static/images/locked.png" alt="Locked" title="Locked" />
                                                             </th>
                                                         </tr>
                                                 </HeaderTemplate>
@@ -148,7 +148,7 @@
                                                         <tr>
                                                             <th>Authorization</th>
                                                             <th>
-                                                                <img src='<%#GetStaticUrl("images/locked.png")%>' alt="lock" />
+                                                                <img src="//ssel-apps.eecs.umich.edu/static/images/locked.png" alt="lock" />
                                                             </th>
                                                         </tr>
                                                 </HeaderTemplate>
@@ -181,7 +181,7 @@
                                                         <tr>
                                                             <th>Authorization</th>
                                                             <th>
-                                                                <img src='<%#GetStaticUrl("images/locked.png")%>' alt="lock" />
+                                                                <img src="//ssel-apps.eecs.umich.edu/static/images/locked.png" alt="lock" />
                                                             </th>
                                                         </tr>
                                                 </HeaderTemplate>
@@ -216,7 +216,7 @@
                                                         <tr>
                                                             <th>Authorization</th>
                                                             <th>
-                                                                <img src='<%#GetStaticUrl("images/locked.png")%>' alt="lock" />
+                                                                <img src="//ssel-apps.eecs.umich.edu/static/images/locked.png" alt="lock" />
                                                             </th>
                                                         </tr>
                                                 </HeaderTemplate>
@@ -251,7 +251,7 @@
                                                         <tr>
                                                             <th>Authorization</th>
                                                             <th>
-                                                                <img src='<%#GetStaticUrl("images/locked.png")%>' alt="lock" />
+                                                                <img src="//ssel-apps.eecs.umich.edu/static/images/locked.png" alt="lock" />
                                                             </th>
                                                         </tr>
                                                 </HeaderTemplate>

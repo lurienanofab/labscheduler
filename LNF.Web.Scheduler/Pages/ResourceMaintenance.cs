@@ -195,9 +195,6 @@ namespace LNF.Web.Scheduler.Pages
                         throw new InvalidOperationException("Unknown command: " + e.CommandName);
                 }
 
-                RepairUtility.UpdateAffectedReservations(repair);
-                RepairUtility.UpdateForgivenChargeOnFinOps(repair);
-
                 RefreshAndRedirect(res);
             }
             catch(Exception ex)

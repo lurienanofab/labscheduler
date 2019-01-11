@@ -26,9 +26,9 @@ namespace LNF.Web.Scheduler
 {
     public static class AjaxUtility
     {
-        public static IClientManager ClientManager => DA.Use<IClientManager>();
+        public static IClientManager ClientManager => ServiceProvider.Current.Use<IClientManager>();
 
-        public static async Task<object> HandleRequest(HttpContext context)
+        public static object HandleRequest(HttpContext context)
         {
             string action = context.Request["Action"].ToString();
 
@@ -92,7 +92,7 @@ namespace LNF.Web.Scheduler
                     break;
                 case "helpdesk-post-message":
                     message = Utility.ConvertTo(ServiceProvider.Current.Context.GetRequestValue("Message"), string.Empty);
-                    message = string.Format("Posted from scheduler by: {0} ({1})\n----------------------------------------\n{2}", CacheManager.Current.CurrentUser.DisplayName, CacheManager.Current.CurrentUser.Email, message);
+                    message = $"Posted from scheduler by: {CacheManager.Current.CurrentUser.DisplayName} ({CacheManager.Current.CurrentUser.Email})\n----------------------------------------\n{message}";
                     result = HelpdeskPostMessage(ticketId, message);
                     break;
                 case "send-hardware-issue-email":
@@ -104,10 +104,10 @@ namespace LNF.Web.Scheduler
                     bool state = Utility.ConvertTo(context.Request["State"], false);
                     int duration = Utility.ConvertTo(context.Request["Duration"], 0);
                     uint d = (duration >= 0) ? (uint)duration : 0;
-                    result = await HandleInterlockRequest(command, resourceId, state, d);
+                    result = HandleInterlockRequest(command, resourceId, state, d);
                     break;
                 case "test":
-                    result = new GenericResult() { Success = true, Message = string.Format("current client: {0}", CacheManager.Current.CurrentUser.ClientID), Data = null, Log = null };
+                    result = new GenericResult() { Success = true, Message = $"current client: {CacheManager.Current.CurrentUser.ClientID}", Data = null, Log = null };
                     break;
                 default:
                     result = new GenericResult
@@ -213,7 +213,7 @@ namespace LNF.Web.Scheduler
             return result;
         }
 
-        public static async Task<GenericResult> HandleInterlockRequest(string command, int resourceId, bool state = false, uint duration = 0)
+        public static GenericResult HandleInterlockRequest(string command, int resourceId, bool state = false, uint duration = 0)
         {
             var result = new GenericResult();
 
@@ -237,7 +237,7 @@ namespace LNF.Web.Scheduler
                     switch (command)
                     {
                         case "get-point-state":
-                            var br = await ServiceProvider.Current.Control.GetBlockState(p.Block);
+                            var br = ServiceProvider.Current.Control.GetBlockState(p.Block);
                             var bs = br.BlockState;
                             if (bs.Points != null)
                             {
@@ -251,7 +251,7 @@ namespace LNF.Web.Scheduler
                             }
                             break;
                         case "set-point-state":
-                            var pr = await ServiceProvider.Current.Control.SetPointState(p, state, duration);
+                            var pr = ServiceProvider.Current.Control.SetPointState(p, state, duration);
 
                             if (pr.Error)
                             {
@@ -261,7 +261,7 @@ namespace LNF.Web.Scheduler
                             else
                             {
                                 result.Success = true;
-                                result.Message = string.Format("command = {0}, resourceId = {1}, state = {2}, duration = {3}, message = ({4}), time = {5:yyyy-MM-dd HH:mm:ss}", command, resourceId, state, duration, pr.Message, DateTime.Now);
+                                result.Message = $"command = {command}, resourceId = {resourceId}, state = {state}, duration = {duration}, message = ({pr.Message}), time = {DateTime.Now:yyyy-MM-dd HH:mm:ss}";
                             }
                             break;
                     }
@@ -269,7 +269,7 @@ namespace LNF.Web.Scheduler
                 else
                 {
                     result.Success = false;
-                    result.Message = string.Format("Resource not found with ResourceID {0}", resourceId);
+                    result.Message = $"Resource not found with ResourceID {resourceId}";
                 }
             }
             else
@@ -298,8 +298,8 @@ namespace LNF.Web.Scheduler
                             string id = resourceId.ToString().PadLeft(6, '0');
 
                             //Check for existing files
-                            string fileName = string.Format("images/{0}/{0}{1}.png", path, id);
-                            string iconName = string.Format("images/{0}/{0}{1}_icon.png", path, id);
+                            string fileName = $"images/{path}/{path}{id}.png";
+                            string iconName = $"images/{path}/{path}{id}_icon.png";
                             string filePhysicalName = Path.GetFullPath(ServiceProvider.Current.Context.GetRequestPhysicalApplicationPath() + fileName);
                             string iconPhysicalName = Path.GetFullPath(ServiceProvider.Current.Context.GetRequestPhysicalApplicationPath() + iconName);
                             if (File.Exists(filePhysicalName)) File.Delete(filePhysicalName);
@@ -529,45 +529,6 @@ namespace LNF.Web.Scheduler
             return result;
         }
 
-        //private static GenericResult UpdateResource()
-        //{
-        //    var result = new GenericResult();
-
-        //    dynamic v;
-
-        //    if (Validate(result, out v))
-        //    {
-        //        ApiResource item = new ApiResource()
-        //        {
-        //            ResourceID = v.ResourcID,
-        //            ResourceName = v.ResourceName,
-        //            LabID = v.LabID,
-        //            ProcessTechID = v.ProcessTechID,
-        //            Description = v.Description,
-        //            HelpdeskEmail = v.HelpdeskEmail,
-        //            IsActive = v.IsActive,
-        //            IsSchedulable = v.IsSchedulable
-        //        };
-
-        //        ApiInstance.Current.Request("scheduler/resource").Put(item.ResourceID, item);
-        //    }
-
-        //    return result;
-        //}
-
-        [Obsolete("Use webapi from now on.")]
-        private static Task<GenericResult> SaveReservationHistory()
-        {
-            throw new NotImplementedException();
-            //int rsvId = Utility.ConvertTo(Providers.Context.Current.GetRequestValue("ReservationID"), 0);
-            //string notes = Utility.ConvertTo(Providers.Context.Current.GetRequestValue("ReservationNotes"), "=x=");
-            //double forgivenPct = Utility.ConvertTo(Providers.Context.Current.GetRequestValue("ReservationForgivenPercentage"), -1D);
-            //int acctId = Utility.ConvertTo(Providers.Context.Current.GetRequestValue("ReservationAccountID"), 0);
-            //bool emailClient = Utility.ConvertTo(Providers.Context.Current.GetRequestValue("EmailClient"), 0).Equals(1);
-            //var result = await ReservationUtility.SaveReservationHistory(rsvId, notes, forgivenPct, acctId, emailClient);
-            //return result;
-        }
-
         private static bool Validate(GenericResult result, out object obj)
         {
             int buildingId = Utility.ConvertTo(ServiceProvider.Current.Context.GetRequestValue("BuildingID"), 0);
@@ -621,7 +582,7 @@ namespace LNF.Web.Scheduler
             if (DA.Current.Single<Resource>(editResourceId) != null && editResourceId != resourceId)
             {
                 result.Success = false;
-                result.Message = string.Format("Resource ID {0} is already in use.", editResourceId);
+                result.Message = $"Resource ID {editResourceId} is already in use.";
                 return false;
             }
 

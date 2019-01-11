@@ -391,6 +391,7 @@ div.reservation-action[data-command='NewReservation'] {
     padding: 5px;
     /*border: solid 1px #AAAAAA;*/
     margin-bottom: 10px;
+    margin-top: 10px;
     width: 700px;
 }
 

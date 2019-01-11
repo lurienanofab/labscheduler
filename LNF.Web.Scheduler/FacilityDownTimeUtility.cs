@@ -10,8 +10,8 @@ namespace LNF.Web.Scheduler
 {
     public static class FacilityDownTimeUtility
     {
-        public static IReservationManager ReservationManager => DA.Use<IReservationManager>();
-        public static IEmailManager EmailManager => DA.Use<IEmailManager>();
+        public static IReservationManager ReservationManager => ServiceProvider.Current.Use<IReservationManager>();
+        public static IEmailManager EmailManager => ServiceProvider.Current.Use<IEmailManager>();
 
         public static ReservationGroup CreateFacilityDownTimeGroup(int clientId, DateTime beginDateTime, DateTime endDateTime)
         {

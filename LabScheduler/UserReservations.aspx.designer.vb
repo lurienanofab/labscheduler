@@ -11,9 +11,9 @@ Option Strict On
 Option Explicit On
 
 Namespace Pages
-
+    
     Partial Public Class UserReservations
-
+        
         '''<summary>
         '''hypRecurringPage control.
         '''</summary>
@@ -22,7 +22,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents hypRecurringPage As Global.System.Web.UI.WebControls.HyperLink
-
+        
         '''<summary>
         '''litCurrentUser control.
         '''</summary>
@@ -31,7 +31,16 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents litCurrentUser As Global.System.Web.UI.WebControls.Literal
-
+        
+        '''<summary>
+        '''litLocation control.
+        '''</summary>
+        '''<remarks>
+        '''Auto-generated field.
+        '''To modify move field declaration from designer file to code-behind file.
+        '''</remarks>
+        Protected WithEvents litLocation As Global.System.Web.UI.WebControls.Literal
+        
         '''<summary>
         '''lblDate control.
         '''</summary>
@@ -40,7 +49,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents lblDate As Global.System.Web.UI.WebControls.Label
-
+        
         '''<summary>
         '''rvReserv control.
         '''</summary>
@@ -49,7 +58,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents rvReserv As Global.LabScheduler.UserControls.ReservationView
-
+        
         '''<summary>
         '''txtCalendarURL control.
         '''</summary>

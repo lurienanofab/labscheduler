@@ -209,8 +209,8 @@ Namespace Pages
                 If Not di("EmailNotify") Is DBNull.Value Then
                     Dim hidCurrentValue As HiddenField = CType(e.Item.FindControl("hidCurrentValue"), HiddenField)
                     Dim ddlNotify As DropDownList = CType(e.Item.FindControl("ddlNotify"), DropDownList)
-                    hidCurrentValue.Value = di("EmailNotify").ToString()
-                    ddlNotify.SelectedValue = di("EmailNotify").ToString()
+                    hidCurrentValue.Value = di("EmailNotify").AsString
+                    ddlNotify.SelectedValue = di("EmailNotify").AsString
                 End If
             End If
         End Sub
@@ -296,13 +296,13 @@ Namespace Pages
         Protected Sub gvResourcePractice_ItemDataBound(sender As Object, e As DataGridItemEventArgs) Handles dgResourcePractice.ItemDataBound
             If e.Item.ItemType = ListItemType.Item OrElse e.Item.ItemType = ListItemType.AlternatingItem Then
                 Dim di As New DataItemHelper(e.Item.DataItem)
-                Dim practiceResEmailNotify As Integer = di.Value("PracticeResEmailNotify", 0)
+                Dim practiceResEmailNotify As Integer = di("PracticeResEmailNotify").AsInt32
                 Dim hidCurrentValue As HiddenField = CType(e.Item.FindControl("hidCurrentValue"), HiddenField)
                 Dim ddlNotify As DropDownList = CType(e.Item.FindControl("ddlNotify"), DropDownList)
                 Dim hidResourceClientID As HiddenField = CType(e.Item.FindControl("hidResourceClientID"), HiddenField)
                 hidCurrentValue.Value = practiceResEmailNotify.ToString()
                 ddlNotify.SelectedValue = practiceResEmailNotify.ToString()
-                hidResourceClientID.Value = di("ResourceClientID").ToString()
+                hidResourceClientID.Value = di("ResourceClientID").AsString
             End If
         End Sub
 

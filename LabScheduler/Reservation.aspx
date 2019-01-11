@@ -1,4 +1,4 @@
-﻿<%@ Page Title="Reservation" Language="vb" AutoEventWireup="false" MasterPageFile="~/MasterPageScheduler.Master" CodeBehind="Reservation.aspx.vb" Inherits="LabScheduler.Pages.Reservation" MaintainScrollPositionOnPostback="true" Async="true" %>
+﻿<%@ Page Title="Reservation" Language="vb" AutoEventWireup="false" MasterPageFile="~/MasterPageScheduler.Master" CodeBehind="Reservation.aspx.vb" Inherits="LabScheduler.Pages.Reservation" %>
 
 <asp:Content ID="Content1" ContentPlaceHolderID="head" runat="server">
     <link rel="stylesheet" href="//ssel-apps.eecs.umich.edu/static/lib/bootstrap/plugins/bootstrap-datepicker/css/bootstrap-datepicker.min.css" />
@@ -24,30 +24,34 @@
         .well.confirmation {
             border: solid 1px #aaaa66;
             background-color: #ffff66;
+            border-radius: 5px;
+            box-shadow: 2px 2px 3px #aaa;
         }
     </style>
-
-    <script>
-        function ResetScrollPosition() {
-            var scrollX = document.getElementById('__SCROLLPOSITIONX');
-            var scrollY = document.getElementById('__SCROLLPOSITIONY');
-
-            if (scrollX && scrollY) {
-                scrollX.value = 0;
-                scrollY.value = 0;
-            }
-        }
-    </script>
 </asp:Content>
 
 <asp:Content ID="Content2" ContentPlaceHolderID="ContentPlaceHolder1" runat="server">
-    <input type="hidden" runat="server" id="hidMustAddInvitee" class="must-add-invitee" value="false" />
-
     <h5 style="margin-bottom: 20px;">
-        <asp:Literal runat="server" ID="litCreateModifyReservation"></asp:Literal>
+        <asp:Literal runat="server" ID="litHeader"></asp:Literal>
+        <span class="resource-name">
+            <asp:Literal runat="server" ID="litResourceName"></asp:Literal>
+        </span>
     </h5>
 
-    <asp:PlaceHolder runat="server" ID="phReserve">
+    <asp:PlaceHolder runat="server" ID="phLoadError" Visible="false">
+        <div class="alert alert-danger" role="alert">
+            <asp:Literal runat="server" ID="litLoadError"></asp:Literal>
+        </div>
+    </asp:PlaceHolder>
+
+    <asp:PlaceHolder runat="server" ID="phReservationAlert" Visible="false">
+        <div runat="server" id="divReservationAlert" class="alert alert-danger alert-dismissable" role="alert">
+            <button runat="server" id="btnReservationAlertClose" type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <asp:Literal runat="server" ID="litReservationAlert"></asp:Literal>
+        </div>
+    </asp:PlaceHolder>
+
+    <asp:PlaceHolder runat="server" ID="phReservation">
         <div class="reservation">
             <div class="lnf panel panel-default">
                 <div class="panel-heading">
@@ -69,25 +73,25 @@
                                 <div class="form-control-static">
                                     <asp:Literal ID="litStartDate" runat="server"></asp:Literal>
                                     <span>(click on calendar to change date)</span>
-                                    <asp:PlaceHolder runat="server" ID="phPastSelectedDateWarning" Visible="false">
+                                    <asp:PlaceHolder runat="server" ID="phPastSelectedDateError" Visible="false">
                                         <div class="alert alert-danger" role="alert" style="margin-top: 10px; margin-bottom: 0;">
-                                            The selected date is in the past
+                                            <asp:Literal runat="server" ID="litPastSelectedDateError"></asp:Literal>
                                         </div>
                                     </asp:PlaceHolder>
                                 </div>
                             </div>
                         </div>
-                        <asp:PlaceHolder runat="server" ID="phStartTimeAndDuration" Visible="true">
+                        <asp:PlaceHolder runat="server" ID="phStartTimeAndDuration" Visible="false">
                             <div class="form-group">
                                 <label class="control-label col-sm-2">Start Time *</label>
                                 <div class="col-sm-10">
                                     <div class="form-inline">
                                         <div class="form-group">
-                                            <asp:DropDownList ID="ddlStartTimeHour" runat="server" AutoPostBack="True" CssClass="form-control">
+                                            <asp:DropDownList runat="server" ID="ddlStartTimeHour" AutoPostBack="True" CssClass="form-control" OnSelectedIndexChanged="DdlStartTimeHour_SelectedIndexChanged">
                                             </asp:DropDownList>
                                         </div>
                                         <div class="form-group">
-                                            <asp:DropDownList ID="ddlStartTimeMin" runat="server" AutoPostBack="True" CssClass="form-control">
+                                            <asp:DropDownList runat="server" ID="ddlStartTimeMin" AutoPostBack="True" CssClass="form-control" OnSelectedIndexChanged="DdlStartTimeMin_SelectedIndexChanged">
                                             </asp:DropDownList>
                                         </div>
                                     </div>
@@ -112,7 +116,7 @@
                                 </asp:PlaceHolder>
                             </div>
                         </asp:PlaceHolder>
-                        <asp:PlaceHolder runat="server" ID="phIsRecurring">
+                        <asp:PlaceHolder runat="server" ID="phRecurring">
                             <div class="form-group">
                                 <div class="col-sm-offset-2 col-sm-10">
                                     <div class="checkbox">
@@ -148,7 +152,7 @@
                             <label class="control-label col-sm-2">Activity *</label>
                             <asp:PlaceHolder runat="server" ID="phActivity">
                                 <div class="col-sm-2">
-                                    <asp:DropDownList runat="server" ID="ddlActivity" AutoPostBack="True" DataTextField="ActivityName" DataValueField="ActivityID" CssClass="activity-select form-control">
+                                    <asp:DropDownList runat="server" ID="ddlActivity" AutoPostBack="True" DataTextField="ActivityName" DataValueField="ActivityID" CssClass="activity-select form-control" OnSelectedIndexChanged="DdlActivity_SelectedIndexChanged">
                                     </asp:DropDownList>
                                 </div>
                             </asp:PlaceHolder>
@@ -279,7 +283,7 @@
                             <div class="form-group">
                                 <label class="col-sm-1 control-label">Start</label>
                                 <div class="col-sm-2">
-                                    <asp:TextBox runat="server" ID="txtStartDate" CssClass="bs-datepicker form-control"></asp:TextBox>
+                                    <asp:TextBox runat="server" ID="txtRecurringStartDate" CssClass="bs-datepicker form-control"></asp:TextBox>
                                 </div>
                             </div>
                             <div class="form-group">
@@ -311,40 +315,50 @@
                         <h3 class="panel-title">Process Info</h3>
                     </div>
                     <div class="panel-body">
-                        <asp:Repeater ID="rptProcessInfo" runat="server">
+                        <asp:Repeater runat="server" ID="rptProcessInfo" OnItemDataBound="RptProcessInfo_ItemDataBound">
+                            <HeaderTemplate>
+                                <table border="0" class="reservation-process-info">
+                                    <tbody>
+                            </HeaderTemplate>
                             <ItemTemplate>
-                                <table border="0">
-                                    <tr>
-                                        <td style="padding: 2px;">&nbsp;</td>
-                                        <td style="padding: 2px;">
-                                            <asp:Label ID="lblPIID" Visible="False" runat="server"></asp:Label>
-                                            <asp:Label ID="lblParamName" runat="server"></asp:Label>
-                                        </td>
-                                        <td style="padding: 2px;">
-                                            <asp:Label ID="lblValueName" runat="server"></asp:Label>
-                                        </td>
-                                        <td style="padding: 2px;">&nbsp;</td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding: 2px;">
-                                            <asp:Label ID="lblPIName" runat="server"></asp:Label>
-                                        </td>
-                                        <td style="padding: 2px;">
-                                            <asp:DropDownList ID="ddlParam" runat="server" CssClass="form-control">
-                                            </asp:DropDownList>
-                                        </td>
-                                        <td style="padding: 2px;">
-                                            <asp:TextBox runat="server" ID="txtValue" MaxLength="5" Width="75" CssClass="form-control"></asp:TextBox>
-                                        </td>
-                                        <td style="padding: 2px;">
-                                            <asp:CheckBox ID="chkSpecial" Text="Special" runat="server"></asp:CheckBox>
-                                        </td>
-                                    </tr>
-                                </table>
+                                <tr>
+                                    <td>&nbsp;</td>
+                                    <td class="param-name">
+                                        <asp:HiddenField runat="server" ID="hidPIID" />
+                                        <asp:Literal runat="server" ID="litParamName"></asp:Literal>
+                                    </td>
+                                    <td class="value-name">
+                                        <asp:Literal runat="server" ID="litValueName"></asp:Literal>
+                                    </td>
+                                    <td>&nbsp;</td>
+                                </tr>
+                                <tr>
+                                    <td class="pi-name">
+                                        <asp:Literal runat="server" ID="litPIName"></asp:Literal>
+                                    </td>
+                                    <td class="pi-params">
+                                        <asp:DropDownList ID="ddlParam" runat="server" CssClass="form-control">
+                                        </asp:DropDownList>
+                                    </td>
+                                    <td class="pi-value">
+                                        <asp:TextBox runat="server" ID="txtValue" MaxLength="5" CssClass="form-control"></asp:TextBox>
+                                    </td>
+                                    <td class="pi-special">
+                                        <asp:CheckBox ID="chkSpecial" Text="Special" runat="server"></asp:CheckBox>
+                                    </td>
+                                </tr>
                             </ItemTemplate>
                             <SeparatorTemplate>
-                                <hr />
+                                <tr>
+                                    <td colspan="4" class="pi-separator">
+                                        <hr>
+                                    </td>
+                                </tr>
                             </SeparatorTemplate>
+                            <FooterTemplate>
+                                </tbody>
+                                </table>
+                            </FooterTemplate>
                         </asp:Repeater>
                     </div>
                 </div>
@@ -359,7 +373,7 @@
                 <div class="panel-body">
                     <div class="row">
                         <div class="col-sm-4">
-                            <asp:DataGrid ID="dgInvitees" runat="server" DataKeyField="InviteeID" ShowFooter="True" AutoGenerateColumns="False" BorderColor="#4682B4" CellPadding="3" ShowHeader="False" CssClass="Table" Width="100%">
+                            <asp:DataGrid ID="dgInvitees" runat="server" DataKeyField="InviteeID" ShowFooter="True" AutoGenerateColumns="False" BorderColor="#4682B4" CellPadding="3" ShowHeader="False" CssClass="Table" Width="100%" OnItemCommand="DgInvitees_ItemCommand" OnItemCreated="DgInvitees_ItemCreated" OnItemDataBound="DgInvitees_ItemDataBound">
                                 <AlternatingItemStyle BackColor="AliceBlue"></AlternatingItemStyle>
                                 <HeaderStyle Font-Bold="True" HorizontalAlign="Center" ForeColor="White" BackColor="#336699"></HeaderStyle>
                                 <FooterStyle BackColor="#CCFFCC" HorizontalAlign="Center"></FooterStyle>
@@ -396,9 +410,8 @@
                 </div>
             </div>
 
-            <asp:Button ID="btnSubmit" runat="server" CssClass="lnf btn btn-default btn-lg"></asp:Button>
-            <asp:Button ID="btnCancel" runat="server" Text="Back" CssClass="lnf btn btn-default btn-lg"></asp:Button>
-            <asp:Literal runat="server" ID="litReservationAlert"></asp:Literal>
+            <asp:Button runat="server" ID="btnSubmit" CssClass="lnf btn btn-default btn-lg" OnClick="BtnSubmit_Click" />
+            <asp:Button runat="server" ID="btnCancel" CssClass="lnf btn btn-default btn-lg" Text="Back" OnClick="BtnCancel_Click" />
         </div>
         <!-- /.reservation -->
     </asp:PlaceHolder>

@@ -24,21 +24,12 @@ Namespace Pages
         Protected WithEvents rptRecurringReservations As Global.System.Web.UI.WebControls.Repeater
         
         '''<summary>
-        '''zgvRecurring control.
+        '''phNoData control.
         '''</summary>
         '''<remarks>
         '''Auto-generated field.
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
-        Protected WithEvents zgvRecurring As Global.System.Web.UI.WebControls.GridView
-        
-        '''<summary>
-        '''fvRecurring control.
-        '''</summary>
-        '''<remarks>
-        '''Auto-generated field.
-        '''To modify move field declaration from designer file to code-behind file.
-        '''</remarks>
-        Protected WithEvents fvRecurring As Global.System.Web.UI.WebControls.FormView
+        Protected WithEvents phNoData As Global.System.Web.UI.WebControls.PlaceHolder
     End Class
 End Namespace

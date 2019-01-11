@@ -1,5 +1,4 @@
-﻿Imports LNF.Cache
-Imports LNF.Feeds
+﻿Imports LNF.Feeds
 Imports LNF.Models.Data
 Imports LNF.Models.Scheduler
 Imports LNF.Scheduler
@@ -23,6 +22,8 @@ Namespace Pages
                 Else
                     litCurrentUser.Text = "[unknown user]"
                 End If
+
+                litLocation.Text = $"{If(Context.ClientInLab(), "Inside", "Outside")} lab, kiosk: {If(KioskUtility.IsKiosk(Request.UserHostAddress), "yes", "no")} [{Request.UserHostAddress}]"
 
                 hypRecurringPage.NavigateUrl = String.Format("~/UserRecurringReservation.aspx?Date={0:yyyy-MM-dd}", Request.SelectedDate())
             End If

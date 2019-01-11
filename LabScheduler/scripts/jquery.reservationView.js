@@ -6,11 +6,8 @@
             var opts = $.extend({}, { "onClick": null, "path": null }, options, $this.data());
 
             var getRedirectUrl = function (args) {
-                var result = "ReservationController.ashx?Command=" + args.Command + "&ReservationID=" + args.ReservationID + "&Date=" + args.Date + "&State=" + args.State;
-
-                if (args.Path)
-                    result += "&Path=" + args.Path;
-
+                var uri = URI("ReservationController.ashx");
+                var result = uri.query(args).toString();
                 return result;
             };
 
@@ -27,6 +24,7 @@
                     Command: cell.data("command"),
                     ReservationID: parseInt(cell.data("reservation-id")), //0 for new reservations
                     Date: cell.data("date"), //every cell has one
+                    Time: cell.data("time"),
                     State: cell.data("state"),
                     Path: cell.data("path") || opts.path
                 };
@@ -43,8 +41,13 @@
                     valid = false;
                 }
 
-                if (!moment(args.Date, "YYYY-MM-DD[T]HH:mm:ss").isValid()) {
+                if (!moment(args.Date, "YYYY-MM-DD").isValid()) {
                     console.log("ReservationView Error: clickable cell with invalid Date", args);
+                    valid = false;
+                }
+
+                if (!moment(args.Date, "HH:mm:ss").isValid()) {
+                    console.log("ReservationView Error: clickable cell with invalid Time", args);
                     valid = false;
                 }
 

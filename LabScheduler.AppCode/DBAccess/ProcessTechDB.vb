@@ -1,5 +1,4 @@
 Imports LNF.Repository
-Imports LNF.CommonTools
 
 Namespace DBAccess
     Public Class ProcessTechDB
@@ -17,86 +16,66 @@ Namespace DBAccess
         End Sub
 
         ' Returns specified ProcessTech
-        Public Sub New(ByVal LID As Integer, ByVal ProcTechID As Integer)  ' non-standard name needed to avoid name clash
-            Using dba As New SQLDBAccess("cnSselScheduler")
-                With dba.SelectCommand
-                    .AddParameter("@Action", "Select")
-                    .AddParameter("@LabID", LID)
-                    .AddParameter("@ProcessTechID", ProcTechID)
-                End With
-                Using reader As IDataReader = dba.ExecuteReader("procProcessTechSelect")
-                    If reader.Read() Then
-                        IsValid = True
-                        BuildingID = Convert.ToInt32(reader("BuildingID"))
-                        BuildingName = reader("BuildingName").ToString()
-                        LabID = Convert.ToInt32(reader("LabID"))
-                        LabName = reader("LabName").ToString()
-                        ProcessTechID = Convert.ToInt32(reader("ProcessTechID"))
-                        ProcessTechName = reader("ProcessTechName").ToString()
-                        Descriptoin = reader("Description").ToString()
-                    End If
-                    reader.Close()
-                End Using
+        Public Sub New(ByVal LabID As Integer, ByVal ProcTechID As Integer)
+            Using reader = DA.Command().Param(New With {.Action = "Select", LabID, ProcTechID}).ExecuteReader("sselScheduler.dbo.procProcessTechSelect")
+                If reader.Read() Then
+                    IsValid = True
+                    BuildingID = Convert.ToInt32(reader("BuildingID"))
+                    BuildingName = reader("BuildingName").ToString()
+                    Me.LabID = Convert.ToInt32(reader("LabID"))
+                    LabName = reader("LabName").ToString()
+                    ProcessTechID = Convert.ToInt32(reader("ProcessTechID"))
+                    ProcessTechName = reader("ProcessTechName").ToString()
+                    Descriptoin = reader("Description").ToString()
+                End If
+                reader.Close()
             End Using
         End Sub
 
         ' Returns ProcessTechs belonging to specified Lab
         Public Function SelectDataReaderByLab(ByVal LabID As Integer) As IDataReader
-            Dim dba As New SQLDBAccess("cnSselScheduler")
-            Return dba.ApplyParameters(New With {.Action = "SelectByLab", .LabID = LabID}).ExecuteReader("procProcessTechSelect")
+            Return DA.Command().Param(New With {.Action = "SelectByLab", LabID}).ExecuteReader("sselScheduler.dbo.procProcessTechSelect")
         End Function
 
         Public Function SelectDataTableByLab(ByVal LabID As Integer) As DataTable
-            Using dba As New SQLDBAccess("cnSselScheduler")
-                Return dba.ApplyParameters(New With {.Action = "SelectByLab", .LabID = LabID}).FillDataTable("procProcessTechSelect")
-            End Using
+            Return DA.Command().Param(New With {.Action = "SelectByLab", LabID}).FillDataTable("sselScheduler.dbo.procProcessTechSelect")
         End Function
 
         ' Returns ProcessTechs not belonging to the specified Lab
         Public Function SelectProcessTechNotInLab(ByVal LabID As Integer) As IDataReader
-            Dim dba As New SQLDBAccess("cnSselScheduler")
-            Return dba.ApplyParameters(New With {.Action = "SelectProcessTechNotInLab", .LabID = LabID}).ExecuteReader("procProcessTechSelect")
+            Return DA.Command().Param(New With {.Action = "SelectProcessTechNotInLab", LabID}).ExecuteReader("sselScheduler.dbo.procProcessTechSelect")
         End Function
 
         ' TODO: Returns all ProcessTechs
         Public Shared Function SelectAll() As DataTable
-            Using dba As New SQLDBAccess("cnSselScheduler")
-                Return dba.MapSchema().ApplyParameters(New With {.Action = "SelectAll"}).FillDataTable("procProcessTechSelect")
-            End Using
+            Return DA.Command().MapSchema().Param(New With {.Action = "SelectAll"}).FillDataTable("sselScheduler.dbo.procProcessTechSelect")
         End Function
 
         Public Function HasResources(ByVal ProcessTechID As Integer) As Boolean
-            Using dba As New SQLDBAccess("cnSselScheduler")
-                Dim count As Integer = dba.ApplyParameters(New With {.Action = "HasLabs", .BuildingID = BuildingID}).ExecuteScalar(Of Integer)("procProcessTechSelect")
-                Return count <> 0
-            End Using
+            Dim count As Integer = DA.Command().Param(New With {.Action = "HasLabs", BuildingID}).ExecuteScalar(Of Integer)("sselScheduler.dbo.procProcessTechSelect")
+            Return count > 0
         End Function
 
         ' Insert/Update/Delete ProcessTechs
         Public Sub Update(ByRef dt As DataTable)
-            Using dba As New SQLDBAccess("cnSselScheduler")
-                With dba.InsertCommand
-                    .AddParameter("@ProcessTechIDOut", 0, ParameterDirection.Output)
-                    .AddParameter("@ProcessTechID", SqlDbType.Int)
-                    .AddParameter("@LabID", SqlDbType.Int)
-                    .AddParameter("@ProcessTechName", SqlDbType.NVarChar, 50)
-                    .AddParameter("@Description", SqlDbType.NVarChar, 200)
-                End With
+            DA.Command().Update(dt, Sub(x)
+                                        x.Insert.SetCommandText("sselScheduler.dbo.procProcessTechInsert")
+                                        x.Insert.AddParameter("ProcessTechIDOut", 0, ParameterDirection.Output)
+                                        x.Insert.AddParameter("ProcessTechID", SqlDbType.Int)
+                                        x.Insert.AddParameter("LabID", SqlDbType.Int)
+                                        x.Insert.AddParameter("ProcessTechName", SqlDbType.NVarChar, 50)
+                                        x.Insert.AddParameter("Description", SqlDbType.NVarChar, 200)
 
-                With dba.UpdateCommand
-                    .AddParameter("@ProcessTechID", SqlDbType.Int)
-                    .AddParameter("@LabID", SqlDbType.Int)
-                    .AddParameter("@ProcessTechName", SqlDbType.NVarChar, 50)
-                    .AddParameter("@Description", SqlDbType.NVarChar, 200)
-                End With
+                                        x.Update.SetCommandText("sselScheduler.dbo.procProcessTechUpdate")
+                                        x.Update.AddParameter("ProcessTechID", SqlDbType.Int)
+                                        x.Update.AddParameter("LabID", SqlDbType.Int)
+                                        x.Update.AddParameter("ProcessTechName", SqlDbType.NVarChar, 50)
+                                        x.Update.AddParameter("Description", SqlDbType.NVarChar, 200)
 
-                With dba.DeleteCommand
-                    .AddParameter("@ProcessTechID", SqlDbType.Int)
-                    .AddParameter("@LabID", SqlDbType.Int, 4)
-                End With
-
-                dba.UpdateDataTable(dt, "procProcessTechInsert", "procProcessTechUpdate", "procProcessTechDelete")
-            End Using
+                                        x.Delete.SetCommandText("sselScheduler.dbo.procProcessTechDelete")
+                                        x.Delete.AddParameter("ProcessTechID", SqlDbType.Int)
+                                        x.Delete.AddParameter("LabID", SqlDbType.Int, 4)
+                                    End Sub)
         End Sub
 
     End Class

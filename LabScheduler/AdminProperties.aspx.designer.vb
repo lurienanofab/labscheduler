@@ -24,6 +24,15 @@ Namespace Pages
         Protected WithEvents AdminTabMenu1 As Global.LNF.Web.Scheduler.Controls.AdminTabMenu
         
         '''<summary>
+        '''litAlertMessage control.
+        '''</summary>
+        '''<remarks>
+        '''Auto-generated field.
+        '''To modify move field declaration from designer file to code-behind file.
+        '''</remarks>
+        Protected WithEvents litAlertMessage As Global.System.Web.UI.WebControls.Literal
+        
+        '''<summary>
         '''txtLateChargePenalty control.
         '''</summary>
         '''<remarks>
@@ -69,24 +78,6 @@ Namespace Pages
         Protected WithEvents ddlAccount As Global.System.Web.UI.WebControls.DropDownList
         
         '''<summary>
-        '''btnSubmit control.
-        '''</summary>
-        '''<remarks>
-        '''Auto-generated field.
-        '''To modify move field declaration from designer file to code-behind file.
-        '''</remarks>
-        Protected WithEvents btnSubmit As Global.System.Web.UI.WebControls.Button
-        
-        '''<summary>
-        '''litAlertMessage control.
-        '''</summary>
-        '''<remarks>
-        '''Auto-generated field.
-        '''To modify move field declaration from designer file to code-behind file.
-        '''</remarks>
-        Protected WithEvents litAlertMessage As Global.System.Web.UI.WebControls.Literal
-        
-        '''<summary>
         '''dgKiosk control.
         '''</summary>
         '''<remarks>
@@ -96,21 +87,12 @@ Namespace Pages
         Protected WithEvents dgKiosk As Global.System.Web.UI.WebControls.DataGrid
         
         '''<summary>
-        '''ddlGranularityTool control.
+        '''btnSubmit control.
         '''</summary>
         '''<remarks>
         '''Auto-generated field.
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
-        Protected WithEvents ddlGranularityTool As Global.System.Web.UI.WebControls.DropDownList
-        
-        '''<summary>
-        '''txtGranularityValues control.
-        '''</summary>
-        '''<remarks>
-        '''Auto-generated field.
-        '''To modify move field declaration from designer file to code-behind file.
-        '''</remarks>
-        Protected WithEvents txtGranularityValues As Global.System.Web.UI.WebControls.TextBox
+        Protected WithEvents btnSubmit As Global.System.Web.UI.WebControls.Button
     End Class
 End Namespace

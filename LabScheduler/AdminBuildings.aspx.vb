@@ -100,7 +100,7 @@ Namespace Pages
                 ibtnDelete.Attributes.Add("onclick", "return confirm('Are you sure you want to delete this Building?');")
 
                 ' Picture
-                UploadFileUtility.DisplayIcon(CType(e.Item.FindControl("Picture"), Image), "Building", di("BuildingID").ToString())
+                UploadFileUtility.DisplayIcon(CType(e.Item.FindControl("Picture"), Image), "Building", di("BuildingID").AsString)
             End If
         End Sub
 

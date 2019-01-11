@@ -1,4 +1,4 @@
-﻿<%@ Page Title="Process Tech" Language="vb" AutoEventWireup="false" MasterPageFile="~/MasterPageScheduler.Master" CodeBehind="ProcessTech.aspx.vb" Inherits="LabScheduler.Pages.ProcessTech" Async="true" %>
+﻿<%@ Page Title="Process Tech" Language="vb" AutoEventWireup="false" MasterPageFile="~/MasterPageScheduler.Master" CodeBehind="ProcessTech.aspx.vb" Inherits="LabScheduler.Pages.ProcessTech" %>
 
 <%@ Reference Control="~/UserControls/ReservationView.ascx" %>
 <%@ Register TagPrefix="uc" TagName="ReservationView" Src="~/UserControls/ReservationView.ascx" %>

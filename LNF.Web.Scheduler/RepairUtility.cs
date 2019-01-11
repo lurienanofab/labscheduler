@@ -2,13 +2,13 @@
 using LNF.CommonTools;
 using LNF.Models.Data;
 using LNF.Models.Scheduler;
+using LNF.Models.Worker;
 using LNF.Repository;
 using LNF.Repository.Scheduler;
 using LNF.Scheduler;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace LNF.Web.Scheduler
 {
@@ -16,11 +16,11 @@ namespace LNF.Web.Scheduler
     {
         public static IContext Context => ServiceProvider.Current.Context;
 
-        public static IResourceManager ResourceManager => DA.Use<IResourceManager>();
+        public static IResourceManager ResourceManager => ServiceProvider.Current.Use<IResourceManager>();
 
-        public static IReservationManager ReservationManager => DA.Use<IReservationManager>();
+        public static IReservationManager ReservationManager => ServiceProvider.Current.Use<IReservationManager>();
 
-        public static IEmailManager EmailManager => DA.Use<IEmailManager>();
+        public static IEmailManager EmailManager => ServiceProvider.Current.Use<IEmailManager>();
 
         public static ClientItem CurrentUser => CacheManager.Current.CurrentUser;
 
@@ -52,6 +52,8 @@ namespace LNF.Web.Scheduler
 
                     // Set the state into resource table and session object
                     ResourceUtility.UpdateState(res.ResourceID, ResourceState.Offline, string.Empty);
+
+                    UpdateAffectedReservations(repair);
                 }
                 else
                 {
@@ -87,6 +89,8 @@ namespace LNF.Web.Scheduler
                         repair.EndDateTime = endDateTime;
                         repair.Notes = notes;
                         ReservationManager.Update(repair, CurrentUser.ClientID);
+
+                        UpdateAffectedReservations(repair);
                     }
                 }
             }
@@ -121,6 +125,8 @@ namespace LNF.Web.Scheduler
 
                             // End the repair reservation now
                             ReservationManager.End(repair, CurrentUser.ClientID, CurrentUser.ClientID);
+
+                            UpdateAffectedReservations(repair);
                         }
                     }
                 }
@@ -136,7 +142,7 @@ namespace LNF.Web.Scheduler
         /// Checks for all reservations affected by the repair and either cancels or deletes them (depending of if they are started or not), and then forgives them.
         /// </summary>
         /// <param name="repair">The repair reservation.</param>
-        public static bool UpdateAffectedReservations(Reservation repair)
+        private static bool UpdateAffectedReservations(Reservation repair)
         {
             // Might be null when resource state is Limited
             if (repair == null) return false;
@@ -202,20 +208,12 @@ namespace LNF.Web.Scheduler
                 }
             }
 
-            return result;
-        }
+            // Update forgiven charge on FinOps. Enqueue an UpdateBilling request. This will
+            // return immediately and the update will process in the background using OnlineServicesWorker.
+            DateTime sd = repair.BeginDateTime.FirstOfMonth();
+            ServiceProvider.Current.Worker.Execute(new UpdateBillingWorkerRequest(sd, 0, new[] { "tool", "room" }));
 
-        /// <summary>
-        /// Enqueue an UpdateBilling request. This will return immediately and the update will process in the background using OnlineServicesWorker.
-        /// </summary>
-        public static void UpdateForgivenChargeOnFinOps(Reservation repair)
-        {
-            if (repair != null)
-            {
-                DateTime sd = repair.BeginDateTime.FirstOfMonth();
-                DateTime ed = repair.EndDateTime.FirstOfMonth().AddMonths(1);
-                ReservationHistoryUtility.SendUpdateBillingRequest(sd, ed, 0, new[] { "tool", "room" });
-            }
+            return result;
         }
     }
 }

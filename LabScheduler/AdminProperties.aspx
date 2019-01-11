@@ -9,6 +9,8 @@
 
     <lnf:AdminTabMenu runat="server" ID="AdminTabMenu1" SelectedIndex="5" />
 
+    <asp:Literal runat="server" ID="litAlertMessage"></asp:Literal>
+
     <div class="lnf panel panel-default">
         <div class="panel-heading">
             <h3 class="panel-title">Modifiy Global Properties</h3>
@@ -16,42 +18,37 @@
         <div class="panel-body">
             <div class="form-horizontal">
                 <div class="form-group">
-                    <label class="col-sm-4 control-label">Late Charge Penalty Multiplier *</label>
+                    <label class="col-sm-3 control-label">Late Charge Penalty Multiplier *</label>
                     <div class="col-sm-2">
                         <asp:TextBox ID="txtLateChargePenalty" MaxLength="5" runat="server" CssClass="form-control"></asp:TextBox>
                     </div>
                 </div>
                 <div class="form-group">
-                    <label class="col-sm-4 control-label">Authorization Expiration Warning *</label>
+                    <label class="col-sm-3 control-label">Authorization Expiration Warning *</label>
                     <div class="col-sm-2">
                         <asp:TextBox ID="txtAuthExpWarning" MaxLength="5" runat="server" CssClass="form-control"></asp:TextBox>
                     </div>
                 </div>
                 <div class="form-group">
-                    <label class="col-sm-4 control-label">Resource IP Prefix *</label>
+                    <label class="col-sm-3 control-label">Resource IP Prefix *</label>
                     <div class="col-sm-2">
                         <asp:TextBox ID="txtResourceIPPrefix" runat="server" MaxLength="15" CssClass="form-control"></asp:TextBox>
                     </div>
                 </div>
                 <div class="form-group">
-                    <label class="col-sm-4 control-label">Scheduler Administrator *</label>
-                    <div class="col-sm-3">
+                    <label class="col-sm-3 control-label">Scheduler Administrator *</label>
+                    <div class="col-sm-4">
                         <asp:DropDownList ID="ddlAdmin" runat="server" DataValueField="ClientID" DataTextField="DisplayName" CssClass="form-control">
                         </asp:DropDownList>
                     </div>
                 </div>
                 <div class="form-group">
-                    <label class="col-sm-4 control-label">General Lab Account *</label>
+                    <label class="col-sm-3 control-label">General Lab Account *</label>
                     <div class="col-sm-4">
                         <asp:DropDownList ID="ddlAccount" runat="server" DataValueField="AccountID" DataTextField="Name" CssClass="form-control">
                         </asp:DropDownList>
                     </div>
                 </div>
-            </div>
-            <div>
-                <asp:Button ID="btnSubmit" runat="server" CssClass="lnf btn btn-default" Text="Modify Properties"></asp:Button>
-                <input class="lnf btn btn-default" type="reset" value="Reset" />
-                <asp:Literal runat="server" ID="litAlertMessage"></asp:Literal>
             </div>
         </div>
     </div>
@@ -61,7 +58,7 @@
             <h3 class="panel-title">Kiosks</h3>
         </div>
         <div class="panel-body">
-            <asp:DataGrid ID="dgKiosk" runat="server" BorderColor="#4682B4" AllowSorting="True" AutoGenerateColumns="False" ShowFooter="True" CellPadding="3" ShowHeader="True" Width="100%" CssClass="Table">
+            <asp:DataGrid ID="dgKiosk" runat="server" BorderColor="#4682B4" AllowSorting="True" AutoGenerateColumns="False" ShowFooter="True" CellPadding="3" ShowHeader="True" Width="100%" CssClass="Table" OnItemCommand="DgKiosk_ItemCommand" OnItemDataBound="DgKiosk_ItemDataBound">
                 <AlternatingItemStyle BackColor="AliceBlue"></AlternatingItemStyle>
                 <HeaderStyle Font-Bold="True" HorizontalAlign="Center" ForeColor="White" BackColor="#336699"></HeaderStyle>
                 <FooterStyle CssClass="GridText" BackColor="LightGreen" HorizontalAlign="Center"></FooterStyle>
@@ -91,7 +88,7 @@
                         </FooterTemplate>
                     </asp:TemplateColumn>
                     <asp:TemplateColumn>
-                        <HeaderStyle Width="50" />
+                        <HeaderStyle Width="100" />
                         <ItemStyle HorizontalAlign="Center" />
                         <ItemTemplate>
                             <asp:ImageButton ID="ibtnEdit" ImageUrl="~/images/edit.gif" CommandName="Edit" ToolTip="Edit" runat="server" CausesValidation="False"></asp:ImageButton>
@@ -110,35 +107,8 @@
         </div>
     </div>
 
-    <div class="lnf panel panel-default">
-        <div class="panel-heading">
-            <h3 class="panel-title">Granularity</h3>
-        </div>
-        <div class="panel-body">
-            <div class="help-block">
-                Configure available granularity values by tool.
-            </div>
-            <div class="form-horizontal">
-                <div class="form-group">
-                    <label class="col-sm-2 control-label">Tool</label>
-                    <div class="col-sm-4">
-                        <asp:DropDownList runat="server" ID="ddlGranularityTool" DataValueField="ResourceID" DataTextField="ResourceName" CssClass="form-control" AutoPostBack="true" OnSelectedIndexChanged="ddlGranularityTool_SelectedIndexChanged">
-                            <asp:ListItem Value="0">Default</asp:ListItem>
-                        </asp:DropDownList>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label class="col-sm-2 control-label">Value</label>
-                    <div class="col-sm-4">
-                        <asp:TextBox runat="server" ID="txtGranularityValues" CssClass="form-control"></asp:TextBox>
-                        <div class="help-block">
-                            A comma-separated list of integers.
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    <asp:Button ID="btnSubmit" runat="server" CssClass="lnf btn btn-default" Text="Modify Properties" OnClick="BtnSubmit_Click" />
+    <input class="lnf btn btn-default" type="reset" value="Reset" />
 </asp:Content>
 
 <asp:Content ID="Content3" ContentPlaceHolderID="scripts" runat="server">

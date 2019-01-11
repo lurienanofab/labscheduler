@@ -1,13 +1,12 @@
-﻿Imports System.Threading.Tasks
-Imports LNF.Cache
+﻿Imports LNF.Cache
 Imports LNF.Models.Scheduler
 Imports LNF.Repository
-Imports LNF.Repository.Data
 Imports LNF.Scheduler
 Imports LNF.Web
 Imports LNF.Web.Controls
 Imports LNF.Web.Scheduler
 Imports LNF.Web.Scheduler.Content
+Imports Data = LNF.Repository.Data
 Imports Scheduler = LNF.Repository.Scheduler
 
 Namespace UserControls
@@ -36,10 +35,10 @@ Namespace UserControls
 
             If CacheManager.Current.DisplayDefaultHours() Then
                 hypHourRange.Text = "Full<br>Day"
-                hypHourRange.NavigateUrl = String.Format("~/ReservationController.ashx?Command=ChangeHourRange&Range=FullDay&Path={0}&Date={1:yyyy-MM-dd}", Request.SelectedPath().UrlEncode(), Request.SelectedDate())
+                hypHourRange.NavigateUrl = $"~/ReservationController.ashx?Command=ChangeHourRange&Range=FullDay&Path={Request.SelectedPath().UrlEncode()}&Date={Request.SelectedDate():yyyy-MM-dd}"
             Else
                 hypHourRange.Text = "Default<br>Hours"
-                hypHourRange.NavigateUrl = String.Format("~/ReservationController.ashx?Command=ChangeHourRange&Range=DefaultHours&Path={0}&Date={1:yyyy-MM-dd}", Request.SelectedPath().UrlEncode(), Request.SelectedDate())
+                hypHourRange.NavigateUrl = $"~/ReservationController.ashx?Command=ChangeHourRange&Range=DefaultHours&Path={Request.SelectedPath().UrlEncode()}&Date={Request.SelectedDate():yyyy-MM-dd}"
             End If
 
             phErrorMessage.Visible = False
@@ -65,16 +64,17 @@ Namespace UserControls
                 Dim reservationId As Integer
                 If e.CommandArgument IsNot Nothing AndAlso Integer.TryParse(e.CommandArgument.ToString(), reservationId) Then
                     Dim rsv As Scheduler.Reservation = DA.Current.Single(Of Scheduler.Reservation)(reservationId)
+                    Dim client As Data.Client = DA.Current.Single(Of Data.Client)(CurrentUser.ClientID)
                     If rsv IsNot Nothing Then
-                        Page.RegisterAsyncTask(New PageAsyncTask(Function() StartReservationAsync(rsv, CurrentUser.ClientID)))
+                        StartReservation(rsv, client)
                     Else
-                        Session("ErrorMessage") = String.Format("Cannot find Reservation with ReservationID = {0}", reservationId)
+                        Session("ErrorMessage") = $"Cannot find Reservation with ReservationID = {reservationId}"
                     End If
                 Else
                     Session("ErrorMessage") = "Missing CommandArgument: ReservationID."
                 End If
             End If
-            Response.Redirect(String.Format("~/ResourceDayWeek.aspx?Path={0}&Date={1:yyyy-MM-dd}", Request.SelectedPath().UrlEncode(), Request.SelectedDate()), False)
+            Response.Redirect($"~/ResourceDayWeek.aspx?Path={Request.SelectedPath().UrlEncode()}&Date={Request.SelectedDate():yyyy-MM-dd}", False)
         End Sub
 
         Private Sub HandleError()
@@ -156,7 +156,7 @@ Namespace UserControls
                     Case ViewType.UserView
                         sd = Request.SelectedDate()
                         ed = sd.AddDays(1)
-                        _reservations.SelectByClient(CacheManager.Current.CurrentUser.ClientID, sd, ed)
+                        _reservations.SelectByClient(Page.CurrentUser.ClientID, sd, ed)
                 End Select
             End If
 
@@ -266,12 +266,6 @@ Namespace UserControls
         Private Sub LoadEmptyCells()
             If tblSchedule.Rows(0).Cells.Count = 1 Then Exit Sub
 
-            Dim authLevel As ClientAuthLevel
-
-            If View = ViewType.DayView OrElse View = ViewType.WeekView Then
-                authLevel = GetAuthorization(Resource.ResourceID)
-            End If
-
             ' Determine start and end times
             Dim columnCell As CustomTableCell = CType(tblSchedule.Rows(0).Cells(1), CustomTableCell)
             Dim weekStart As Date = columnCell.CellDate
@@ -289,15 +283,19 @@ Namespace UserControls
 
             ' Create Table Cells
             While currentTime < currentTimeEnd
-                ' Time Cell
-                Dim timeCell As New TableCell With {
-                    .CssClass = "TableCell",
-                    .Wrap = False,
-                    .Text = weekStart.Add(currentTime).ToShortTimeString()
-                }
-
                 Dim newRow As New TableRow()
-                newRow.Cells.Add(timeCell)
+
+                ' Time Cell
+                newRow.Cells.Add(New TableCell With {
+                    .CssClass = "TableCell",
+                    .Text = weekStart.Add(currentTime).ToShortTimeString()
+                })
+
+                Dim authLevel As ClientAuthLevel
+
+                If View = ViewType.DayView OrElse View = ViewType.WeekView Then
+                    authLevel = GetAuthorization(Resource.ResourceID)
+                End If
 
                 ' Empty Cells
                 For i As Integer = 1 To tblSchedule.Rows(0).Cells.Count - 1 'iterate through each column skipping the first (time column)
@@ -310,71 +308,26 @@ Namespace UserControls
                         .AutoPostBack = False
                     }
 
+                    ' When SchedulerUtility.GetReservationCell is called it will set this attribute.
+                    rsvCell.Attributes("data-caption") = String.Empty
+
                     If View = ViewType.DayView OrElse View = ViewType.WeekView Then
                         rsvCell.ResourceID = Resource.ResourceID
                         rsvCell.CellDate = weekStart.AddDays(i - 1).Add(currentTime)
 
-                        ' Reservable Cell ToolTip
-                        Dim toolTip As String = String.Empty
-
-                        If Resource.IsSchedulable = False Then
-                            ' If resource is not schedulable
-                            toolTip = "<b>This resource is not schedulable.</b>"
-                            rsvCell.CssClass = "TableCell"
-                        ElseIf (rsvCell.CellDate > Date.Now AndAlso rsvCell.CellDate < Date.Now.Add(Resource.ReservFence)) OrElse (rsvCell.CellDate > Date.Now AndAlso authLevel >= ClientAuthLevel.SuperUser) Then
-                            ' If the cell date is not in the past and before the reservation fence
-                            ' Or if the user is the tool engineer and cell date is not in the past
-                            toolTip = String.Format("<b>Click to make reservation for {0}<br />on {1}<br />at {2}</b>", Resource.ResourceName, rsvCell.CellDate.ToLongDateString(), rsvCell.CellDate.ToShortTimeString())
-                            rsvCell.CssClass = "ReservationCell"
-                            SetReservationActionCellAttributes(rsvCell, "NewReservation", ReservationState.Undefined)
-                        ElseIf rsvCell.CellDate > Date.Now.Add(Resource.ReservFence) AndAlso authLevel < ClientAuthLevel.SuperUser Then
-                            ' If the cell date is after the reservation fence and user is not a tool engineer
-                            toolTip = "<b>You cannot make reservations past the reservation fence.</b>"
-                            rsvCell.CssClass = "TableCell"
-                        ElseIf rsvCell.CellDate < Date.Now Then
-                            ' If the cell date is in the past
-                            toolTip = "<b>You cannot make reservations in the past.</b>"
-                            rsvCell.CssClass = "TableCell"
-                        End If
-
-                        rsvCell.Attributes("data-tooltip") = toolTip
-                        rsvCell.Attributes("data-caption") = String.Empty
+                        SetReservationCell(rsvCell, Resource, authLevel)
                     ElseIf View = ViewType.ProcessTechView Then
-                        Dim resourceId As Integer = headerCell.ResourceID
-                        Dim r As Scheduler.Resource = DA.Current.Single(Of Scheduler.Resource)(resourceId)
-
-                        authLevel = GetAuthorization(resourceId)
+                        rsvCell.ResourceID = headerCell.ResourceID
                         rsvCell.CellDate = weekStart.Add(currentTime)
-                        rsvCell.ResourceID = resourceId
+
+                        authLevel = GetAuthorization(rsvCell.ResourceID)
 
                         'in this case, the uniqueness is defined by resource id + current hour and current minutes
-                        rsvCell.ID = "id" + resourceId.ToString() + currentTime.Ticks.ToString()
+                        rsvCell.ID = $"td_{rsvCell.ResourceID}_{currentTime.Ticks}"
 
-                        ' Reservable Cell ToolTip
-                        Dim toolTip As String = String.Empty
-                        If r.IsSchedulable = False Then
-                            toolTip = "<b>This resource is not schedulable.</b>"
-                            rsvCell.CssClass = "TableCell"
-                            rsvCell.AutoPostBack = False
-                        ElseIf rsvCell.CellDate < Date.Now Then
-                            ' If the cell date is in the past
-                            toolTip = "<b>You cannot make reservations in the past.</b>"
-                            rsvCell.CssClass = "TableCell"
-                            rsvCell.AutoPostBack = False
-                        ElseIf rsvCell.CellDate < Date.Now.AddHours(r.ReservFence) OrElse authLevel >= ClientAuthLevel.SuperUser Then
-                            ' If the cell date is not in the past and before the reservation fence
-                            ' Or if the user is the tool engineer and cell date is not in the past
-                            toolTip = String.Format("<b>Click to make reservation for {0}<br />on {1}<br />at {2}</b>", r.ResourceName, rsvCell.CellDate.ToLongDateString(), rsvCell.CellDate.ToShortTimeString())
-                            SetReservationActionCellAttributes(rsvCell, "NewReservation", ReservationState.Undefined)
-                        ElseIf rsvCell.CellDate > Date.Now.AddHours(r.ReservFence) AndAlso authLevel < ClientAuthLevel.SuperUser Then
-                            ' If the cell date is after the reservation fence and user is not a tool engineer
-                            toolTip = "<b>You cannot make reservations past the reservation fence.</b>"
-                            rsvCell.CssClass = "TableCell"
-                            rsvCell.AutoPostBack = False
-                        End If
+                        Dim res As ResourceItem = CacheManager.Current.ResourceTree().GetResource(rsvCell.ResourceID).GetResourceItem()
 
-                        rsvCell.Attributes("data-tooltip") = toolTip
-                        rsvCell.Attributes("data-caption") = String.Empty
+                        SetReservationCell(rsvCell, res, authLevel)
                     ElseIf View = ViewType.UserView Then
                         rsvCell.CssClass = "TableCell"
                         rsvCell.CellDate = weekStart.Add(currentTime)
@@ -388,6 +341,75 @@ Namespace UserControls
                 tblSchedule.Rows.Add(newRow)
                 currentTime = currentTime.Add(TimeSpan.FromMinutes(_minGran))
             End While
+        End Sub
+
+        Private Sub SetReservationCell(cell As CustomTableCell, res As ResourceItem, authLevel As ClientAuthLevel)
+            If res.IsSchedulable = False Then
+                ' If resource is not schedulable
+                SetNotSchedulableCell(cell)
+            ElseIf cell.CellDate < DateTime.Now Then
+                ' If the cell date is in the past
+                SetInPastCell(cell)
+            ElseIf cell.CellDate < DateTime.Now.Add(res.ReservFence) OrElse authLevel >= ClientAuthLevel.SuperUser Then
+                ' If the cell date is not in the past and before the reservation fence
+                ' Or if the user is the tool engineer and cell date is not in the past
+                SetReservableCell(cell, res)
+            ElseIf cell.CellDate > DateTime.Now.Add(Resource.ReservFence) AndAlso authLevel < ClientAuthLevel.SuperUser Then
+                ' If the cell date is after the reservation fence and user is not a tool engineer
+                SetPastFenceCell(cell)
+            End If
+        End Sub
+
+        Private Sub SetReservableCell(cell As CustomTableCell, res As ResourceItem)
+            cell.CssClass = "ReservationCell"
+            cell.Attributes("data-tooltip") = $"<b>Click to make reservation for {res.ResourceName}<br />on {cell.CellDate.ToLongDateString()}<br />at {cell.CellDate.ToShortTimeString()}</b>"
+            cell.AutoPostBack = False
+
+            SetReservationCellAttributes(cell, ReservationState.Undefined, PathInfo.Create(res))
+
+            SetActionCellAttributes(cell, "NewReservation")
+        End Sub
+
+        Private Sub SetReservationCellAttributes(cell As CustomTableCell, state As ReservationState, pathInfo As PathInfo)
+            cell.Attributes("data-command") = String.Empty
+            cell.Attributes("data-reservation-id") = cell.ReservationID.ToString()
+            cell.Attributes("data-date") = cell.CellDate.ToString("yyyy-MM-dd")
+            cell.Attributes("data-time") = cell.CellDate.TimeOfDay.TotalMinutes.ToString()
+            cell.Attributes("data-state") = state.ToString()
+            cell.Attributes("data-path") = pathInfo.ToString()
+        End Sub
+
+        Private Sub SetPastFenceCell(cell As CustomTableCell)
+            cell.CssClass = "TableCell"
+            cell.Attributes("data-tooltip") = "<b>You cannot make reservations past the reservation fence.</b>"
+            cell.AutoPostBack = False
+        End Sub
+
+        Private Sub SetInPastCell(cell As CustomTableCell)
+            cell.CssClass = "TableCell"
+            cell.Attributes("data-tooltip") = "<b>You cannot make reservations in the past.</b>"
+            cell.AutoPostBack = False
+        End Sub
+
+        Private Sub SetNotSchedulableCell(cell As CustomTableCell)
+            cell.CssClass = "TableCell"
+            cell.Attributes("data-tooltip") = "<b>This resource is not schedulable.</b>"
+            cell.AutoPostBack = False
+        End Sub
+
+        Private Sub SetActionCellAttributes(cell As CustomTableCell, command As String) ', state As ReservationState, Optional res As IResource = Nothing
+            'If res Is Nothing Then
+            '    res = CacheManager.Current.ResourceTree().GetResource(cell.ResourceID)
+            'End If
+
+            cell.CssClass = (cell.CssClass + " reservation-action").Trim()
+            cell.Attributes("data-command") = command
+
+            'cell.Attributes.Add("data-reservation-id", cell.ReservationID.ToString())
+            'cell.Attributes.Add("data-date", cell.CellDate.ToString("yyyy-MM-dd"))
+            'cell.Attributes.Add("data-time", cell.CellDate.TimeOfDay.TotalMinutes.ToString())
+            'cell.Attributes.Add("data-state", state.ToString())
+            'cell.Attributes.Add("data-path", PathInfo.Create(res).ToString())
         End Sub
 
         ''' <summary>
@@ -412,7 +434,7 @@ Namespace UserControls
                     Dim lab As Scheduler.Lab = DA.Current.Single(Of Scheduler.Lab)(LabID)
                     recurringRes = ReservationRecurrenceUtility.SelectByProcessTech(ProcessTechID).OrderBy(Function(x) x.Resource.ResourceID).ToList()
                 Case ViewType.UserView
-                    recurringRes = ReservationRecurrenceUtility.SelectByClient(CacheManager.Current.CurrentUser.ClientID).OrderBy(Function(x) x.Resource.ResourceID).ToList()
+                    recurringRes = ReservationRecurrenceUtility.SelectByClient(Page.CurrentUser.ClientID).OrderBy(Function(x) x.Resource.ResourceID).ToList()
                     ' iter = 1 means today there is no reservation on any this tool at this time
                     ' iter is the number of columns, so 1 means there is only one column (index 0) which is the time.
                     ' Therefore when the table was built there were no columns to add for each tool in the My Reservations view. 
@@ -485,12 +507,12 @@ Namespace UserControls
                             ' Insert/Update Reservation
                             Dim rsv As Scheduler.Reservation = New Scheduler.Reservation With {
                                 .Resource = DA.Current.Single(Of Scheduler.Resource)(resourceId),
-                                .Client = DA.Current.Single(Of Client)(clientId),
+                                .Client = DA.Current.Single(Of Data.Client)(clientId),
                                 .CreatedOn = createdOn,
                                 .BeginDateTime = beginDateTime,
                                 .EndDateTime = endDateTime,
                                 .LastModifiedOn = Date.Now,
-                                .Account = DA.Current.Single(Of Account)(Convert.ToInt32(row("AccountID"))),
+                                .Account = DA.Current.Single(Of Data.Account)(Convert.ToInt32(row("AccountID"))),
                                 .Duration = Convert.ToDouble(row("Duration")),
                                 .MaxReservedDuration = Convert.ToDouble(row("Duration")),
                                 .Notes = row("Notes").ToString(),
@@ -588,7 +610,7 @@ Namespace UserControls
                     Else
                         ' the space is used to disambiguate the string (which should never be a problem, but
                         ' for example, without the space 123 + 456 would be the same as 12 + 3456
-                        resourceIds = "" 'shouldn't this be called reservationIds?
+                        resourceIds = String.Empty 'shouldn't this be called reservationIds?
                         For k As Integer = 0 To reservationCount - 1
                             resourceIds += filteredRsv(k).ReservationID.ToString() + " "
                         Next
@@ -615,11 +637,15 @@ Namespace UserControls
                                 rsvCell.ReservationID = rsv.ReservationID
 
                                 ' Reservation Cell Events
-                                Dim isInLab As Boolean = CacheManager.Current.ClientInLab(rsv.Resource.ProcessTech.Lab.LabID)
-                                Dim state As ReservationState = SchedulerUtility.GetReservationCell(rsvCell, rsv, CurrentUser.ClientID, isInLab)
+
+                                ' Delete/modify buttons are added here if needed.
+                                Dim client As Data.Client = DA.Current.Single(Of Data.Client)(CurrentUser.ClientID)
+                                Dim state As ReservationState = SchedulerUtility.GetReservationCell(rsvCell, rsv, client, Request.UserHostAddress)
+
+                                SetReservationCellAttributes(rsvCell, state, PathInfo.Create(rsv.Resource))
 
                                 If IsReservationActionState(state) Then
-                                    SetReservationActionCellAttributes(rsvCell, "ReservationAction", state)
+                                    SetActionCellAttributes(rsvCell, "ReservationAction")
                                 End If
                             Else
                                 rsvCell.ReservationID = -1
@@ -652,17 +678,6 @@ Namespace UserControls
             lblNoData.Visible = True
             tblSchedule.Visible = False
         End Sub
-
-        Private Sub SetReservationActionCellAttributes(cell As CustomTableCell, command As String, state As ReservationState)
-            Dim res As IResource = CacheManager.Current.ResourceTree().GetResource(cell.ResourceID)
-            cell.CssClass = (cell.CssClass + " reservation-action").Trim()
-            cell.Attributes.Add("data-command", command)
-            cell.Attributes.Add("data-reservation-id", cell.ReservationID.ToString())
-            cell.Attributes.Add("data-date", cell.CellDate.ToString("yyyy-MM-dd'T'HH:mm:ss"))
-            cell.Attributes.Add("data-state", state.ToString())
-            cell.Attributes.Add("data-path", PathInfo.Create(res).ToString())
-            cell.AutoPostBack = False
-        End Sub
 #End Region
 
 #Region "Utility"
@@ -684,17 +699,16 @@ Namespace UserControls
         End Function
 
         Private Function GetAuthorization(resourceId As Integer) As ClientAuthLevel
-            Return CacheManager.Current.GetAuthLevel(resourceId, CacheManager.Current.CurrentUser.ClientID)
+            Return CacheManager.Current.GetAuthLevel(resourceId, Page.CurrentUser.ClientID)
         End Function
 
-        Public Async Function StartReservationAsync(rsv As Scheduler.Reservation, clientId As Integer) As Task
+        Public Sub StartReservation(rsv As Scheduler.Reservation, client As Data.Client)
             Try
-                Dim isInLab As Boolean = CacheManager.Current.ClientInLab(rsv.Resource.ProcessTech.Lab.LabID)
-                Await Page.ReservationManager.StartReservation(rsv, clientId, isInLab)
+                Page.ReservationManager.StartReservation(rsv, client, Request.UserHostAddress)
             Catch ex As Exception
                 Session("ErrorMessage") = ex.Message
             End Try
-        End Function
+        End Sub
 #End Region
     End Class
 End Namespace

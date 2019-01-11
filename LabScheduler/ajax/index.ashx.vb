@@ -1,12 +1,16 @@
-﻿Imports System.Threading.Tasks
-Imports LNF
+﻿Imports LNF
 Imports LNF.Web.Scheduler
 
-Public Class index
-    Inherits HttpTaskAsyncHandler
-    Implements IReadOnlySessionState
+Public Class Index
+    Implements IHttpHandler, IReadOnlySessionState
 
-    Public Overrides Async Function ProcessRequestAsync(context As HttpContext) As Task
+    Public ReadOnly Property IsReusable As Boolean Implements IHttpHandler.IsReusable
+        Get
+            Return False
+        End Get
+    End Property
+
+    Public Sub ProcessRequest(context As HttpContext) Implements IHttpHandler.ProcessRequest
         Dim result As Object = Nothing
 
         Try
@@ -20,7 +24,7 @@ Public Class index
                 'Response.Write(Providers.Serialization.Json.SerializeObject(schedule))
                 'Return
             Else
-                result = Await AjaxUtility.HandleRequest(context)
+                result = AjaxUtility.HandleRequest(context)
             End If
         Catch ex As Exception
             result = New GenericResult With {
@@ -32,7 +36,7 @@ Public Class index
 
         context.Response.ContentType = "application/json"
         context.Response.Write(JsonResult(result))
-    End Function
+    End Sub
 
     Private Function GetParam(context As HttpContext, paramName As String) As String
         If context.Request(paramName) Is Nothing OrElse String.IsNullOrEmpty(context.Request(paramName)) Then

@@ -8,7 +8,7 @@ namespace LNF.Web.Scheduler.TreeView
 {
     public class ResourceNode : TreeViewNode<ResourceTreeItem>
     {
-        protected IReservationManager ReservationManager => DA.Use<IReservationManager>();
+        protected IReservationManager ReservationManager => ServiceProvider.Current.Use<IReservationManager>();
 
         public bool IsSchedulable { get; private set; }
         public ResourceState State { get; private set; }

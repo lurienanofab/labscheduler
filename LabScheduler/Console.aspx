@@ -13,11 +13,6 @@
     {
 
     }
-
-    string GetStaticUrl(string path)
-    {
-        return Utility.GetStaticUrl(path);
-    }
 </script>
 
 <!DOCTYPE html>
@@ -29,7 +24,7 @@
     <title>Console</title>
 
     <!-- Bootstrap -->
-    <link href="<%=GetStaticUrl("styles/bootstrap/themes/courier/bootstrap.min.css")%>" rel="stylesheet">
+    <link href="//ssel-apps.eecs.umich.edu/static/styles/bootstrap/themes/courier/bootstrap.min.css" rel="stylesheet">
 
     <style>
         .console {
@@ -87,10 +82,10 @@
     </div>
 
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
-    <script src="<%=GetStaticUrl("lib/jquery/jquery.min.js")%>"></script>
+    <script src="//ssel-apps.eecs.umich.edu/static/lib/jquery/jquery.min.js"></script>
 
     <!-- Include all compiled plugins (below), or include individual files as needed -->
-    <script src="<%=GetStaticUrl("lib/bootstrap/js/bootstrap.min.js")%>"></script>
+    <script src="//ssel-apps.eecs.umich.edu/static/lib/bootstrap/js/bootstrap.min.js"></script>
 
     <script>
         (function ($) {

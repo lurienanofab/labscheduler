@@ -1,8 +1,7 @@
-﻿using System;
+﻿using LNF.Web.Scheduler.Handlers;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Threading.Tasks;
 using System.Web;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using LNF.Web.Scheduler.Handlers;
 
 namespace LNF.Web.Scheduler.Tests
 {
@@ -10,17 +9,17 @@ namespace LNF.Web.Scheduler.Tests
     public class ReservationHandlerTests : TestBase
     {
         [TestMethod]
-        public async Task CanProcessRequestAsync()
+        public void CanProcessRequest()
         {
-            var handler = new ReservationHandler();
-            HttpRequestManager mgr = ContextManager.StartRequest("reservation.ashx", "http://lnf-dev.eecs.umich.edu/sselscheduler/ajax/reservation.ashx", "Command=test&ReservationID=0");
-            await handler.ProcessRequestAsync(mgr.Context);
-            var content = mgr.GetResponse();
-            var result = ServiceProvider.Current.Serialization.Json.DeserializeAnonymous(content, new { Error = false, Message = "" });
-            Assert.AreEqual(result.Error, false);
-            Assert.AreEqual(result.Message, "ok");
-
-            //mgr = HttpContextManager.Create("reservation.ashx", "http://lnf-dev.eecs.umich.edu/sselscheduler/ajax/reservation.ashx", "Command=save-reservation-history&ReservationID=");
+            using (var mgr = ContextManager.StartRequest(1600, "reservation.ashx", "http://lnf-dev.eecs.umich.edu/sselscheduler/ajax/reservation.ashx", "Command=test&ReservationID=0"))
+            {
+                var handler = new ReservationHandler();
+                handler.ProcessRequest(HttpContext.Current);
+                var content = mgr.GetResponse();
+                var result = ServiceProvider.Current.Serialization.Json.DeserializeAnonymous(content, new { Error = false, Message = "" });
+                Assert.AreEqual(result.Error, false);
+                Assert.AreEqual(result.Message, "ok");
+            }
         }
     }
 }

@@ -1,0 +1,31 @@
+﻿.reservation-process-info > tbody > tr > td {
+    padding: 2px 2px 2px 10px;
+}
+
+.reservation-process-info .param-name,
+.reservation-process-info .value-name {
+    font-weight: bold;
+    text-align: left;
+    vertical-align: bottom;
+}
+
+.reservation-process-info .pi-name {
+    font-weight: bold;
+    text-align: right;
+}
+
+.reservation-process-info .pi-value > input[type='text'] {
+    width: 75px;
+}
+
+.pi-special > label {
+    margin-left: 5px;
+}
+
+.reservation-process-info > tbody > tr > td.pi-separator {
+    padding: 0;
+}
+
+    .reservation-process-info > tbody > tr > td.pi-separator > hr {
+        border-top: 1px solid #ccc;
+    }

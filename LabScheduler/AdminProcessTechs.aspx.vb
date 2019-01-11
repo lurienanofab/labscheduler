@@ -160,7 +160,7 @@ Namespace Pages
                 ibtnDelete.Attributes.Add("onclick", "return confirm('Are you sure you want to delete this Process Technology?');")
 
                 ' Picture
-                UploadFileUtility.DisplayIcon(CType(e.Item.FindControl("Picture"), System.Web.UI.WebControls.Image), "ProcessTech", di("ProcessTechID").ToString())
+                UploadFileUtility.DisplayIcon(CType(e.Item.FindControl("Picture"), Image), "ProcessTech", di("ProcessTechID").AsString)
             End If
         End Sub
 

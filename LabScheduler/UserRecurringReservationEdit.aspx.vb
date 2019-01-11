@@ -211,8 +211,7 @@ Namespace Pages
 
         Protected Function GetReservationLink(rsv As repo.Reservation) As String
             If Not rsv.ActualBeginDateTime.HasValue AndAlso rsv.BeginDateTime > Date.Now Then
-                Session("ReservationSelectedTime") = rsv.BeginDateTime
-                Dim url As String = SchedulerUtility.GetReturnUrl("Reservation.aspx", PathInfo.Create(rsv.Resource), rsv.ReservationID, rsv.BeginDateTime)
+                Dim url As String = SchedulerUtility.GetReservationReturnUrl(PathInfo.Create(rsv.Resource), rsv.ReservationID, rsv.BeginDateTime, rsv.BeginDateTime.TimeOfDay)
                 Return String.Format("<a href=""{0}"">{1}</a>", VirtualPathUtility.ToAbsolute(url), rsv.ReservationID)
             Else
                 Dim url As String = SchedulerUtility.GetReturnUrl("ReservationHistory.aspx", PathInfo.Create(rsv.Resource), rsv.ReservationID, Request.SelectedDate())

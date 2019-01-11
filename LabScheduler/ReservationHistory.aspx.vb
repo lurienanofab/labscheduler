@@ -1,24 +1,27 @@
-﻿Imports LNF.Cache
+﻿Imports LNF
+Imports LNF.Cache
 Imports LNF.CommonTools
 Imports LNF.Data
 Imports LNF.Models.Data
+Imports LNF.Models.Scheduler
 Imports LNF.Repository
-Imports LNF.Repository.Data
 Imports LNF.Scheduler.Data
 Imports LNF.Web.Scheduler
 Imports LNF.Web.Scheduler.Content
+Imports Data = LNF.Repository.Data
 Imports Scheduler = LNF.Repository.Scheduler
 
 Namespace Pages
     Public Class ReservationHistory
         Inherits SchedulerPage
 
-        Private _EditReservation As Scheduler.Reservation
+        Private _EditReservation As ReservationItem
 
         Private Function GetClient() As ClientItem
             Dim c As ClientItem = Nothing
             Dim cid As Integer = 0
-            If trUser.Visible Then
+            Dim trUserVisible = True 'trUser.Visible
+            If trUserVisible Then
                 If Not Integer.TryParse(ddlClients.SelectedValue, cid) Then
                     c = CurrentUser
                 Else
@@ -28,17 +31,25 @@ Namespace Pages
             Return c
         End Function
 
-        Public ReadOnly Property EditReservation As Scheduler.Reservation
+        Public ReadOnly Property EditReservationID As Integer
             Get
-                If _EditReservation Is Nothing OrElse _EditReservation.ReservationID.ToString() <> hidEditReservationID.Value Then
-                    Dim reservationId As Integer
-                    If Integer.TryParse(hidEditReservationID.Value, reservationId) Then
-                        If reservationId > 0 Then
-                            _EditReservation = DA.Current.Single(Of Scheduler.Reservation)(reservationId)
-                        Else
-                            _EditReservation = Nothing
-                        End If
+                Dim reservationId As Integer
+                If Integer.TryParse(Request.QueryString("ReservationID"), reservationId) Then
+                    Return reservationId
+                Else
+                    Return 0
+                End If
+            End Get
+        End Property
 
+
+        Public ReadOnly Property EditReservation As ReservationItem
+            Get
+                If _EditReservation Is Nothing OrElse _EditReservation.ReservationID <> EditReservationID Then
+                    If EditReservationID > 0 Then
+                        _EditReservation = ServiceProvider.Current.Scheduler.GetReservation(EditReservationID)
+                    Else
+                        _EditReservation = Nothing
                     End If
                 End If
 
@@ -47,52 +58,34 @@ Namespace Pages
         End Property
 
         Protected Sub Page_Load(sender As Object, e As EventArgs) Handles Me.Load
-            divReservationHistory.Attributes("data-client-id") = CacheManager.Current.CurrentUser.ClientID.ToString()
-
-            Dim reservationId As Integer
-
-            If Not String.IsNullOrEmpty(Request.QueryString("ReservationID")) Then
-                If Not Integer.TryParse(Request.QueryString("ReservationID"), reservationId) Then
-                    reservationId = 0
-                End If
-            End If
-
-            hidEditReservationID.Value = reservationId.ToString()
-
             If Not Page.IsPostBack Then
                 LoadClients()
-                If reservationId <> 0 Then
-                    LoadEditForm()
-                Else
+                If EditReservationID = 0 Then
                     LoadReservationHistory()
+                Else
+                    LoadEditForm()
                 End If
             End If
         End Sub
 
         Private Sub LoadClients()
-            Dim dtClients = ResourceClientData.SelectReservHistoryClient(CurrentUser.ClientID)
+            Dim dtClients As DataTable = ResourceClientData.SelectReservationHistoryClient(CurrentUser)
 
             ddlClients.DataSource = dtClients
             ddlClients.DataBind()
 
-            If dtClients.Rows.Count > 0 Then
-                trUser.Visible = True
+            If EditReservation IsNot Nothing Then
+                Session("SelectedClientID") = EditReservation.ClientID.ToString()
+            End If
 
-                If EditReservation IsNot Nothing Then
-                    Session("SelectedClientID") = EditReservation.Client.ClientID.ToString()
-                End If
-
-                If Session("SelectedClientID") Is Nothing Then
-                    ddlClients.SelectedValue = CurrentUser.ClientID.ToString()
-                Else
-                    ddlClients.SelectedValue = Session("SelectedClientID").ToString()
-                End If
+            If Session("SelectedClientID") Is Nothing Then
+                ddlClients.SelectedValue = CurrentUser.ClientID.ToString()
             Else
-                trUser.Visible = False
+                ddlClients.SelectedValue = Session("SelectedClientID").ToString()
             End If
 
             Dim range As Integer
-            Dim sd, ed As Date?
+            Dim sd, ed As DateTime?
 
             If Session("SelectedRange") Is Nothing Then
                 range = Integer.Parse(ddlRange.SelectedValue)
@@ -160,17 +153,20 @@ Namespace Pages
             rptHistory.DataBind()
 
             ' Display datagrid
-            If trUser.Visible AndAlso rptHistory.Items.Count = 0 Then
+
+            Dim trUserVisible As Boolean = True 'trUser.Visible
+
+            If trUserVisible AndAlso rptHistory.Items.Count = 0 Then
                 rptHistory.Visible = False
-                lblNoData.Text = "No past reservations were found for " + ddlClients.SelectedItem.Text
-                lblNoData.Visible = True
-            ElseIf Not trUser.Visible AndAlso rptHistory.Items.Count = 0 Then
+                'lblNoData.Text = "No past reservations were found for " + ddlClients.SelectedItem.Text
+                'lblNoData.Visible = True
+            ElseIf Not trUserVisible AndAlso rptHistory.Items.Count = 0 Then
                 rptHistory.Visible = False
-                lblNoData.Text = "No past reservations were found"
-                lblNoData.Visible = True
+                'lblNoData.Text = ""
+                'lblNoData.Visible = True
             Else
                 rptHistory.Visible = True
-                lblNoData.Visible = False
+                'lblNoData.Visible = False
 
                 If (includeCanceledForModification) Then
                     litShowCanceledForModificationMessage.Text = "<em class=""canceled-for-modification-message"">Red text indicates the reservation was canceled for modification.</em>"
@@ -179,12 +175,8 @@ Namespace Pages
                 End If
             End If
 
-            panHistory.Visible = True
-            panEditHistory.Visible = False
-            hidEditReservationID.Value = String.Empty
-            hidSelectedClientID.Value = String.Empty
-
-            panCanForgiveNotice.Visible = Not lblNoData.Visible
+            phSelectHistory.Visible = True
+            phEditHistory.Visible = False
         End Sub
 
         Private Function GetNotes(obj As Object) As String
@@ -196,7 +188,7 @@ Namespace Pages
         End Function
 
         Private Sub ShowAlert(message As String)
-            Page.ClientScript.RegisterStartupScript([GetType](), "alert_" + Guid.NewGuid().ToString(), String.Format("alert('{0}');", message), True)
+            Page.ClientScript.RegisterStartupScript([GetType](), "alert_" + Guid.NewGuid().ToString(), $"alert('{message}');", True)
         End Sub
 
         Private Sub LoadEditForm()
@@ -207,27 +199,24 @@ Namespace Pages
             Dim sd As Date = EditReservation.ChargeBeginDateTime().FirstOfMonth()
             Dim ed As Date = EditReservation.ChargeEndDateTime().FirstOfMonth().AddMonths(1)
 
-            hidSelectedClientID.Value = ddlClients.SelectedValue
-            hidEditReservationID.Value = EditReservation.ReservationID.ToString()
-            hidStartDate.Value = sd.ToString("yyyy-MM-dd")
-            hidEndDate.Value = ed.ToString("yyyy-MM-dd")
             litReservationID.Text = EditReservation.ReservationID.ToString()
-            litResourceName.Text = EditReservation.Resource.ResourceName
-            litActivityName.Text = EditReservation.Activity.ActivityName
+            litResourceName.Text = EditReservation.GetResourceDisplayName()
+            litActivityName.Text = EditReservation.ActivityName
             litIsStarted.Text = If(EditReservation.IsStarted, "Yes", "No")
             litIsCanceled.Text = If(IsCanceled(EditReservation.IsActive), "Yes", "No")
-            trInvitees.Visible = ReservationManager.GetInvitees(EditReservation).Count() > 0
             litInvitees.Text = InviteeListHTML()
-            litCurrentAccount.Text = EditReservation.Account.Name
-            trAccount.Visible = canChangeNotes
+            litCurrentAccount.Text = EditReservation.AccountName
+            trAccount.Visible = canChangeAcct
 
             '2012-10-23 It's possible that there are no available accounts. For example
             'a remote processing run where no one was ever invited.
-            Dim availAccts As List(Of ClientAccount) = ReservationManager.AvailableAccounts(EditReservation).ToList()
-            Dim accts As IEnumerable(Of Account) = Nothing
+            Dim availAccts As List(Of Data.ClientAccount) = ReservationManager.AvailableAccounts(EditReservation).ToList()
+            Dim accts As IEnumerable(Of Data.Account) = Nothing
+
             If availAccts IsNot Nothing Then
                 accts = availAccts.Select(Function(ca) ca.Account)
             End If
+
             If accts IsNot Nothing Then
                 ddlEditReservationAccount.DataSource = AccountManager.ConvertToAccountTable(accts.ToList())
                 ddlEditReservationAccount.DataBind()
@@ -236,12 +225,17 @@ Namespace Pages
                 litEditReservationAccountMessage.Text = "<div>No accounts are available for this reservation</div>"
             End If
 
-            Dim item As ListItem = ddlEditReservationAccount.Items.FindByValue(EditReservation.Account.AccountID.ToString())
-            If item IsNot Nothing Then ddlEditReservationAccount.SelectedValue = EditReservation.Account.AccountID.ToString()
+            Dim item As ListItem = ddlEditReservationAccount.Items.FindByValue(EditReservation.AccountID.ToString())
+
+            If item IsNot Nothing Then
+                ddlEditReservationAccount.SelectedValue = EditReservation.AccountID.ToString()
+            End If
+
             ddlEditReservationAccount.Enabled = canChangeAcct
             litReservedBeginDateTime.Text = EditReservation.BeginDateTime.ToString("MM/dd/yyyy hh:mm:ss tt")
             litReservedEndDateTime.Text = EditReservation.EndDateTime.ToString("MM/dd/yyyy hh:mm:ss tt")
             litReservedRegularDuration.Text = EditReservation.ReservedDuration().ToString("#0.0")
+
             If (EditReservation.IsStarted) Then
                 litActualBeginDateTime.Text = If(EditReservation.ActualBeginDateTime Is Nothing, "--", EditReservation.ActualBeginDateTime.Value.ToString("MM/dd/yyyy hh:mm:ss tt"))
                 litActualEndDateTime.Text = If(EditReservation.ActualEndDateTime Is Nothing, "--", EditReservation.ActualEndDateTime.Value.ToString("MM/dd/yyyy hh:mm:ss tt"))
@@ -253,6 +247,7 @@ Namespace Pages
                 litActualRegularDuration.Text = "--"
                 litActualOvertimeDuration.Text = "--"
             End If
+
             litChargeableBeginDateTime.Text = EditReservation.ChargeBeginDateTime().ToString("MM/dd/yyyy hh:mm:ss tt")
             litChargeableEndDateTime.Text = EditReservation.ChargeEndDateTime().ToString("MM/dd/yyyy hh:mm:ss tt")
             litChargeableRegularDuration.Text = EditReservation.ChargeDuration().ToString("#0.0")
@@ -261,29 +256,24 @@ Namespace Pages
             trForgiveForm.Visible = canForgive
             txtForgiveAmount.Text = String.Empty
 
-            If canChangeNotes Then
-                txtNotes.Text = EditReservation.Notes
-                panNotes.Visible = True
-            Else
-                litNotes.Text = If(String.IsNullOrEmpty(EditReservation.Notes), String.Empty, String.Format("<div style=""border: solid 1px #AAAAAA; padding: 5px;"">{0}</div>", EditReservation.Notes))
-                panNotes.Visible = False
-            End If
+            txtNotes.Text = EditReservation.Notes
+            txtNotes.Enabled = canChangeNotes
 
             If canForgive Or canChangeAcct OrElse canChangeNotes Then
-                chkEmailClient.Visible = CurrentUser.ClientID <> EditReservation.Client.ClientID
+                chkEmailClient.Visible = CurrentUser.ClientID <> EditReservation.ClientID
                 btnEditSave.Visible = True
             Else
                 chkEmailClient.Visible = False
                 btnEditSave.Visible = False
             End If
 
-            panEditHistory.Visible = True
-            panHistory.Visible = False
+            phEditHistory.Visible = True
+            phSelectHistory.Visible = False
         End Sub
 
         Private Function InviteeListHTML() As String
             Dim sb As New StringBuilder()
-            For Each item As Scheduler.ReservationInvitee In ReservationManager.GetInvitees(EditReservation)
+            For Each item As Scheduler.ReservationInvitee In ReservationManager.GetInvitees(EditReservationID)
                 sb.AppendLine(String.Format("<div>{0}</div>", item.Invitee.DisplayName))
             Next
             Return sb.ToString()
@@ -291,11 +281,11 @@ Namespace Pages
 
         ' this overload is called from the aspx page
         Protected Overloads Function IsBeforeForgiveCutoff(reservationId As Integer) As Boolean
-            Dim rsv As Scheduler.Reservation = DA.Current.Single(Of Scheduler.Reservation)(reservationId)
+            Dim rsv As ReservationItem = DA.Current.Single(Of Scheduler.Reservation)(reservationId).Model(Of ReservationItem)()
             Return ReservationHistoryUtility.IsBeforeForgiveCutoff(rsv, Date.Now)
         End Function
 
-        Protected Sub btnSearchHistory_Click(sender As Object, e As EventArgs)
+        Protected Sub BtnSearchHistory_Click(sender As Object, e As EventArgs)
             LoadReservationHistory()
         End Sub
 
@@ -304,20 +294,48 @@ Namespace Pages
             Select Case e.CommandName
                 Case "cancel"
                     EditReservationCancel()
-                Case "edit"
-                    _EditReservation = Nothing
-                    hidEditReservationID.Value = e.CommandArgument.ToString()
-                    LoadEditForm()
+                Case "save"
+                    EditReservationSave()
             End Select
         End Sub
 
         Private Sub EditReservationCancel()
-            ddlClients.SelectedValue = hidSelectedClientID.Value
-            hidEditReservationID.Value = String.Empty
-            hidSelectedClientID.Value = String.Empty
-            panEditHistory.Visible = False
-            panHistory.Visible = True
+            phEditHistory.Visible = False
+            phSelectHistory.Visible = True
             LoadReservationHistory()
+        End Sub
+
+        Private Sub EditReservationSave()
+            Dim alertText As String = String.Empty
+            Dim alertType As String = "success"
+
+            If EditReservationID > 0 Then
+                Dim accountId As Integer = Integer.Parse(ddlEditReservationAccount.SelectedValue)
+                Dim forgivenPct As Double = GetForgiveAmount()
+                Dim period As DateTime = EditReservation.ChargeBeginDateTime.FirstOfMonth()
+                Dim clientId As Integer = EditReservation.ClientID
+
+                Dim result = ReservationManager.SaveReservationHistory(EditReservation, accountId, forgivenPct, txtNotes.Text, chkEmailClient.Checked)
+
+                If result.ReservationUpdated Then
+                    alertText += "<div>&bull; Reservation updated OK!</div>"
+                Else
+                    alertText += "<div>&bull; Reservation update failed.</div>"
+                    alertType = "danger"
+                End If
+
+                If Not String.IsNullOrEmpty(result.BillingLog) Then
+                    alertText += "<div>&bull; Billing updated OK!</div>"
+                Else
+                    alertText += $"<div>&bull; Billing update failed.</div>"
+                    alertType = "danger"
+                End If
+            Else
+                alertText += "Invalid ReservationID."
+                alertType = "danger"
+            End If
+
+            ShowSaveAlert(alertText, alertType)
         End Sub
 
         Protected Function IsCanceled(obj As Object) As Boolean
@@ -339,6 +357,30 @@ Namespace Pages
 
         Protected Function GetEditUrl(item As ReservationHistoryItem) As String
             Return String.Format("~/ReservationHistory.aspx?Date={0:yyyy-MM-dd}&ReservationID={1}", Request.SelectedDate(), item.ReservationID)
+        End Function
+
+        Private Sub ShowSaveAlert(text As String, Optional type As String = "danger")
+            If String.IsNullOrEmpty(text) Then
+                phSaveAlert.Visible = False
+                litSaveAlertText.Text = String.Empty
+            Else
+                phSaveAlert.Visible = True
+                litSaveAlertText.Text = text
+            End If
+
+            divSaveAlert.Attributes("class") = $"alert alert-{type} alert-dismissible"
+        End Sub
+
+        Private Function GetForgiveAmount() As Double
+            Dim result As Double = 0
+
+            If Not String.IsNullOrEmpty(txtForgiveAmount.Text) Then
+                If Double.TryParse(txtForgiveAmount.Text, result) Then
+                    Return result
+                End If
+            End If
+
+            Return 0
         End Function
     End Class
 End Namespace

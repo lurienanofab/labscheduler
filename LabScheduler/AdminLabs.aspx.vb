@@ -22,7 +22,7 @@ Namespace Pages
             End Get
         End Property
 
-        Protected Sub Page_Load(ByVal sender As Object, ByVal e As System.EventArgs) Handles Me.Load
+        Protected Sub Page_Load(ByVal sender As Object, ByVal e As EventArgs) Handles Me.Load
             If Not IsPostBack Then
                 SwitchPanels(True)
                 LoadBuildings()
@@ -43,9 +43,11 @@ Namespace Pages
         End Sub
 
         Private Sub LoadRooms()
-            ddlRooms.DataSource = (New LabDB).SelectRooms
-            ddlRooms.DataBind()
-            ddlRooms.Items.Insert(0, New ListItem("None", "-1"))
+            Using reader As IDataReader = dbLab.SelectRooms()
+                ddlRooms.DataSource = reader
+                ddlRooms.DataBind()
+                ddlRooms.Items.Insert(0, New ListItem("None", "-1"))
+            End Using
         End Sub
 
         Private Sub LoadKiosks()
@@ -63,25 +65,25 @@ Namespace Pages
             Session("dtKioskLab") = dtKioskLab
         End Sub
 
-        Private Sub btnAdd_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles btnAdd.Click
+        Private Sub btnAdd_Click(ByVal sender As Object, ByVal e As EventArgs) Handles btnAdd.Click
             If UpdateLab(True) Then
                 SwitchPanels(True)
             End If
         End Sub
 
-        Private Sub btnAddAnother_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles btnAddAnother.Click
+        Private Sub btnAddAnother_Click(ByVal sender As Object, ByVal e As EventArgs) Handles btnAddAnother.Click
             If UpdateLab(True) Then
                 ClearControls()
             End If
         End Sub
 
-        Private Sub btnUpdate_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles btnUpdate.Click
+        Private Sub btnUpdate_Click(ByVal sender As Object, ByVal e As EventArgs) Handles btnUpdate.Click
             If UpdateLab(False) Then
                 SwitchPanels(True)
             End If
         End Sub
 
-        Private Sub btnCancel_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles btnCancel.Click
+        Private Sub btnCancel_Click(ByVal sender As Object, ByVal e As EventArgs) Handles btnCancel.Click
             SwitchPanels(True)
         End Sub
 
@@ -130,7 +132,7 @@ Namespace Pages
         End Function
 
 #Region " Kiosks "
-        Private Sub dgKioskLab_ItemCommand(ByVal source As System.Object, ByVal e As System.Web.UI.WebControls.DataGridCommandEventArgs) Handles dgKioskLab.ItemCommand
+        Private Sub dgKioskLab_ItemCommand(ByVal source As Object, ByVal e As DataGridCommandEventArgs) Handles dgKioskLab.ItemCommand
             Dim LabID As Integer
             If dgLabs.SelectedItem Is Nothing Then
                 LabID = -1
@@ -142,7 +144,7 @@ Namespace Pages
                 Case "AddNewRow"
                     Dim ddlKiosk As DropDownList = CType(e.Item.FindControl("ddlKiosk"), DropDownList)
                     If ddlKiosk.SelectedItem Is Nothing Then
-                        ServerJScript.JSAlert(Me.Page, "No more kiosks to select from.")
+                        ServerJScript.JSAlert(Page, "No more kiosks to select from.")
                     Else
                         Dim dr As DataRow = dtKioskLab.NewRow
                         dr("KioskID") = ddlKiosk.SelectedValue
@@ -160,11 +162,11 @@ Namespace Pages
             dgKioskLab.DataBind()
         End Sub
 
-        Private Sub dgKioskLab_ItemDataBound(ByVal sender As System.Object, ByVal e As System.Web.UI.WebControls.DataGridItemEventArgs) Handles dgKioskLab.ItemDataBound
+        Private Sub dgKioskLab_ItemDataBound(ByVal sender As System.Object, ByVal e As DataGridItemEventArgs) Handles dgKioskLab.ItemDataBound
 
             If e.Item.ItemType = ListItemType.Item Or e.Item.ItemType = ListItemType.AlternatingItem Then
                 Dim di As New DataItemHelper(e.Item.DataItem)
-                CType(e.Item.FindControl("lblKioskName"), Label).Text = di("KioskName").ToString()
+                CType(e.Item.FindControl("lblKioskName"), Label).Text = di("KioskName").AsString
             ElseIf e.Item.ItemType = ListItemType.Footer Then
                 Dim ddlKiosk As DropDownList = CType(e.Item.FindControl("ddlKiosk"), DropDownList)
                 ddlKiosk.DataSource = dtKiosk.DefaultView
@@ -198,7 +200,7 @@ Namespace Pages
             dgLabs.DataBind()
         End Sub
 
-        Private Sub btnNewLab_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles btnNewLab.Click
+        Private Sub btnNewLab_Click(ByVal sender As Object, ByVal e As EventArgs) Handles btnNewLab.Click
             SwitchPanels(False, True)
         End Sub
 
@@ -211,11 +213,11 @@ Namespace Pages
                 ibtnDelete.Attributes.Add("onclick", "return confirm('Are you sure you want to delete this Laboratory?');")
 
                 ' Picture
-                UploadFileUtility.DisplayIcon(CType(e.Item.FindControl("Picture"), System.Web.UI.WebControls.Image), "Lab", di("LabID").ToString())
+                UploadFileUtility.DisplayIcon(CType(e.Item.FindControl("Picture"), Image), "Lab", di("LabID").AsString)
             End If
         End Sub
 
-        Private Sub dgLabs_EditCommand(ByVal source As Object, ByVal e As System.Web.UI.WebControls.DataGridCommandEventArgs) Handles dgLabs.EditCommand
+        Private Sub dgLabs_EditCommand(ByVal source As Object, ByVal e As DataGridCommandEventArgs) Handles dgLabs.EditCommand
             SwitchPanels(False, False)
 
             Dim drLab As DataRow = dtLab.Rows.Find(e.Item.Cells(0).Text)

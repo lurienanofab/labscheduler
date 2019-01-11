@@ -1,4 +1,4 @@
-﻿<%@ Page Title="Scheduler" Language="vb" AutoEventWireup="false" MasterPageFile="~/MasterPageScheduler.Master" CodeBehind="ResourceDayWeek.aspx.vb" Inherits="LabScheduler.Pages.ResourceDayWeek" EnableViewState="true" Async="true" %>
+﻿<%@ Page Title="Scheduler" Language="vb" AutoEventWireup="false" MasterPageFile="~/MasterPageScheduler.Master" CodeBehind="ResourceDayWeek.aspx.vb" Inherits="LabScheduler.Pages.ResourceDayWeek" EnableViewState="true" %>
 
 <%@ Register TagPrefix="uc" TagName="ReservationView" Src="~/UserControls/ReservationView.ascx" %>
 <%@ Register TagPrefix="lnf" Assembly="LNF.Web.Scheduler" Namespace="LNF.Web.Scheduler.Controls" %>

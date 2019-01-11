@@ -489,21 +489,21 @@ Namespace Pages
                     Dim di As New DataItemHelper(e.Item.DataItem)
 
                     ' Display ProcessInfo Info
-                    CType(e.Item.FindControl("lblPIName"), Label).Text = di("ProcessInfoName").ToString()
-                    CType(e.Item.FindControl("lblParamName"), Label).Text = di("ParamName").ToString()
-                    CType(e.Item.FindControl("lblValueName"), Label).Text = di("ValueName").ToString()
+                    CType(e.Item.FindControl("lblPIName"), Label).Text = di("ProcessInfoName").AsString
+                    CType(e.Item.FindControl("lblParamName"), Label).Text = di("ParamName").AsString
+                    CType(e.Item.FindControl("lblValueName"), Label).Text = di("ValueName").AsString
                     If di("Special") Is DBNull.Value Then
                         CType(e.Item.FindControl("lblSpecial"), Label).Text = String.Empty
                     Else
-                        CType(e.Item.FindControl("lblSpecial"), Label).Text = di("Special").ToString()
+                        CType(e.Item.FindControl("lblSpecial"), Label).Text = di("Special").AsString
                     End If
-                    CType(e.Item.FindControl("lblAllowNone"), Label).Text = di("AllowNone").ToString()
-                    CType(e.Item.FindControl("lblRequireValue"), Label).Text = di("RequireValue").ToString()
-                    CType(e.Item.FindControl("lblRequireSelection"), Label).Text = di("RequireSelection").ToString()
+                    CType(e.Item.FindControl("lblAllowNone"), Label).Text = di("AllowNone").AsString
+                    CType(e.Item.FindControl("lblRequireValue"), Label).Text = di("RequireValue").AsString
+                    CType(e.Item.FindControl("lblRequireSelection"), Label).Text = di("RequireSelection").AsString
                     CType(e.Item.FindControl("ibtnDelete"), ImageButton).Attributes.Add("onclick", "return confirm('Are you sure you want to delete this Process Info?');")
 
                     ' Display ProcessInfoLine datagrid
-                    If Convert.ToInt32(di("ProcessInfoID")) = -1 AndAlso e.Item.ItemIndex > 0 Then
+                    If di("ProcessInfoID").AsInt32 = -1 AndAlso e.Item.ItemIndex > 0 Then
                         ' Set Previous record button to show collapse
                         Dim ibtnPrevExpand As ImageButton = CType(dgProcessInfo.Items(e.Item.ItemIndex - 1).FindControl("ibtnExpand"), ImageButton)
                         ibtnPrevExpand.ImageUrl = "~/images/collapse.gif"
@@ -533,17 +533,17 @@ Namespace Pages
                     Dim di As New DataItemHelper(e.Item.DataItem)
 
                     ' Display ProcessInfo for editing
-                    CType(e.Item.FindControl("txtPIName"), TextBox).Text = di("ProcessInfoName").ToString()
-                    CType(e.Item.FindControl("txtParamName"), TextBox).Text = di("ParamName").ToString()
-                    CType(e.Item.FindControl("txtValueName"), TextBox).Text = di("ValueName").ToString()
+                    CType(e.Item.FindControl("txtPIName"), TextBox).Text = di("ProcessInfoName").AsString
+                    CType(e.Item.FindControl("txtParamName"), TextBox).Text = di("ParamName").AsString
+                    CType(e.Item.FindControl("txtValueName"), TextBox).Text = di("ValueName").AsString
                     If di("Special") Is DBNull.Value Then
                         CType(e.Item.FindControl("txtSpecial"), TextBox).Text = String.Empty
                     Else
-                        CType(e.Item.FindControl("txtSpecial"), TextBox).Text = di("Special").ToString()
+                        CType(e.Item.FindControl("txtSpecial"), TextBox).Text = di("Special").AsString
                     End If
-                    CType(e.Item.FindControl("chkAllowNone"), CheckBox).Checked = Convert.ToBoolean(di("AllowNone"))
-                    CType(e.Item.FindControl("chkRequireValue"), CheckBox).Checked = Convert.ToBoolean(di("RequireValue"))
-                    CType(e.Item.FindControl("chkRequireSelection"), CheckBox).Checked = Convert.ToBoolean(di("RequireSelection"))
+                    CType(e.Item.FindControl("chkAllowNone"), CheckBox).Checked = di("AllowNone").AsBoolean
+                    CType(e.Item.FindControl("chkRequireValue"), CheckBox).Checked = di("RequireValue").AsBoolean
+                    CType(e.Item.FindControl("chkRequireSelection"), CheckBox).Checked = di("RequireSelection").AsBoolean
                 End If
             Catch ex As Exception
                 WebUtility.BootstrapAlert(phProcessInfoMessage, "danger", "ProcessInfo ItemDataBound Error: " + ex.Message, True)
@@ -765,15 +765,15 @@ Namespace Pages
             Try
                 If e.Item.ItemType = ListItemType.Item Or e.Item.ItemType = ListItemType.AlternatingItem Then
                     Dim di As New DataItemHelper(e.Item.DataItem)
-                    CType(e.Item.FindControl("lblParam"), Label).Text = di("Param").ToString()
-                    CType(e.Item.FindControl("lblMinVal"), Label).Text = di("MinValue").ToString()
-                    CType(e.Item.FindControl("lblMaxVal"), Label).Text = di("MaxValue").ToString()
+                    CType(e.Item.FindControl("lblParam"), Label).Text = di("Param").AsString
+                    CType(e.Item.FindControl("lblMinVal"), Label).Text = di("MinValue").AsString
+                    CType(e.Item.FindControl("lblMaxVal"), Label).Text = di("MaxValue").AsString
                     CType(e.Item.FindControl("ibtnPILDelete"), ImageButton).Attributes.Add("onclick", "return confirm('Are you sure you want to delete this Process Info Line?');")
                 ElseIf e.Item.ItemType = ListItemType.EditItem Then
                     Dim di As New DataItemHelper(e.Item.DataItem)
-                    CType(e.Item.FindControl("txtParam"), TextBox).Text = di("Param").ToString()
-                    CType(e.Item.FindControl("txtMinVal"), TextBox).Text = di("MinValue").ToString()
-                    CType(e.Item.FindControl("txtMaxVal"), TextBox).Text = di("MaxValue").ToString()
+                    CType(e.Item.FindControl("txtParam"), TextBox).Text = di("Param").AsString
+                    CType(e.Item.FindControl("txtMinVal"), TextBox).Text = di("MinValue").AsString
+                    CType(e.Item.FindControl("txtMaxVal"), TextBox).Text = di("MaxValue").AsString
                 End If
             Catch ex As Exception
                 WebUtility.BootstrapAlert(phProcessInfoMessage, "danger", String.Format("ProcessInfoLine ItemDataBound Error: {0}", ex.Message), True)

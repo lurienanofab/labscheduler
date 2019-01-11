@@ -114,6 +114,24 @@ Namespace Pages
         Protected WithEvents hypFDT As Global.System.Web.UI.WebControls.HyperLink
         
         '''<summary>
+        '''phUtility control.
+        '''</summary>
+        '''<remarks>
+        '''Auto-generated field.
+        '''To modify move field declaration from designer file to code-behind file.
+        '''</remarks>
+        Protected WithEvents phUtility As Global.System.Web.UI.WebControls.PlaceHolder
+        
+        '''<summary>
+        '''hypUtility control.
+        '''</summary>
+        '''<remarks>
+        '''Auto-generated field.
+        '''To modify move field declaration from designer file to code-behind file.
+        '''</remarks>
+        Protected WithEvents hypUtility As Global.System.Web.UI.WebControls.HyperLink
+        
+        '''<summary>
         '''Calendar1 control.
         '''</summary>
         '''<remarks>

@@ -1,4 +1,3 @@
-Imports LNF.CommonTools
 Imports LNF.Repository
 
 Namespace DBAccess
@@ -14,59 +13,48 @@ Namespace DBAccess
 
         ' Returns specified Building
         Public Sub New(ByVal id As Integer)
-            Using dba As New SQLDBAccess("cnSselScheduler")
-                Using reader As IDataReader = dba.ApplyParameters(New With {.Action = "Select", .BuildingID = id}).ExecuteReader("procBuildingSelect")
-                    If reader.Read() Then
-                        IsValid = True
-                        BuildingID = Convert.ToInt32(reader("BuildingID"))
-                        BuildingName = reader("BuildingName").ToString()
-                        Description = reader("Description").ToString()
-                    End If
-                    reader.Close()
-                End Using
+            Using reader As IDataReader = DA.Command().Param(New With {.Action = "Select", .BuildingID = id}).ExecuteReader("sselScheduler.dbo.procBuildingSelect")
+                If reader.Read() Then
+                    IsValid = True
+                    BuildingID = Convert.ToInt32(reader("BuildingID"))
+                    BuildingName = reader("BuildingName").ToString()
+                    Description = reader("Description").ToString()
+                End If
+                reader.Close()
             End Using
         End Sub
 
         ' Returns all Buildings
         Public Function SelectAllDataReader() As IDataReader
-            Dim dba As New SQLDBAccess("cnSselScheduler")
-            Return dba.ApplyParameters(New With {.Action = "SelectAll"}).ExecuteReader("procBuildingSelect")
+            Return DA.Command().Param(New With {.Action = "SelectAll"}).ExecuteReader("sselScheduler.dbo.procBuildingSelect")
         End Function
 
         ' Returns all Buildings
         Public Shared Function SelectAllDataTable() As DataTable
-            Using dba As New SQLDBAccess("cnSselScheduler")
-                Return dba.MapSchema().ApplyParameters(New With {.Action = "SelectAll"}).FillDataTable("procBuildingSelect")
-            End Using
+            Return DA.Command().MapSchema().Param(New With {.Action = "SelectAll"}).FillDataTable("sselScheduler.dbo.procBuildingSelect")
         End Function
 
         Public Shared Function HasLabs(ByVal BuildingID As Integer) As Boolean
-            Using dba As New SQLDBAccess("cnSselScheduler")
-                Dim count As Integer = dba.ApplyParameters(New With {.Action = "HasLabs", .BuildingID = BuildingID}).ExecuteScalar(Of Integer)("procBuildingSelect")
-                Return count <> 0
-            End Using
+            Dim count As Integer = DA.Command().Param(New With {.Action = "HasLabs", BuildingID}).ExecuteScalar(Of Integer)("sselScheduler.dbo.procBuildingSelect")
+            Return count > 0
         End Function
 
         ' Insert/Update/Delete Buildings
         Public Shared Sub Update(ByRef dt As DataTable)
-            Using dba As New SQLDBAccess("cnSselScheduler")
-                With dba.InsertCommand
-                    .AddParameter("@BuildingID", SqlDbType.Int, ParameterDirection.Output)
-                    .AddParameter("@BuildingName", SqlDbType.NVarChar, 50)
-                    .AddParameter("@Description", SqlDbType.NVarChar, 200)
-                End With
+            DA.Command.Update(dt, Sub(x)
+                                      x.Insert.SetCommandText("sselScheduler.dbo.procBuildingInsert")
+                                      x.Insert.AddParameter("BuildingID", SqlDbType.Int, ParameterDirection.Output)
+                                      x.Insert.AddParameter("BuildingName", SqlDbType.NVarChar, 50)
+                                      x.Insert.AddParameter("Description", SqlDbType.NVarChar, 200)
 
-                With dba.UpdateCommand
-                    .AddParameter("@BuildingID", SqlDbType.Int)
-                    .AddParameter("@BuildingName", SqlDbType.NVarChar, 50)
-                    .AddParameter("@Description", SqlDbType.NVarChar, 200)
-                End With
+                                      x.Update.SetCommandText("sselScheduler.dbo.procBuildingUpdate")
+                                      x.Update.AddParameter("BuildingID", SqlDbType.Int)
+                                      x.Update.AddParameter("BuildingName", SqlDbType.NVarChar, 50)
+                                      x.Update.AddParameter("Description", SqlDbType.NVarChar, 200)
 
-                dba.DeleteCommand.AddParameter("@BuildingID", SqlDbType.Int)
-
-                dba.UpdateDataTable(dt, "procBuildingInsert", "procBuildingUpdate", "procBuildingDelete")
-            End Using
+                                      x.Delete.SetCommandText("sselScheduler.dbo.procBuildingDelete")
+                                      x.Delete.AddParameter("BuildingID", SqlDbType.Int)
+                                  End Sub)
         End Sub
-
     End Class
 End Namespace

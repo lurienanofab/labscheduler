@@ -15,33 +15,6 @@ Namespace Pages
     Partial Public Class ReservationHistory
         
         '''<summary>
-        '''divReservationHistory control.
-        '''</summary>
-        '''<remarks>
-        '''Auto-generated field.
-        '''To modify move field declaration from designer file to code-behind file.
-        '''</remarks>
-        Protected WithEvents divReservationHistory As Global.System.Web.UI.HtmlControls.HtmlGenericControl
-        
-        '''<summary>
-        '''hidClientID control.
-        '''</summary>
-        '''<remarks>
-        '''Auto-generated field.
-        '''To modify move field declaration from designer file to code-behind file.
-        '''</remarks>
-        Protected WithEvents hidClientID As Global.System.Web.UI.HtmlControls.HtmlInputHidden
-        
-        '''<summary>
-        '''trUser control.
-        '''</summary>
-        '''<remarks>
-        '''Auto-generated field.
-        '''To modify move field declaration from designer file to code-behind file.
-        '''</remarks>
-        Protected WithEvents trUser As Global.System.Web.UI.HtmlControls.HtmlTableRow
-        
-        '''<summary>
         '''ddlClients control.
         '''</summary>
         '''<remarks>
@@ -87,49 +60,67 @@ Namespace Pages
         Protected WithEvents btnSearchHistory As Global.System.Web.UI.WebControls.Button
         
         '''<summary>
-        '''panEditHistory control.
+        '''phSelectHistory control.
         '''</summary>
         '''<remarks>
         '''Auto-generated field.
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
-        Protected WithEvents panEditHistory As Global.System.Web.UI.WebControls.Panel
+        Protected WithEvents phSelectHistory As Global.System.Web.UI.WebControls.PlaceHolder
         
         '''<summary>
-        '''hidSelectedClientID control.
+        '''rptHistory control.
         '''</summary>
         '''<remarks>
         '''Auto-generated field.
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
-        Protected WithEvents hidSelectedClientID As Global.System.Web.UI.HtmlControls.HtmlInputHidden
+        Protected WithEvents rptHistory As Global.System.Web.UI.WebControls.Repeater
         
         '''<summary>
-        '''hidEditReservationID control.
+        '''litShowCanceledForModificationMessage control.
         '''</summary>
         '''<remarks>
         '''Auto-generated field.
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
-        Protected WithEvents hidEditReservationID As Global.System.Web.UI.HtmlControls.HtmlInputHidden
+        Protected WithEvents litShowCanceledForModificationMessage As Global.System.Web.UI.WebControls.Literal
         
         '''<summary>
-        '''hidStartDate control.
+        '''phEditHistory control.
         '''</summary>
         '''<remarks>
         '''Auto-generated field.
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
-        Protected WithEvents hidStartDate As Global.System.Web.UI.HtmlControls.HtmlInputHidden
+        Protected WithEvents phEditHistory As Global.System.Web.UI.WebControls.PlaceHolder
         
         '''<summary>
-        '''hidEndDate control.
+        '''phSaveAlert control.
         '''</summary>
         '''<remarks>
         '''Auto-generated field.
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
-        Protected WithEvents hidEndDate As Global.System.Web.UI.HtmlControls.HtmlInputHidden
+        Protected WithEvents phSaveAlert As Global.System.Web.UI.WebControls.PlaceHolder
+        
+        '''<summary>
+        '''divSaveAlert control.
+        '''</summary>
+        '''<remarks>
+        '''Auto-generated field.
+        '''To modify move field declaration from designer file to code-behind file.
+        '''</remarks>
+        Protected WithEvents divSaveAlert As Global.System.Web.UI.HtmlControls.HtmlGenericControl
+        
+        '''<summary>
+        '''litSaveAlertText control.
+        '''</summary>
+        '''<remarks>
+        '''Auto-generated field.
+        '''To modify move field declaration from designer file to code-behind file.
+        '''</remarks>
+        Protected WithEvents litSaveAlertText As Global.System.Web.UI.WebControls.Literal
         
         '''<summary>
         '''litResourceName control.
@@ -175,15 +166,6 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents litIsCanceled As Global.System.Web.UI.WebControls.Literal
-        
-        '''<summary>
-        '''trInvitees control.
-        '''</summary>
-        '''<remarks>
-        '''Auto-generated field.
-        '''To modify move field declaration from designer file to code-behind file.
-        '''</remarks>
-        Protected WithEvents trInvitees As Global.System.Web.UI.HtmlControls.HtmlTableRow
         
         '''<summary>
         '''litInvitees control.
@@ -357,15 +339,6 @@ Namespace Pages
         Protected WithEvents txtForgiveAmount As Global.System.Web.UI.WebControls.TextBox
         
         '''<summary>
-        '''panNotes control.
-        '''</summary>
-        '''<remarks>
-        '''Auto-generated field.
-        '''To modify move field declaration from designer file to code-behind file.
-        '''</remarks>
-        Protected WithEvents panNotes As Global.System.Web.UI.WebControls.Panel
-        
-        '''<summary>
         '''txtNotes control.
         '''</summary>
         '''<remarks>
@@ -373,15 +346,6 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents txtNotes As Global.System.Web.UI.WebControls.TextBox
-        
-        '''<summary>
-        '''litNotes control.
-        '''</summary>
-        '''<remarks>
-        '''Auto-generated field.
-        '''To modify move field declaration from designer file to code-behind file.
-        '''</remarks>
-        Protected WithEvents litNotes As Global.System.Web.UI.WebControls.Literal
         
         '''<summary>
         '''chkEmailClient control.
@@ -399,7 +363,7 @@ Namespace Pages
         '''Auto-generated field.
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
-        Protected WithEvents btnEditSave As Global.System.Web.UI.HtmlControls.HtmlInputButton
+        Protected WithEvents btnEditSave As Global.System.Web.UI.WebControls.Button
         
         '''<summary>
         '''btnEditCancel control.
@@ -418,51 +382,6 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents litEditMessage As Global.System.Web.UI.WebControls.Literal
-        
-        '''<summary>
-        '''panHistory control.
-        '''</summary>
-        '''<remarks>
-        '''Auto-generated field.
-        '''To modify move field declaration from designer file to code-behind file.
-        '''</remarks>
-        Protected WithEvents panHistory As Global.System.Web.UI.WebControls.Panel
-        
-        '''<summary>
-        '''panCanForgiveNotice control.
-        '''</summary>
-        '''<remarks>
-        '''Auto-generated field.
-        '''To modify move field declaration from designer file to code-behind file.
-        '''</remarks>
-        Protected WithEvents panCanForgiveNotice As Global.System.Web.UI.WebControls.Panel
-        
-        '''<summary>
-        '''rptHistory control.
-        '''</summary>
-        '''<remarks>
-        '''Auto-generated field.
-        '''To modify move field declaration from designer file to code-behind file.
-        '''</remarks>
-        Protected WithEvents rptHistory As Global.System.Web.UI.WebControls.Repeater
-        
-        '''<summary>
-        '''litShowCanceledForModificationMessage control.
-        '''</summary>
-        '''<remarks>
-        '''Auto-generated field.
-        '''To modify move field declaration from designer file to code-behind file.
-        '''</remarks>
-        Protected WithEvents litShowCanceledForModificationMessage As Global.System.Web.UI.WebControls.Literal
-        
-        '''<summary>
-        '''lblNoData control.
-        '''</summary>
-        '''<remarks>
-        '''Auto-generated field.
-        '''To modify move field declaration from designer file to code-behind file.
-        '''</remarks>
-        Protected WithEvents lblNoData As Global.System.Web.UI.WebControls.Label
         
         '''<summary>
         '''litDebug control.

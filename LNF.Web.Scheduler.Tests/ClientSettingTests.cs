@@ -10,47 +10,33 @@ namespace LNF.Web.Scheduler.Tests
     [TestClass]
     public class ClientSettingTests : TestBase
     {
-        protected override void Prepare()
-        {
-            ContextManager.CurrentClient = new ClientItem()
-            {
-                ClientID = 728,
-                UserName = "codrin",
-                Privs = (ClientPrivilege)1541
-            };
-        }
-
         [TestMethod]
-        public void ClientSettingTests_CanGetLab()
+        public void CanGetLab()
         {
-            ContextManager.StartRequest();
-
-            using (ServiceProvider.Current.DataAccess.StartUnitOfWork())
+            using (ContextManager.StartRequest(1600))
             {
                 Assert.AreEqual(-1, CacheManager.Current.GetClientSetting().LabID);
                 Assert.AreEqual(ClientSetting.DefaultLabID, CacheManager.Current.GetClientSetting().GetLabOrDefault().LabID);
             }
 
-            CacheManager.Current.GetClientSetting().LabID = 9;
-
-            using (ServiceProvider.Current.DataAccess.StartUnitOfWork())
+            using (ContextManager.StartRequest(1600))
             {
+                CacheManager.Current.GetClientSetting().LabID = 9;
                 DA.Current.SaveOrUpdate(CacheManager.Current.GetClientSetting());
             }
 
-            using (ServiceProvider.Current.DataAccess.StartUnitOfWork())
+            using (ContextManager.StartRequest(1600))
             {
                 Assert.AreEqual(9, CacheManager.Current.GetClientSetting().GetLabOrDefault().LabID);
             }
 
-            CacheManager.Current.GetClientSetting().LabID = -1;
-
-            using (ServiceProvider.Current.DataAccess.StartUnitOfWork())
+            using (ContextManager.StartRequest(1600))
             {
+                CacheManager.Current.GetClientSetting().LabID = -1;
                 DA.Current.SaveOrUpdate(CacheManager.Current.GetClientSetting());
             }
 
-            using (ServiceProvider.Current.DataAccess.StartUnitOfWork())
+            using (ContextManager.StartRequest(1600))
             {
                 Assert.AreEqual(-1, CacheManager.Current.GetClientSetting().LabID);
                 Assert.AreEqual(1, CacheManager.Current.GetClientSetting().GetLabOrDefault().LabID);

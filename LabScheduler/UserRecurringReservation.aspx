@@ -48,49 +48,14 @@
                 </ItemTemplate>
                 <FooterTemplate>
                     </tbody>
-            </table>
+                    </table>
                 </FooterTemplate>
             </asp:Repeater>
+            <asp:PlaceHolder runat="server" ID="phNoData" Visible="false">
+                <em class="text-muted">No recurring reservations were found.</em>
+            </asp:PlaceHolder>
         </div>
     </div>
-
-    <table class="content-table">
-        <tr>
-            <td>
-                <asp:GridView ID="zgvRecurring" runat="server" AutoGenerateColumns="false">
-                    <Columns>
-                        <asp:BoundField HeaderText="Resource" DataField="ResourceName" ItemStyle-HorizontalAlign="center" ItemStyle-Width="180" />
-                        <asp:BoundField HeaderText="Begin Date" DataField="BeginDate" DataFormatString="{0:MM/dd/yyyy}" HtmlEncode="False" ItemStyle-HorizontalAlign="center" ItemStyle-Width="90" />
-                        <asp:BoundField HeaderText="End Date" DataField="EndDate" NullDisplayText="Infinite" DataFormatString="{0:MM/dd/yyyy}" HtmlEncode="False" ItemStyle-HorizontalAlign="center" ItemStyle-Width="90" />
-                        <asp:BoundField HeaderText="Begin Time" DataField="BeginTime" DataFormatString="{0:hh:mm tt}" HtmlEncode="False" ItemStyle-HorizontalAlign="center" ItemStyle-Width="90" />
-                        <asp:BoundField HeaderText="End Time" DataField="EndTime" DataFormatString="{0:hh:mm tt}" HtmlEncode="False" ItemStyle-HorizontalAlign="center" ItemStyle-Width="90" />
-                        <asp:BoundField HeaderText="Pattern Type" DataField="PatternName" ItemStyle-HorizontalAlign="center" ItemStyle-Width="90" />
-                        <asp:TemplateField>
-                            <ItemTemplate>
-                                <asp:ImageButton ID="imgbtnDel" AlternateText="Delete this order" runat="Server" OnClientClick="return confirm('Are you sure you want to delete this record?');" ImageUrl="~/images/im_delete.gif" CommandName="Delete" CommandArgument='<%# Bind("RecurrenceID") %>' />
-                            </ItemTemplate>
-                        </asp:TemplateField>
-                        <asp:TemplateField HeaderText="Edit">
-                            <ItemTemplate>
-                                <asp:ImageButton ID="imgbtnEdit" runat="Server" ImageUrl="~/images/im_edit.gif" AlternateText="Edit" CommandName="EditMe" CommandArgument='<%# Bind("RecurrenceID") %>' />
-                            </ItemTemplate>
-                        </asp:TemplateField>
-                    </Columns>
-                    <EmptyDataTemplate>
-                        &nbsp;&nbsp;-- You don't have any recurring reservation --&nbsp;&nbsp;
-                    </EmptyDataTemplate>
-                </asp:GridView>
-                <asp:FormView ID="fvRecurring" runat="server">
-                    <ItemTemplate>
-                        <div class="divmargin20">
-                            <span class="RowItemCaption">Creation Date:</span>
-                            <%#Eval("RecurrenceID")%>
-                        </div>
-                    </ItemTemplate>
-                </asp:FormView>
-            </td>
-        </tr>
-    </table>
 </asp:Content>
 
 <asp:Content ID="Content3" ContentPlaceHolderID="scripts" runat="server">

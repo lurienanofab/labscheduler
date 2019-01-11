@@ -50,11 +50,29 @@ Namespace Pages
                 hypContact.NavigateUrl = String.Format("~/Contact.aspx?AdminOnly=1&Date={0:yyyy-MM-dd}", Request.SelectedDate())
                 hypFDT.NavigateUrl = String.Format("~/ReservationFacilityDownTime.aspx?Date={0:yyyy-MM-dd}", Request.SelectedDate())
 
-                phAdmin.Visible = CacheManager.Current.CurrentUser.HasPriv(ClientPrivilege.Administrator)
-                phFDT.Visible = CacheManager.Current.CurrentUser.HasPriv(ClientPrivilege.Staff)
+                phAdmin.Visible = CurrentUser.HasPriv(ClientPrivilege.Administrator)
+                phFDT.Visible = CurrentUser.HasPriv(ClientPrivilege.Staff)
+                phUtility.Visible = HasUtilityPriv()
             End If
 
             RequestLog.Append("MasterPageScheduler.Page_Load: {0}", Date.Now - startTime)
         End Sub
+
+        Private Function HasUtilityPriv() As Boolean
+            If CurrentUser.HasPriv(ClientPrivilege.Developer) Then
+                Return True
+            End If
+
+            Dim origUser As ClientItem = Nothing
+            If Session("LogInAsOriginalUser") IsNot Nothing Then
+                Dim un As String = Session("LogInAsOriginalUser").ToString()
+                origUser = CacheManager.Current.GetClient(un)
+                If origUser.HasPriv(ClientPrivilege.Developer) Then
+                    Return True
+                End If
+            End If
+
+            Return False
+        End Function
     End Class
 End Namespace

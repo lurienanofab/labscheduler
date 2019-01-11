@@ -100,13 +100,13 @@
                                 <tr>
                                     <th style="width: 140px;">reservation started</th>
                                     <td class="reservation-started">
-                                        <img src="<%=GetStaticUrl("images/ajax-loader-5.gif")%>" />
+                                        <img src="//ssel-apps.eecs.umich.edu/static/images/ajax-loader-5.gif" />
                                     </td>
                                 </tr>
                                 <tr class="interlock" style="display: none;">
                                     <th>interlock enabled</th>
                                     <td class="interlock-enabled">
-                                        <img src="<%=GetStaticUrl("images/ajax-loader-5.gif")%>" />
+                                        <img src="//ssel-apps.eecs.umich.edu/static/images/ajax-loader-5.gif" />
                                     </td>
                                 </tr>
                             </tbody>

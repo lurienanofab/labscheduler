@@ -1,5 +1,4 @@
 Imports LNF.Repository
-Imports LNF.CommonTools
 
 Namespace DBAccess
     Public Class AccountDB
@@ -7,9 +6,9 @@ Namespace DBAccess
         ''' Returns all Accounts
         ''' </summary>
         Public Function SelectAll() As DataTable
-            Using dba As New SQLDBAccess("cnSselScheduler")
-                Return dba.ApplyParameters(New With {.Action = "SelectAccounts"}).FillDataTable("sselData_Select")
-            End Using
+            Return DA.Command() _
+                .Param("Action", "SelectAccounts") _
+                .FillDataTable("sselScheduler.dbo.sselData_Select")
         End Function
     End Class
 End Namespace

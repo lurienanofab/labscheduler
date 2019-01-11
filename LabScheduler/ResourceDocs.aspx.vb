@@ -18,7 +18,7 @@ Namespace Pages
             End Get
         End Property
 
-        Protected Sub Page_Load(ByVal sender As Object, ByVal e As System.EventArgs) Handles Me.Load
+        Protected Sub Page_Load(ByVal sender As Object, ByVal e As EventArgs) Handles Me.Load
             'If user types url directly, we have to return immediately if resDB is not loaded
             If Request.SelectedPath().ResourceID = 0 Then
                 Return
@@ -35,23 +35,23 @@ Namespace Pages
             dgDocs.DataBind()
         End Sub
 
-        Private Sub dgDocs_ItemDataBound(ByVal sender As Object, ByVal e As System.Web.UI.WebControls.DataGridItemEventArgs) Handles dgDocs.ItemDataBound
+        Private Sub dgDocs_ItemDataBound(ByVal sender As Object, ByVal e As DataGridItemEventArgs) Handles dgDocs.ItemDataBound
             If e.Item.ItemType = ListItemType.Item Or e.Item.ItemType = ListItemType.AlternatingItem Then
                 Dim di As New DataItemHelper(e.Item.DataItem)
                 Dim lblDocName As Label = CType(e.Item.FindControl("lblDocName"), Label)
-                lblDocName.Text = di("DocName").ToString()
+                lblDocName.Text = di("DocName").AsString
                 Dim ibtnDelete As ImageButton = CType(e.Item.FindControl("ibtnDelete"), ImageButton)
                 ibtnDelete.Attributes.Add("onclick", "return confirm('Are you sure you want to delete this doc?');")
                 Dim hplView As HyperLink = CType(e.Item.FindControl("hplView"), HyperLink)
-                hplView.NavigateUrl = Application("DocServer").ToString() + "ToolDocs/" + di("FileName").ToString()
+                hplView.NavigateUrl = Application("DocServer").ToString() + "ToolDocs/" + di("FileName").AsString
             ElseIf e.Item.ItemType = ListItemType.EditItem Then
                 Dim di As New DataItemHelper(e.Item.DataItem)
                 Dim txbDocName As TextBox = CType(e.Item.FindControl("txbDocName"), TextBox)
-                txbDocName.Text = di("DocName").ToString()
+                txbDocName.Text = di("DocName").AsString
             End If
         End Sub
 
-        Private Sub dgDocs_ItemCommand(ByVal source As Object, ByVal e As System.Web.UI.WebControls.DataGridCommandEventArgs) Handles dgDocs.ItemCommand
+        Private Sub dgDocs_ItemCommand(ByVal source As Object, ByVal e As DataGridCommandEventArgs) Handles dgDocs.ItemCommand
             Dim docId As Integer
             Dim fileExt As String, fileName As String
             Try

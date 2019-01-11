@@ -21,64 +21,56 @@ Namespace DBAccess
         Public EmailInvited As Boolean
 
         ' Returns the preferences for the specified client
-        Public Sub New(ByVal ClID As Integer) ' non-standard name needed to avoid name clash
-            Using dba As New SQLDBAccess("cnSselScheduler")
-                Using reader As IDataReader = dba.ApplyParameters(New With {.ClientID = ClID}).ExecuteReader("procClientSettingSelect")
-                    If reader.Read() Then
-                        IsValid = True
-                        ClientID = Convert.ToInt32(reader("ClientID"))
-                        BuildingID = Convert.ToInt32(reader("BuildingID"))
-                        LabID = Convert.ToInt32(reader("LabID"))
-                        DefaultView = CType(reader("DefaultView"), ViewType)
-                        BeginHour = Convert.ToDouble(reader("BeginHour"))
-                        EndHour = Convert.ToDouble(reader("EndHour"))
-                        WorkDays = reader("WorkDays").ToString()
-                        EmailCreateReserv = Convert.ToBoolean(reader("EmailCreateReserv"))
-                        EmailModifyReserv = Convert.ToBoolean(reader("EmailModifyReserv"))
-                        EmailDeleteReserv = Convert.ToBoolean(reader("EmailDeleteReserv"))
-                        EmailInvited = Convert.ToBoolean(reader("EmailInvited"))
-                    End If
-                    reader.Close()
-                End Using
+        Public Sub New(ByVal ClientID As Integer) ' non-standard name needed to avoid name clash
+            Using reader As IDataReader = DA.Command().Param(New With {ClientID}).ExecuteReader("sselScheduler.dbo.procClientSettingSelect")
+                If reader.Read() Then
+                    IsValid = True
+                    Me.ClientID = Convert.ToInt32(reader("ClientID"))
+                    BuildingID = Convert.ToInt32(reader("BuildingID"))
+                    LabID = Convert.ToInt32(reader("LabID"))
+                    DefaultView = CType(reader("DefaultView"), ViewType)
+                    BeginHour = Convert.ToDouble(reader("BeginHour"))
+                    EndHour = Convert.ToDouble(reader("EndHour"))
+                    WorkDays = reader("WorkDays").ToString()
+                    EmailCreateReserv = Convert.ToBoolean(reader("EmailCreateReserv"))
+                    EmailModifyReserv = Convert.ToBoolean(reader("EmailModifyReserv"))
+                    EmailDeleteReserv = Convert.ToBoolean(reader("EmailDeleteReserv"))
+                    EmailInvited = Convert.ToBoolean(reader("EmailInvited"))
+                End If
+                reader.Close()
             End Using
         End Sub
 
         Public Sub Insert()
-            Using dba As New SQLDBAccess("cnSselScheduler")
-                With dba.SelectCommand
-                    .AddParameter("@ClientID", ClientID)
-                    .AddParameter("@BuildingID", BuildingID)
-                    .AddParameter("@LabID", LabID)
-                    .AddParameter("@DefaultView", DefaultView)
-                    .AddParameter("@BeginHour", BeginHour)
-                    .AddParameter("@EndHour", EndHour)
-                    .AddParameter("@WorkDays", WorkDays)
-                    .AddParameter("@EmailCreateReserv", EmailCreateReserv)
-                    .AddParameter("@EmailModifyReserv", EmailModifyReserv)
-                    .AddParameter("@EmailDeleteReserv", EmailDeleteReserv)
-                    .AddParameter("@EmailInvited", EmailInvited)
-                End With
-                dba.ExecuteNonQuery("procClientSettingInsert")
-            End Using
+            DA.Command() _
+                .Param("ClientID", ClientID) _
+                .Param("BuildingID", BuildingID) _
+                .Param("LabID", LabID) _
+                .Param("DefaultView", DefaultView) _
+                .Param("BeginHour", BeginHour) _
+                .Param("EndHour", EndHour) _
+                .Param("WorkDays", WorkDays) _
+                .Param("EmailCreateReserv", EmailCreateReserv) _
+                .Param("EmailModifyReserv", EmailModifyReserv) _
+                .Param("EmailDeleteReserv", EmailDeleteReserv) _
+                .Param("EmailInvited", EmailInvited) _
+                .ExecuteNonQuery("sselScheduler.dbo.procClientSettingInsert")
         End Sub
 
         Public Sub Update()
-            Using dba As New SQLDBAccess("cnSselScheduler")
-                With dba.SelectCommand
-                    .AddParameter("@ClientID", ClientID)
-                    .AddParameter("@BuildingID", BuildingID)
-                    .AddParameter("@LabID", LabID)
-                    .AddParameter("@DefaultView", DefaultView)
-                    .AddParameter("@BeginHour", BeginHour)
-                    .AddParameter("@EndHour", EndHour)
-                    .AddParameter("@WorkDays", WorkDays)
-                    .AddParameter("@EmailCreateReserv", EmailCreateReserv)
-                    .AddParameter("@EmailModifyReserv", EmailModifyReserv)
-                    .AddParameter("@EmailDeleteReserv", EmailDeleteReserv)
-                    .AddParameter("@EmailInvited", EmailInvited)
-                End With
-                dba.ExecuteNonQuery("procClientSettingUpdate")
-            End Using
+            DA.Command() _
+                .Param("ClientID", ClientID) _
+                .Param("BuildingID", BuildingID) _
+                .Param("LabID", LabID) _
+                .Param("DefaultView", DefaultView) _
+                .Param("BeginHour", BeginHour) _
+                .Param("EndHour", EndHour) _
+                .Param("WorkDays", WorkDays) _
+                .Param("EmailCreateReserv", EmailCreateReserv) _
+                .Param("EmailModifyReserv", EmailModifyReserv) _
+                .Param("EmailDeleteReserv", EmailDeleteReserv) _
+                .Param("EmailInvited", EmailInvited) _
+                .ExecuteNonQuery("procClientSettingUpdate")
         End Sub
     End Class
 

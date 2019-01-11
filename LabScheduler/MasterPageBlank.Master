@@ -23,7 +23,7 @@
         </div>
     </form>
     
-    <script src="<%=GetStaticUrl("lib/jquery/jquery.min.js")%>"></script>
+    <script src="//ssel-apps.eecs.umich.edu/static/lib/jquery/jquery.min.js"></script>
 
     <asp:ContentPlaceHolder ID="scripts" runat="server">
     </asp:ContentPlaceHolder>

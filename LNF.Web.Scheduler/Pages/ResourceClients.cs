@@ -249,7 +249,7 @@ namespace LNF.Web.Scheduler.Pages
         protected bool CanAuthorize()
         {
             var p = ClientAuthLevel.Trainer | ClientAuthLevel.ToolEngineer;
-            var currentUserAuthLevel = DA.Use<IReservationManager>().GetAuthLevel(CurrentClients, CurrentUser);
+            var currentUserAuthLevel = ServiceProvider.Current.Use<IReservationManager>().GetAuthLevel(CurrentClients, CurrentUser);
             return (currentUserAuthLevel & p) > 0;
         }
 

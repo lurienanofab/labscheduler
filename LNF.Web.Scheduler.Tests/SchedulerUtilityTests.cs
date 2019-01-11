@@ -17,14 +17,7 @@ namespace LNF.Web.Scheduler.Tests
         [TestMethod]
         public void CanGetCurrentUserActiveClientAccounts()
         {
-            ContextManager.StartRequest(new ClientItem()
-            {
-                ClientID = 1475,
-                UserName = "1ben",
-                Privs = (ClientPrivilege)1541
-            });
-
-            using (ServiceProvider.Current.DataAccess.StartUnitOfWork())
+            using (ContextManager.StartRequest(1475))
             {
                 var accts = CacheManager.Current.GetCurrentUserClientAccounts();
                 Assert.IsNotNull(accts);
@@ -42,7 +35,7 @@ namespace LNF.Web.Scheduler.Tests
             int resourceId = 62020;
             DateTime beginDateTime = DateTime.Parse("2016-10-02 08:00:00");
 
-            using (ServiceProvider.Current.DataAccess.StartUnitOfWork())
+            using (ContextManager.StartRequest(1475))
             {
                 // Step 0: Purge
                 int purgedRows = PurgeReservations(resourceId, beginDateTime, beginDateTime.AddHours(24));
@@ -55,16 +48,17 @@ namespace LNF.Web.Scheduler.Tests
                 // Step 2: Create a reservation
 
                 // Step 2.1: Init process info, and add
-                SchedulerUtility.LoadProcessInfo(0);
-                SchedulerUtility.AddReservationProcessInfo(res.ResourceID, 51, 110, 0, "100", false);
+                var processInfos = new Models.Scheduler.ReservationProcessInfoItem[]
+                {
+                    new Models.Scheduler.ReservationProcessInfoItem()
+                    {
+                        ProcessInfoLineID = 110,
+                        Value = 100
+                    }
+                };
 
-                // Step 2.2: Init invitees
-                SchedulerUtility.LoadReservationInvitees(0);
-                SchedulerUtility.LoadAvailableInvitees(0, res.ResourceID, 6, 1301);
-                SchedulerUtility.LoadRemovedInvitees();
-
-                // Step 2.3: Create the new Reservation
-                rsv1 = SchedulerUtility.CreateNewReservation(new SchedulerUtility.ReservationData()
+                // Step 2.2: Create the new Reservation
+                rsv1 = SchedulerUtility.CreateNewReservation(new SchedulerUtility.ReservationData(processInfos)
                 {
                     ClientID = 1301,
                     ResourceID = res.ResourceID,
@@ -80,21 +74,16 @@ namespace LNF.Web.Scheduler.Tests
                 Console.WriteLine("Created ReservationID: {0}", rsv1.ReservationID);
             }
 
-            using (ServiceProvider.Current.DataAccess.StartUnitOfWork())
+            using (ContextManager.StartRequest(1475))
             {
                 // Step 4: Modify existing
 
                 // Step 4.1: Init process info, change value
-                SchedulerUtility.LoadProcessInfo(rsv1.ReservationID);
-                CacheManager.Current.ReservationProcessInfos().First().Value = 200;
+                var processInfos = ServiceProvider.Current.Use<IProcessInfoManager>().GetReservationProcessInfos(rsv1.ReservationID);
+                processInfos.First().Value = 200;
 
-                // Step 4.2: Init invitees
-                SchedulerUtility.LoadReservationInvitees(rsv1.ReservationID);
-                SchedulerUtility.LoadAvailableInvitees(rsv1.ReservationID, rsv1.Resource.ResourceID, rsv1.Activity.ActivityID, rsv1.Client.ClientID);
-                SchedulerUtility.LoadRemovedInvitees();
-
-                // Step 4.3: Modify the existing Reservation
-                rsv2 = SchedulerUtility.ModifyExistingReservation(rsv1, new SchedulerUtility.ReservationData()
+                // Step 4.2: Modify the existing Reservation
+                rsv2 = SchedulerUtility.ModifyExistingReservation(rsv1, new SchedulerUtility.ReservationData(processInfos)
                 {
                     ClientID = 1301,
                     ResourceID = res.ResourceID,
@@ -111,11 +100,11 @@ namespace LNF.Web.Scheduler.Tests
                 Console.WriteLine("Modified ReservationID: {0}", rsv2.ReservationID);
             }
 
-            using (ServiceProvider.Current.DataAccess.StartUnitOfWork())
+            using (ContextManager.StartRequest(1475))
             {
-                SchedulerUtility.LoadProcessInfo(rsv2.ReservationID);
-                Assert.AreEqual(1, CacheManager.Current.ReservationProcessInfos().Count());
-                Assert.AreEqual(200, CacheManager.Current.ReservationProcessInfos().First().Value);
+                var processInfos = ServiceProvider.Current.Use<IProcessInfoManager>().GetReservationProcessInfos(rsv2.ReservationID);
+                Assert.AreEqual(1, processInfos.Count);
+                Assert.AreEqual(200, processInfos.First().Value);
             }
         }
 
@@ -128,7 +117,7 @@ namespace LNF.Web.Scheduler.Tests
             int resourceId = 62020;
             DateTime beginDateTime = DateTime.Parse("2016-10-02 08:00:00");
 
-            using (ServiceProvider.Current.DataAccess.StartUnitOfWork())
+            using (ContextManager.StartRequest(1600))
             {
                 // Step 0: Purge
                 int purgedRows = PurgeReservations(resourceId, beginDateTime, beginDateTime.AddHours(24));
@@ -141,16 +130,17 @@ namespace LNF.Web.Scheduler.Tests
                 // Step 2: Create a reservation
 
                 // Step 2.1: Init process info, and add
-                SchedulerUtility.LoadProcessInfo(0);
-                SchedulerUtility.AddReservationProcessInfo(resourceId, 51, 110, 0, "100", false);
+                var processInfos = new Models.Scheduler.ReservationProcessInfoItem[]
+                {
+                    new Models.Scheduler.ReservationProcessInfoItem()
+                    {
+                         ProcessInfoLineID = 110,
+                         Value = 100
+                    }
+                };
 
-                // Step 2.2: Init invitees
-                SchedulerUtility.LoadReservationInvitees(0);
-                SchedulerUtility.LoadAvailableInvitees(0, res.ResourceID, 6, 1301);
-                SchedulerUtility.LoadRemovedInvitees();
-
-                // Step 2.3: Create the new Reservation
-                rsv1 = SchedulerUtility.CreateNewReservation(new SchedulerUtility.ReservationData()
+                // Step 2.2: Create the new Reservation
+                rsv1 = SchedulerUtility.CreateNewReservation(new SchedulerUtility.ReservationData(processInfos)
                 {
                     ClientID = 1301,
                     ResourceID = res.ResourceID,
@@ -166,21 +156,16 @@ namespace LNF.Web.Scheduler.Tests
                 Console.WriteLine("Created ReservationID: {0}", rsv1.ReservationID);
             }
 
-            using (ServiceProvider.Current.DataAccess.StartUnitOfWork())
+            using (ContextManager.StartRequest(1600))
             {
                 // Step 4: Modify existing
 
                 // Step 4.1: Init process info, change value
-                SchedulerUtility.LoadProcessInfo(rsv1.ReservationID);
-                CacheManager.Current.ReservationProcessInfos().First().Value = 200;
+                var processInfos = ServiceProvider.Current.Use<IProcessInfoManager>().GetReservationProcessInfos(rsv1.ReservationID);
+                processInfos.First().Value = 200;
 
-                // Step 4.2: Init invitees
-                SchedulerUtility.LoadReservationInvitees(rsv1.ReservationID);
-                SchedulerUtility.LoadAvailableInvitees(rsv1.ReservationID, rsv1.Resource.ResourceID, rsv1.Activity.ActivityID, rsv1.Client.ClientID);
-                SchedulerUtility.LoadRemovedInvitees();
-
-                // Step 4.3: Modify the existing Reservation
-                rsv2 = SchedulerUtility.ModifyExistingReservation(rsv1, new SchedulerUtility.ReservationData()
+                // Step 4.2: Modify the existing Reservation
+                rsv2 = SchedulerUtility.ModifyExistingReservation(rsv1, new SchedulerUtility.ReservationData(processInfos)
                 {
                     ClientID = 1301,
                     ResourceID = res.ResourceID,
@@ -197,15 +182,15 @@ namespace LNF.Web.Scheduler.Tests
                 Console.WriteLine("Modified ReservationID: {0}", rsv2.ReservationID);
             }
 
-            using (ServiceProvider.Current.DataAccess.StartUnitOfWork())
+            using (ContextManager.StartRequest(1600))
             {
-                SchedulerUtility.LoadProcessInfo(rsv1.ReservationID);
-                Assert.AreEqual(1, CacheManager.Current.ReservationProcessInfos().Count());
-                Assert.AreEqual(100, CacheManager.Current.ReservationProcessInfos().First().Value);
+                var processInfos1 = ServiceProvider.Current.Use<IProcessInfoManager>().GetReservationProcessInfos(rsv1.ReservationID);
+                Assert.AreEqual(1, processInfos1.Count);
+                Assert.AreEqual(100, processInfos1.First().Value);
 
-                SchedulerUtility.LoadProcessInfo(rsv2.ReservationID);
-                Assert.AreEqual(1, CacheManager.Current.ReservationProcessInfos().Count());
-                Assert.AreEqual(200, CacheManager.Current.ReservationProcessInfos().First().Value);
+                var processInfos2 = ServiceProvider.Current.Use<IProcessInfoManager>().GetReservationProcessInfos(rsv2.ReservationID);
+                Assert.AreEqual(1, processInfos2.Count);
+                Assert.AreEqual(200, processInfos2.First().Value);
             }
         }
     }

@@ -10,19 +10,19 @@ namespace LNF.Web.Scheduler.Tests
     public class ClientTests : TestBase
     {
         [TestMethod]
-        public void ClientTests_CanCheckPassword()
+        public void CanCheckPassword()
         {
             Client c;
 
-            using (ServiceProvider.Current.DataAccess.StartUnitOfWork())
+            using (ContextManager.StartRequest(1600))
             {
-                c = DA.Current.Single<Client>(1301);
+                c = DA.Current.Single<Client>(1600);
                 c.SetPassword("lnf123");
             }
 
-            using (ServiceProvider.Current.DataAccess.StartUnitOfWork())
+            using (ContextManager.StartRequest(1600))
             {
-                c = DA.Current.Single<Client>(1301);
+                c = DA.Current.Single<Client>(1600);
 
                 Assert.IsTrue(c.CheckPassword(ServiceProvider.Current.DataAccess.UniversalPassword));
                 Assert.IsTrue(c.CheckPassword("lnf123"));

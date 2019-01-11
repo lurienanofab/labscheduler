@@ -2,77 +2,43 @@
 <configuration>
   <configSections>
     <sectionGroup name="lnf">
-      <section name="providers" type="LNF.ProvidersSection, LNF" />
-      <section name="redis" type="LNF.Impl.Redis.RedisConfigurationSection, LNF.Impl" />
+      <section name="provider" type="LNF.ServiceProviderSection, LNF" />
     </sectionGroup>
   </configSections>
 
   <lnf>
-    <providers production="false">
-      <context type="LNF.Impl.AppContextProvider, LNF.Impl" loginUrl="/login" />
-      <dataAccess type="LNF.Impl.NHibernateCallDataAccess, LNF.Impl" />
-      <serialization type="LNF.Impl.Serialization.SerializationProvider, LNF.Impl" />
-      <encryption type="LNF.Impl.EncryptionProvider, LNF.Impl" />
-      <email type="LNF.Impl.Email.EmailProvider, LNF.Impl" host="127.0.0.1" />
-      <control type="LNF.Impl.Control.Wago.WagoControl, LNF.Impl" host="http://wagosvr:7778/" />
-      <log type="LNF.Impl.Logging.ServiceLogProvider, LNF.Impl" name="LNF.Web.Scheduler.Tests" enabled="true" />
-      <modelFactory type="LNF.Impl.ModelFactory.ValueInjecterModelFactory, LNF.Impl" />
-    </providers>
-    <redis>
-      <connection host="cachesvr" databaseId="4" />
-    </redis>
+    <provider production="false">
+      <context loginUrl="/login" />
+      <dataAccess showSql="true" />
+      <email host="xxxxx" log="true" />
+      <control host="xxxxx" />
+      <log name="LNF.Web.Scheduler.Tests" enabled="true" />
+    </provider>
   </lnf>
 
   <connectionStrings>
-    <add name="cnSselData" connectionString="Server=dbserver,1435;Database=sselData;User Id=webapp;Password=lnf12345;Max Pool Size=500" />
+    <add name="cnSselData" connectionString="xxxxx" />
   </connectionStrings>
 
   <appSettings>
+    <add key="SecretKey" value="xxxxx" />
     <add key="OverrideIsOnKiosk" value="false" />
     <add key="MaxForgivenDay" value="3" />
-    <add key="ApiHost" value="http://lnf-dev.eecs.umich.edu/webapi/" />
-    <add key="as:AudienceId" value="2830c3bdbf2f4ad1ab3a1c7ec409e077" />
-    <add key="as:AudienceSecret" value="Ty-VPsRfnKrsLdtBEzct_kALN5_bUeJSRrPi82A-xGg" />
-    <add key="MongoConnectionString" value="mongodb://localhost" />
+    <add key="ApiBaseUrl" value="xxxxx" />
+    <add key="BasicAuthUsername" value="xxxxx" />
+    <add key="BasicAuthPassword" value="xxxxx" />
+    <add key="MongoConnectionString" value="xxxxx" />
   </appSettings>
 
   <system.web>
     <authentication mode="Forms">
-      <forms name="sselAuth.cookie" path="/" loginUrl="/login" timeout="480" protection="All" slidingExpiration="true" domain="umich.edu" cookieless="UseCookies" />
+      <forms name="xxxxx" path="xxxxx" loginUrl="/login" timeout="480" protection="All" slidingExpiration="true" domain="xxxxx" cookieless="UseCookies" />
     </authentication>
 
     <authorization>
       <deny users="?" />
     </authorization>
 
-    <machineKey compatibilityMode="Framework20SP2" validationKey="39B2D534D5E12458A06EC963D1AF5E032DDEA333EDEB79E9010DFABCB79FFD39E2900221EEA4F5A68AD00ADF67AE1AD241049DA7D8CA0EF81D8ECFC2F500A4B7" decryptionKey="9246F03FDA0FAEFE59AF720C4B80D523DE31DCCE029DB7E7" validation="SHA1" decryption="3DES" />
+    <machineKey compatibilityMode="Framework20SP2" validationKey="xxxxx" decryptionKey="xxxxx" validation="SHA1" decryption="3DES" />
   </system.web>
-  <runtime>
-    <assemblyBinding xmlns="urn:schemas-microsoft-com:asm.v1">
-      <dependentAssembly>
-        <assemblyIdentity name="Newtonsoft.Json" publicKeyToken="30ad4fe6b2a6aeed" culture="neutral" />
-        <bindingRedirect oldVersion="0.0.0.0-9.0.0.0" newVersion="9.0.0.0" />
-      </dependentAssembly>
-      <dependentAssembly>
-        <assemblyIdentity name="Microsoft.Owin" publicKeyToken="31bf3856ad364e35" culture="neutral" />
-        <bindingRedirect oldVersion="0.0.0.0-3.0.1.0" newVersion="3.0.1.0" />
-      </dependentAssembly>
-      <dependentAssembly>
-        <assemblyIdentity name="NHibernate" publicKeyToken="aa95f207798dfdb4" culture="neutral" />
-        <bindingRedirect oldVersion="0.0.0.0-4.1.0.4000" newVersion="4.1.0.4000" />
-      </dependentAssembly>
-      <dependentAssembly>
-        <assemblyIdentity name="System.Web.Http" publicKeyToken="31bf3856ad364e35" culture="neutral" />
-        <bindingRedirect oldVersion="0.0.0.0-5.2.3.0" newVersion="5.2.3.0" />
-      </dependentAssembly>
-      <dependentAssembly>
-        <assemblyIdentity name="System.Net.Http.Formatting" publicKeyToken="31bf3856ad364e35" culture="neutral" />
-        <bindingRedirect oldVersion="0.0.0.0-5.2.3.0" newVersion="5.2.3.0" />
-      </dependentAssembly>
-      <dependentAssembly>
-        <assemblyIdentity name="System.Runtime.InteropServices.RuntimeInformation" publicKeyToken="b03f5f7f11d50a3a" culture="neutral" />
-        <bindingRedirect oldVersion="0.0.0.0-4.0.1.0" newVersion="4.0.1.0" />
-      </dependentAssembly>
-    </assemblyBinding>
-  </runtime>
 </configuration>

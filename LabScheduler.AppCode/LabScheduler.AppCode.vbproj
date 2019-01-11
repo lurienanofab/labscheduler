@@ -152,6 +152,10 @@
       <Project>{e3b73410-869b-4ba2-99ac-ad6708a27ade}</Project>
       <Name>LNF</Name>
     </ProjectReference>
+    <ProjectReference Include="..\LNF.Web.Scheduler\LNF.Web.Scheduler.csproj">
+      <Project>{74c5ad4f-71fb-47ce-a2bc-aa8774774661}</Project>
+      <Name>LNF.Web.Scheduler</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.VisualBasic.targets" />

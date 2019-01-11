@@ -1,4 +1,4 @@
-Imports System.Threading.Tasks
+Imports LNF
 Imports LNF.Cache
 Imports LNF.CommonTools
 Imports LNF.Data
@@ -10,37 +10,36 @@ Imports LNF.Scheduler
 
 Public Class OnTheFlyImpl
 
-    Private key As Integer = 0
-    Private cardswipedata As String = Nothing
-    Private cardNum As String = Nothing
+    Private ReadOnly key As Integer = 0
+    Private ReadOnly cardswipedata As String = Nothing
+    Private ReadOnly cardNum As String = Nothing
     Private otfresource As OnTheFlyResource = Nothing
     Private guid As Guid
     Private cardSwipeTime As Date
     Private clientWhoSwipedTheCard As Client = Nothing
-    Private reservationID As Integer = -1  ' this may not be available in cases like first time request
+    Private ReadOnly reservationID As Integer = -1  ' this may not be available in cases like first time request
     Private allReservationListAtTimeOfSwipe As IList(Of Reservation) = Nothing
     Private currentlyRunningReservationByUser As Reservation = Nothing
     Private currentlyRunningReservationMayNotBeUsers As Reservation = Nothing
-    'Private isExistingReservation As Boolean = False
     Private nextReservationInMinTime As Reservation = Nothing
     Private rreq As ResRequest = New ResRequest()
     Private logArray As List(Of OnTheFlyLog) = New List(Of OnTheFlyLog)
     Private returnMessage As String = ""
     Private isProcessFail As Boolean = False
-    Private Shared otfActivity As Activity = DA.Current.Single(Of Activity)(6)
+    Private Shared ReadOnly otfActivity As Activity = DA.Current.Single(Of Activity)(6)
 
     Protected ReadOnly Property ReservationManager As IReservationManager
         Get
-            Return DA.Use(Of IReservationManager)()
+            Return ServiceProvider.Current.Use(Of IReservationManager)()
         End Get
     End Property
 
-    Sub New(potfResource As OnTheFlyResource, pcardswipedata As String, ByVal ipaddress As String)
+    Sub New(potfResource As OnTheFlyResource, pcardswipedata As String, ipAddr As String)
         otfresource = potfResource
         cardswipedata = pcardswipedata
         cardNum = ReservationOnTheFlyUtil.GetCardNumber(pcardswipedata)
         rreq.CardNum = cardNum
-        rreq.IPAddress = ipaddress
+        rreq.IPAddress = ipAddr
         rreq.OnTheFlyName = otfresource.Resource.ResourceName
         rreq.ResourceID = otfresource.Resource.ResourceID
         Init()
@@ -299,7 +298,7 @@ Public Class OnTheFlyImpl
     '------------------------Utility methods -------------------------
     Private Function IsUserInTheReservationInviteesList(ByVal rsv As Reservation, ByVal currentClient As Client) As Boolean
         If rsv IsNot Nothing Then
-            Dim allInvs As IList(Of ReservationInvitee) = ReservationManager.GetInvitees(rsv).ToList()
+            Dim allInvs As IList(Of ReservationInvitee) = ReservationManager.GetInvitees(rsv.ReservationID).ToList()
             If allInvs IsNot Nothing Then
                 Dim isReservedOrIsInvted As ReservationInvitee = allInvs.Where(Function(x) x.Invitee.ClientID = currentClient.ClientID).FirstOrDefault()
 
@@ -357,7 +356,7 @@ Public Class OnTheFlyImpl
         Return otfresource.Resource.ResourceID
     End Function
 
-    Private Async Function CreateAndStartReservation() As Task(Of Integer)
+    Private Function CreateAndStartReservation() As Integer
         'create and start reservation  ------------
         Dim rsv As Reservation = New Reservation()
 
@@ -397,12 +396,12 @@ Public Class OnTheFlyImpl
             Throw New InvalidOperationException("The default account could not be determined.")
         End If
 
-        Await StartReservation(clientWhoSwipedTheCard, rsv, rr, res.MinReservTime)
+        StartReservation(clientWhoSwipedTheCard, rsv, rr, res.MinReservTime)
 
         Return rsv.ReservationID
     End Function
 
-    Private Async Function StartReservation(ByVal aclient As Client, ByVal rsv As Reservation, ByVal rr As ResRequest, Optional ByVal reservationTime As Integer = -1) As Task
+    Private Sub StartReservation(ByVal aclient As Client, ByVal rsv As Reservation, ByVal rr As ResRequest, Optional ByVal reservationTime As Integer = -1)
         If rsv Is Nothing Then
             Throw New ArgumentNullException("rsv", "A null Reservation object is not allowed. [LabScheduler.AppCode.OnTheFlyImpl.StartReservation]")
         End If
@@ -416,16 +415,16 @@ Public Class OnTheFlyImpl
             .Reservation = rsv
         }
 
-        Dim isInLab As Boolean = KioskUtility.ClientInLab(rsv.Resource.ProcessTech.Lab.LabID, rsv.Client.ClientID, rr.IPAddress)
-        Await ReservationManager.StartReservation(rsv, aclient.ClientID, isInLab)
+        ReservationManager.StartReservation(rsv, aclient, rr.IPAddress)
 
         rr.ReservationID = rsv.ReservationID
         rr.ReservationTime = Convert.ToInt32(reservationTime)
         ronfly.CardNumber = rr.CardNum
         ronfly.IPAddress = rr.IPAddress
         ronfly.OnTheFlyName = rr.OnTheFlyName
+
         DA.Current.Insert(ronfly)
-    End Function
+    End Sub
 
     Private Shared Function GetNearestStartTime(ByVal minResTimeInMins As Integer) As Date
         Dim pDt = New Date(Date.Now.Year, Date.Now.Month, Date.Now.Day, Date.Now.Hour, 0, 0)
@@ -453,31 +452,31 @@ Public Class OnTheFlyImpl
         End If
     End Sub
 
-    Public Async Function EndExisitingIfExistsAndStartNextReservation() As Task  ' there is already next reservation reserved from scheduler
+    Public Sub EndExisitingIfExistsAndStartNextReservation()  ' there is already next reservation reserved from scheduler
         EndExistingReservation()
         'start next
-        Dim reservationId As Integer = Await CreateAndStartReservation()
+        Dim reservationId As Integer = CreateAndStartReservation()
         Log(String.Format("EndExisitingIfExistsAndStartNextReservation [ReservationID = {0}, WagoEnabled = {1}]", reservationId, CacheManager.Current.WagoEnabled()), True)
-    End Function
+    End Sub
 
-    Public Async Function CreateAndStartNewReservation() As Task
-        Dim reservationId As Integer = Await CreateAndStartReservation()
+    Public Sub CreateAndStartNewReservation()
+        Dim reservationId As Integer = CreateAndStartReservation()
         Log(String.Format("CreateAndStartNewReservation [ReservationID = {0}, WagoEnabled = {1}]", reservationId, CacheManager.Current.WagoEnabled()), True)
-    End Function
+    End Sub
 
-    Public Async Function StartExistingReservation() As Task
+    Public Sub StartExistingReservation()
         If currentlyRunningReservationByUser.IsStarted Then
             Log("StartExistingReservation:AlreadyStarted", True)
         Else
-            Await StartReservation(clientWhoSwipedTheCard, currentlyRunningReservationByUser, GetResRequest())
+            StartReservation(clientWhoSwipedTheCard, currentlyRunningReservationByUser, GetResRequest())
             Log("StartExistingReservation:Started", True)
         End If
-    End Function
+    End Sub
 
-    Public Async Function StartNextReservation() As Task
+    Public Sub StartNextReservation()
         Dim nexRestInMinTime = GetReservationWhichStartsInMinReservationTime()
-        Await StartReservation(clientWhoSwipedTheCard, nexRestInMinTime, GetResRequest())
-    End Function
+        StartReservation(clientWhoSwipedTheCard, nexRestInMinTime, GetResRequest())
+    End Sub
 
     Public Sub ExtendExistingReservation()
         Log("[5]ExtendExistingReservation", True)
@@ -493,12 +492,12 @@ Public Class OnTheFlyImpl
         Log("Fail-" + func, msg)
     End Sub
 
-    Public Async Function Swipe() As Task   'starting point for OnTheFlyImpl
+    Public Sub Swipe() 'starting point for OnTheFlyImpl
 
         Try
             Log("--SwipeStart--", cardNum)
             If _IsUserAuthorizedOnTool() Then
-                Await OnTheFlyRules.Apply(Me)
+                OnTheFlyRules.Apply(Me)
             Else
                 Fail("Swipe", "User not authorized on the tool")
             End If
@@ -521,7 +520,7 @@ Public Class OnTheFlyImpl
         Finally
             Log("--SwipeEnd--", cardNum)
         End Try
-    End Function
+    End Sub
 
     Private Function GetSwipedByClientID() As Integer
         If clientWhoSwipedTheCard Is Nothing Then
@@ -546,119 +545,119 @@ Public Class OnTheFlyImpl
 End Class
 
 Public Class OnTheFlyRules   '-------------------------------------------------------------------------------
-    Private Shared Async Function Check_KeepAlive(ByVal oi As OnTheFlyImpl) As Task
+    Private Shared Sub Check_KeepAlive(ByVal oi As OnTheFlyImpl)
         If oi._KeepAlive() Then
             oi.Fail("_KeepAlive")
         Else
-            Await oi.CreateAndStartNewReservation()
+            oi.CreateAndStartNewReservation()
         End If
-    End Function
+    End Sub
 
-    Private Shared Async Function Check_InGroupOfNextReservation(ByVal oi As OnTheFlyImpl) As Task
+    Private Shared Sub Check_InGroupOfNextReservation(ByVal oi As OnTheFlyImpl)
         If oi._InGroupOfNextReservation() Then
             If oi._ExistingReservation() Then
-                Await oi.EndExisitingIfExistsAndStartNextReservation()
+                oi.EndExisitingIfExistsAndStartNextReservation()
             Else
-                Await oi.StartNextReservation()
+                oi.StartNextReservation()
             End If
         Else
             oi.Fail("Check_InGroupOfNextReservation", "Not in group of next Reservation")
         End If
-    End Function
+    End Sub
 
-    Private Shared Async Function Check_DoesAnotherReservationStartWithInMinimumTime(ByVal oi As OnTheFlyImpl) As Task
+    Private Shared Sub Check_DoesAnotherReservationStartWithInMinimumTime(ByVal oi As OnTheFlyImpl)
         If oi._IsAnotherReservationStartInMinimumTime() Then
             'In group of Next reservation ?
-            Await Check_InGroupOfNextReservation(oi)  ' is this same behaviour or different ?
+            Check_InGroupOfNextReservation(oi)  ' is this same behaviour or different ?
         Else
             'End Current and Create and Start New
-            Await oi.EndExisitingIfExistsAndStartNextReservation()
+            oi.EndExisitingIfExistsAndStartNextReservation()
         End If
-    End Function
+    End Sub
 
-    Private Shared Async Function Check_OTF_Reservation(ByVal oi As OnTheFlyImpl) As Task
+    Private Shared Sub Check_OTF_Reservation(ByVal oi As OnTheFlyImpl)
         If oi._IsExistingAnOTFReservation() Then
-            Await Check_DoesAnotherReservationStartWithInMinimumTime(oi)
+            Check_DoesAnotherReservationStartWithInMinimumTime(oi)
         Else
             oi.Fail("Check_OTF_Reservation")
         End If
-    End Function
+    End Sub
 
-    Private Shared Async Function Check_InGroupExistingReservation_WhileRunning(ByVal oi As OnTheFlyImpl) As Task
+    Private Shared Sub Check_InGroupExistingReservation_WhileRunning(ByVal oi As OnTheFlyImpl)
         If oi._InGroupExisitingReservation() Then
-            Await Check_DoesAnotherReservationStartWithInGranularity(oi)
+            Check_DoesAnotherReservationStartWithInGranularity(oi)
         Else
-            Await Check_OTF_Reservation(oi) '   ------------------------- new flow 'is existing OTF
+            Check_OTF_Reservation(oi) '   ------------------------- new flow 'is existing OTF
         End If
-    End Function
+    End Sub
 
-    Private Shared Async Function Check_DoesAnotherReservationStartWithInGranularity(ByVal oi As OnTheFlyImpl) As Task
+    Private Shared Sub Check_DoesAnotherReservationStartWithInGranularity(ByVal oi As OnTheFlyImpl)
         If oi._DoesAnotherReservationStartWithInGranularity() Then
-            Await Check_InGroupOfNextReservation(oi)
+            Check_InGroupOfNextReservation(oi)
         Else
             oi.ExtendExistingReservation()
         End If
-    End Function
-    Private Shared Async Function Check_AfterGracePeriod(ByVal oi As OnTheFlyImpl) As Task
+    End Sub
+    Private Shared Sub Check_AfterGracePeriod(ByVal oi As OnTheFlyImpl)
         If oi._AfterGracePeriod() Then
-            Await Check_KeepAlive(oi)
+            Check_KeepAlive(oi)
         Else
             oi.Fail("Check_AfterGracePeriod")
         End If
-    End Function
+    End Sub
 
-    Private Shared Async Function Check_InGroupExistingReservation_NotRunning(ByVal oi As OnTheFlyImpl) As Task
+    Private Shared Sub Check_InGroupExistingReservation_NotRunning(ByVal oi As OnTheFlyImpl)
         If oi._InGroupExisitingReservation() Then
-            Await oi.StartExistingReservation()
+            oi.StartExistingReservation()
         Else
-            Await Check_AfterGracePeriod(oi)
+            Check_AfterGracePeriod(oi)
         End If
-    End Function
+    End Sub
 
-    Private Shared Async Function ApplyIsCreateAndStart(ByVal oi As OnTheFlyImpl) As Task
+    Private Shared Sub ApplyIsCreateAndStart(ByVal oi As OnTheFlyImpl)
         If oi._IsCreateAndStart() Then
-            Await ApplyNonExistingReservation(oi)
+            ApplyNonExistingReservation(oi)
         Else
             ' reservation_start_only is already handled in earlier step
             oi.Fail("ApplyIsCreateAndStart", "Unreachable code, Start-Already-Existing-Reservation, this is should be be handled in earlier step")
         End If
-    End Function
+    End Sub
 
-    Private Shared Async Function ApplyNonExistingReservation(ByVal oi As OnTheFlyImpl) As Task
+    Private Shared Sub ApplyNonExistingReservation(ByVal oi As OnTheFlyImpl)
         If oi._DoesAnotherReservationStartWithInMinReservationTime() Then
-            Await Check_InGroupOfNextReservation(oi)
+            Check_InGroupOfNextReservation(oi)
         Else
-            Await oi.CreateAndStartNewReservation()
+            oi.CreateAndStartNewReservation()
         End If
-    End Function
+    End Sub
 
-    Private Shared Async Function ApplyExistingReservation(ByVal oi As OnTheFlyImpl) As Task
+    Private Shared Sub ApplyExistingReservation(ByVal oi As OnTheFlyImpl)
         If oi._Running() Then
-            Await Check_InGroupExistingReservation_WhileRunning(oi)
+            Check_InGroupExistingReservation_WhileRunning(oi)
         Else
-            Await Check_InGroupExistingReservation_NotRunning(oi)
+            Check_InGroupExistingReservation_NotRunning(oi)
         End If
-    End Function
+    End Sub
 
-    Private Shared Async Function ApplyCabinet(ByVal oi As OnTheFlyImpl) As Task
-        Await oi.EndExisitingIfExistsAndStartNextReservation()
-    End Function
+    Private Shared Sub ApplyCabinet(ByVal oi As OnTheFlyImpl)
+        oi.EndExisitingIfExistsAndStartNextReservation()
+    End Sub
 
-    Private Shared Async Function ApplyTool(ByVal oi As OnTheFlyImpl) As Task
+    Private Shared Sub ApplyTool(ByVal oi As OnTheFlyImpl)
         If oi._ExistingReservation() Then
-            Await ApplyExistingReservation(oi)
+            ApplyExistingReservation(oi)
         Else
-            Await ApplyIsCreateAndStart(oi) 'ApplyNonExistingReservation(oi)
+            ApplyIsCreateAndStart(oi) 'ApplyNonExistingReservation(oi)
         End If
-    End Function
+    End Sub
 
-    Public Shared Async Function Apply(ByVal oi As OnTheFlyImpl) As Task
+    Public Shared Sub Apply(ByVal oi As OnTheFlyImpl)
         If oi._IsCabinet() Then
-            Await ApplyCabinet(oi)
+            ApplyCabinet(oi)
         Else
-            Await ApplyTool(oi)
+            ApplyTool(oi)
         End If
-    End Function
+    End Sub
 
     Public Shared Function EndReservation(ByVal oi As OnTheFlyImpl) As Integer
         If oi._ExistingReservation() Then ' is there an existing reservation?

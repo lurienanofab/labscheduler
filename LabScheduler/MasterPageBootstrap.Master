@@ -18,7 +18,7 @@
     <link rel="stylesheet" href="//ssel-apps.eecs.umich.edu/static/lib/fullcalendar/fullcalendar.min.css?v=20161226" />
     <link rel="stylesheet" href="//ssel-apps.eecs.umich.edu/static/lib/fullcalendar/fullcalendar.print.css?v=20161226" media="print" />
     <link rel="stylesheet" href="//ssel-apps.eecs.umich.edu/static/scripts/jquery/jquery.ajaxbutton/jquery.ajaxbutton.css?v=20161226" />
-    <link rel="stylesheet" href="//ssel-apps.eecs.umich.edu/static/styles/datatables.css?v=20161226" />
+    <%--<link rel="stylesheet" href="//ssel-apps.eecs.umich.edu/static/styles/datatables.css?v=20161226" />--%>
     <link rel="stylesheet" href="//ssel-apps.eecs.umich.edu/static/styles/master.css?v=20161226" />
     <link rel="stylesheet" href="//ssel-apps.eecs.umich.edu/static/styles/navigation.css?v=20161226" />
     <link rel="stylesheet" href="//ssel-apps.eecs.umich.edu/static/styles/common.css?v=20161226" />

@@ -53,7 +53,8 @@
     <link rel="stylesheet" href="//ssel-apps.eecs.umich.edu/static/lib/fullcalendar/fullcalendar.min.css" />
     <link rel="stylesheet" href="//ssel-apps.eecs.umich.edu/static/lib/fullcalendar/fullcalendar.print.css" media="print" />
     <link rel="stylesheet" href="//ssel-apps.eecs.umich.edu/static/scripts/jquery/jquery.ajaxbutton/jquery.ajaxbutton.css" />
-    <link rel="stylesheet" href="//ssel-apps.eecs.umich.edu/static/styles/datatables.css?v=20161216" />
+    <%--<link rel="stylesheet" href="//ssel-apps.eecs.umich.edu/static/styles/datatables.css?v=20161216" />--%>
+    <link rel="stylesheet" href="//ssel-apps.eecs.umich.edu/static/lib/datatables/css/dataTables.bootstrap.min.css" />
     <link rel="stylesheet" href="//ssel-apps.eecs.umich.edu/static/styles/master.css" />
     <link rel="stylesheet" href="//ssel-apps.eecs.umich.edu/static/styles/navigation.css?v=20161216" />
     <link rel="stylesheet" href="//ssel-apps.eecs.umich.edu/static/styles/common.css" />
@@ -65,6 +66,7 @@
     <link rel="stylesheet" href="styles/splitter.css" />
     <link rel="stylesheet" href="styles/tabs.css?v=20160510" />
     <link rel="stylesheet" href="styles/treeview.css?v=20160412" />
+    <link rel="stylesheet" href="styles/processinfo.css?v=20181023" />
     <link rel="stylesheet" href="styles/bootstrap.css?v=20161205" />
     <link rel="stylesheet" href="scripts/calendar/calendar.css" />
 
@@ -80,7 +82,7 @@
                     <table class="scheduler-header">
                         <tr>
                             <td style="vertical-align: middle; width: 242px;">
-                                <asp:HyperLink runat="server" ID="hypHome" NavigateUrl="~/">
+                                <asp:HyperLink runat="server" ID="hypHome" NavigateUrl="~/?Home">
                                 <img src="images/SchedulerLogo.png" alt="Home" style="border: none;" />
                                 </asp:HyperLink>
                             </td>
@@ -100,6 +102,10 @@
                                     <span>|</span>
                                     <asp:PlaceHolder runat="server" ID="phFDT">
                                         <asp:HyperLink runat="server" ID="hypFDT" Text="Facility Down Time"></asp:HyperLink>
+                                        <span>|</span>
+                                    </asp:PlaceHolder>
+                                    <asp:PlaceHolder runat="server" ID="phUtility">
+                                        <asp:HyperLink runat="server" ID="hypUtility" Text="Scheduler Utility" NavigateUrl="~/Utility.aspx"></asp:HyperLink>
                                         <span>|</span>
                                     </asp:PlaceHolder>
                                     <a href="/sselonline" target="_top">Exit Application</a>
@@ -151,6 +157,7 @@
     <script src="//ssel-apps.eecs.umich.edu/static/lib/bootstrap/js/bootstrap.min.js"></script>
     <script src="//ssel-apps.eecs.umich.edu/static/lib/bootstrap/plugins/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
     <script src="//ssel-apps.eecs.umich.edu/static/lib/datatables/js/jquery.dataTables.min.js"></script>
+    <script src="//ssel-apps.eecs.umich.edu/static/lib/datatables/js/dataTables.bootstrap.min.js"></script>
     <script src="//ssel-apps.eecs.umich.edu/static/scripts/jquery/jquery.daterange.js"></script>
     <script src="//ssel-apps.eecs.umich.edu/static/lib/jclock/jquery.jclock.js"></script>
     <script src="//ssel-apps.eecs.umich.edu/static/lib/js-cookie/js.cookie.js"></script>

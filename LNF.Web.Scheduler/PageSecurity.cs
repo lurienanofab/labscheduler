@@ -34,9 +34,10 @@ namespace LNF.Web.Scheduler
                     case "resourcedocs.aspx":
                     case "resourceconfig.aspx":
                     case "resourcemaintenance.aspx":
-                        if (HttpContext.Current.Request.SelectedPath().ResourceID > 0)
+                        var resourceId = page.Request.SelectedPath().ResourceID;
+                        if (resourceId > 0)
                         {
-                            ClientAuthLevel authLevel = CacheManager.Current.GetAuthLevel(page.Request.SelectedPath().ResourceID, CacheManager.Current.CurrentUser.ClientID);
+                            ClientAuthLevel authLevel = CacheManager.Current.GetAuthLevel(resourceId, currentUser.ClientID);
                             // So far, only Tool Engineer can see the 3 pages
                             return (authLevel & ClientAuthLevel.ToolEngineer) > 0;
                         }
@@ -47,11 +48,6 @@ namespace LNF.Web.Scheduler
             }
 
             return false;
-        }
-
-        public static bool IsOnKiosk()
-        {
-            return CacheManager.Current.IsOnKiosk();
         }
     }
 }

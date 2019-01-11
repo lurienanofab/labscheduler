@@ -1,5 +1,5 @@
-﻿Imports LNF.Cache
-Imports LNF.Scheduler
+﻿Imports LNF.Web
+Imports LNF.Web.Scheduler
 Imports LNF.Web.Scheduler.Content
 
 Namespace Pages
@@ -11,15 +11,15 @@ Namespace Pages
 
                 If Request.QueryString("ClearSession") = "1" Then
                     Session.Abandon()
-                    Response.Redirect("~/index.aspx")
+                    Response.Redirect("~/index.aspx", True)
                 End If
-
-                litDisplayName.Text = CurrentUser.DisplayName
 
                 ' If client logged in from a Kiosk (or is in a lab), then display My Reservations page
-                If CacheManager.Current.IsOnKiosk() Then
-                    HttpContext.Current.Response.Redirect("~/UserReservations.aspx")
+                If Context.ClientInLab() AndAlso Not Request.QueryString.ToString().Contains("Home") Then
+                    Response.Redirect("~/UserReservations.aspx", True)
                 End If
+
+                litDisplayName.Text = Context.CurrentUser().DisplayName
             End If
         End Sub
     End Class

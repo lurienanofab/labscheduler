@@ -5,6 +5,10 @@ using LNF.Scheduler;
 using LNF.Web.Content;
 using LNF.Data;
 using LNF.Repository;
+using LNF.Models.PhysicalAccess;
+using OnlineServices.Api;
+using System.Collections.Generic;
+using OnlineServices.Api.PhysicalAccess;
 
 namespace LNF.Web.Scheduler.Content
 {
@@ -15,19 +19,14 @@ namespace LNF.Web.Scheduler.Content
             get { return (SchedulerMasterPage)Page.Master; }
         }
 
-        public IClientManager ClientManager => DA.Use<IClientManager>();
-        public IClientOrgManager ClientOrgManager => DA.Use<IClientOrgManager>();
-        public IAccountManager AccountManager => DA.Use<IAccountManager>();
-        public IReservationManager ReservationManager => DA.Use<IReservationManager>();
-        public IReservationInviteeManager ReservationInviteeManager => DA.Use<IReservationInviteeManager>();
-        public IResourceManager ResourceManager => DA.Use<IResourceManager>();
-        public IEmailManager EmailManager => DA.Use<IEmailManager>();
-
-        //Public Shadows ReadOnly Property Master As MasterPageScheduler
-        //Get
-        //        Return CType(Page.Master, MasterPageScheduler)
-        //    End Get
-        //End Property
+        public IClientManager ClientManager => ServiceProvider.Current.Use<IClientManager>();
+        public IClientOrgManager ClientOrgManager => ServiceProvider.Current.Use<IClientOrgManager>();
+        public IAccountManager AccountManager => ServiceProvider.Current.Use<IAccountManager>();
+        public IReservationManager ReservationManager => ServiceProvider.Current.Use<IReservationManager>();
+        public IReservationInviteeManager ReservationInviteeManager => ServiceProvider.Current.Use<IReservationInviteeManager>();
+        public IResourceManager ResourceManager => ServiceProvider.Current.Use<IResourceManager>();
+        public IEmailManager EmailManager => ServiceProvider.Current.Use<IEmailManager>();
+        public IProcessInfoManager ProcessInfoManager => ServiceProvider.Current.Use<IProcessInfoManager>();
 
         public override ClientPrivilege AuthTypes
         {

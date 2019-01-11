@@ -1,4 +1,4 @@
-<%@ Page Language="C#" Title="LNF Scheduler Status" Async="true" %>
+<%@ Page Language="C#" Title="LNF Scheduler Status" %>
 
 <%@ Import Namespace="System.Data" %>
 <%@ Import Namespace="System.Threading.Tasks" %>
@@ -23,28 +23,25 @@
             return;
         }
 
-        currentReservations = DA.Scheduler.Reservation.Query()
+        currentReservations = DA.Current.Query<Reservation>()
                 .Where(x => x.IsActive && x.IsStarted && x.ActualBeginDateTime != null && x.ActualEndDateTime == null)
                 .OrderBy(x => x.ActualBeginDateTime).ToArray()
                 .Select(GetReservationItem).ToArray();
 
-        nextReservations = DA.Scheduler.Reservation.Query()
+        nextReservations = DA.Current.Query<Reservation>()
             .Where(x => x.IsActive && !x.IsStarted && x.ActualBeginDateTime == null && x.ActualEndDateTime == null && x.EndDateTime >= DateTime.Now)
             .OrderBy(x => x.BeginDateTime).ToArray()
             .Select(GetReservationItem).ToArray();
 
-        RegisterAsyncTask(new PageAsyncTask(LoadToolStatus));
+        LoadToolStatus();
     }
 
-    async Task LoadToolStatus()
+    void LoadToolStatus()
     {
-        using (var dba = DA.Current.GetAdapter())
-        {
-            DataTable dt = dba.CommandTypeText().FillDataTable("SELECT ResourceID, ResourceName FROM sselScheduler.dbo.Resource WHERE IsActive = 1 ORDER BY ResourceName");
-            await WagoInterlock.AllToolStatus(dt);
-            rptToolStatus.DataSource = dt.AsEnumerable().Select(GetToolStatusItem);
-            rptToolStatus.DataBind();
-        }
+        DataTable dt = DA.Command(CommandType.Text).FillDataTable("SELECT ResourceID, ResourceName FROM sselScheduler.dbo.Resource WHERE IsActive = 1 ORDER BY ResourceName");
+        WagoInterlock.AllToolStatus(dt);
+        rptToolStatus.DataSource = dt.AsEnumerable().Select(GetToolStatusItem);
+        rptToolStatus.DataBind();
     }
 
     ReservationItem GetReservationItem(Reservation rsv)
@@ -181,11 +178,6 @@
         return null;
     }
 
-    protected string GetStaticUrl(string path)
-    {
-        return LNF.CommonTools.Utility.GetStaticUrl(path);
-    }
-
     public class ReservationItem
     {
         public int ResourceID { get; set; }
@@ -211,7 +203,7 @@
 
     <title>LNF Scheduler Status</title>
 
-    <link rel="stylesheet" href="<%=GetStaticUrl("styles/bootstrap/themes/lnf/bootstrap.css")%>" />
+    <link rel="stylesheet" href="//ssel-apps.eecs.umich.edu/static/styles/bootstrap/themes/lnf/bootstrap.css" />
 
     <style>
         span.form-text {
@@ -386,9 +378,9 @@
     </form>
 
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
-    <script src="<%=GetStaticUrl("lib/jquery/jquery.min.js")%>"></script>
+    <script src="//ssel-apps.eecs.umich.edu/static/lib/jquery/jquery.min.js"></script>
 
     <!-- Include all compiled plugins (below), or include individual files as needed -->
-    <script src="<%=GetStaticUrl("lib/bootstrap/js/bootstrap.min.js")%>"></script>
+    <script src="//ssel-apps.eecs.umich.edu/static/lib/bootstrap/js/bootstrap.min.js"></script>
 </body>
 </html>

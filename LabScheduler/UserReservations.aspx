@@ -1,4 +1,4 @@
-﻿<%@ Page Title="Reservations" Language="vb" AutoEventWireup="false" MasterPageFile="~/MasterPageScheduler.Master" CodeBehind="UserReservations.aspx.vb" Inherits="LabScheduler.Pages.UserReservations" Async="true" %>
+﻿<%@ Page Title="Reservations" Language="vb" AutoEventWireup="false" MasterPageFile="~/MasterPageScheduler.Master" CodeBehind="UserReservations.aspx.vb" Inherits="LabScheduler.Pages.UserReservations" %>
 
 <%@ Reference Control="~/UserControls/ReservationView.ascx" %>
 <%@ Register TagPrefix="uc" TagName="ReservationView" Src="~/UserControls/ReservationView.ascx" %>
@@ -30,6 +30,14 @@
                 <b>
                     <span>Current User:</span>
                     <asp:Literal runat="server" ID="litCurrentUser"></asp:Literal>
+                </b>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <b>
+                    <span>Location:</span>
+                    <asp:Literal runat="server" ID="litLocation"></asp:Literal>
                 </b>
             </td>
         </tr>
