@@ -1,12 +1,11 @@
 ﻿Imports LNF
 Imports LNF.Cache
-Imports LNF.Email
 Imports LNF.Models.Data
+Imports LNF.Models.Mail
 Imports LNF.Models.Scheduler
 Imports LNF.Repository
 Imports LNF.Repository.Data
 Imports LNF.Scheduler
-Imports LNF.Web
 Imports LNF.Web.Scheduler
 Imports LNF.Web.Scheduler.Content
 Imports Scheduler = LNF.Repository.Scheduler
@@ -325,7 +324,7 @@ Namespace UserControls
                     .IsHtml = False
                 }
 
-                ServiceProvider.Current.Email.SendMessage(args)
+                ServiceProvider.Current.Mail.SendMessage(args)
 
                 phSuccessMessage.Visible = True
                 litSuccessMessage.Text = "Your email has been sent successfully."

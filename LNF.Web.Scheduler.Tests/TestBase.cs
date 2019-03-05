@@ -63,7 +63,7 @@ namespace LNF.Web.Scheduler.Tests
     public class HttpRequestManager : IDisposable
     {
         private StringWriter _responseWriter = null;
-        private IUnitOfWork _uow = null;
+        private IDisposable _uow = null;
 
         //public HttpContext Context { get; }
 
@@ -75,7 +75,7 @@ namespace LNF.Web.Scheduler.Tests
             HttpContext.Current = new HttpContext(httpRequest, httpResponse);
             SessionStateUtility.AddHttpSessionStateToContext(HttpContext.Current, sessionContainer);
             ServiceProvider.Current = IOC.Resolver.GetInstance<ServiceProvider>();
-            _uow = ServiceProvider.Current.DataAccess.StartUnitOfWork();
+            _uow = DA.StartUnitOfWork();
         }
 
         public string GetResponse()

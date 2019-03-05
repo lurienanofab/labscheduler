@@ -120,7 +120,7 @@ namespace LNF.Web.Scheduler.Controls
                     StringBuilder sb = new StringBuilder();
                     sb.AppendLine(string.Format("Create ticket failed. User: {0} ({1}). Resource: {2} ({3})", CurrentUser.DisplayName, CacheManager.Current.CurrentUser.ClientID, res.ResourceName, res.ResourceID));
                     sb.AppendLine(string.Format("----------{0}{1}", Environment.NewLine, addTicketResult.Exception.Message));
-                    ServiceProvider.Current.Email.SendMessage(CacheManager.Current.CurrentUser.ClientID, "LNF.Web.Scheduler.Controls.Helpdesk.btnCreateTicket_Click(object sender, EventArgs e)", "Create Ticket Error", sb.ToString(), SendEmail.SystemEmail, SendEmail.DeveloperEmails);
+                    SendEmail.SendDeveloperEmail("LNF.Web.Scheduler.Controls.Helpdesk.btnCreateTicket_Click", "Create Ticket Error", sb.ToString());
                     litErrMsg.Text = WebUtility.BootstrapAlert("danger", "Sorry, an error occurred and your ticket was not created. A notification has been sent to LNF staff.");
                 }
             }

@@ -1,8 +1,8 @@
 ﻿Imports System.Text
 Imports LNF
 Imports LNF.Cache
-Imports LNF.Email
 Imports LNF.Models.Data
+Imports LNF.Models.Mail
 Imports LNF.Repository
 Imports LNF.Repository.Data
 
@@ -84,7 +84,7 @@ Public Class ErrorUtility
                 .To = toAddr
             }
 
-            ServiceProvider.Current.Email.SendMessage(args)
+            ServiceProvider.Current.Mail.SendMessage(args)
         Catch ex As Exception
             errors.Add(New ErrorLog() With {
                 .Application = appName,

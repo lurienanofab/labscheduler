@@ -1,12 +1,9 @@
 ﻿using LNF.Cache;
-using LNF.Email;
-using LNF.Models.Scheduler;
 using LNF.Scheduler;
+using Newtonsoft.Json;
 using System;
-using System.Linq;
 using System.Web;
 using System.Web.SessionState;
-using Newtonsoft.Json;
 
 namespace LNF.Web.Scheduler.Handlers
 {

@@ -14,7 +14,7 @@ namespace LNF.Web.Scheduler.Tests
     [TestClass]
     public class ReservationTests
     {
-        private IUnitOfWork _uow;
+        private IDisposable _uow;
 
         private void LogIn(int clientId)
         {
@@ -33,7 +33,7 @@ namespace LNF.Web.Scheduler.Tests
         [TestInitialize]
         public void TestInitialize()
         {
-            _uow = ServiceProvider.Current.DataAccess.StartUnitOfWork();
+            _uow = DA.StartUnitOfWork();
         }
 
         [TestCleanup]
