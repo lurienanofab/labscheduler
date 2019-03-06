@@ -11,27 +11,27 @@ Option Strict On
 Option Explicit On
 
 Namespace Pages
-
+    
     Partial Public Class Lab
-
+        
         '''<summary>
-        '''lblLabPath control.
+        '''litLabPath control.
         '''</summary>
         '''<remarks>
         '''Auto-generated field.
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
-        Protected WithEvents lblLabPath As Global.System.Web.UI.WebControls.Label
-
+        Protected WithEvents litLabPath As Global.System.Web.UI.WebControls.Literal
+        
         '''<summary>
-        '''lblLabName control.
+        '''litLabName control.
         '''</summary>
         '''<remarks>
         '''Auto-generated field.
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
-        Protected WithEvents lblLabName As Global.System.Web.UI.WebControls.Label
-
+        Protected WithEvents litLabName As Global.System.Web.UI.WebControls.Literal
+        
         '''<summary>
         '''lblDescription control.
         '''</summary>
@@ -40,16 +40,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents lblDescription As Global.System.Web.UI.WebControls.Label
-
-        '''<summary>
-        '''tdImage control.
-        '''</summary>
-        '''<remarks>
-        '''Auto-generated field.
-        '''To modify move field declaration from designer file to code-behind file.
-        '''</remarks>
-        Protected WithEvents tdImage As Global.System.Web.UI.HtmlControls.HtmlTableCell
-
+        
         '''<summary>
         '''imgPicture control.
         '''</summary>
@@ -58,7 +49,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents imgPicture As Global.System.Web.UI.WebControls.Image
-
+        
         '''<summary>
         '''rptResources control.
         '''</summary>

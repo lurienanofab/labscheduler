@@ -9,53 +9,42 @@
 </asp:Content>
 
 <asp:Content ID="Content2" ContentPlaceHolderID="ContentPlaceHolder1" runat="server">
-    <table class="content-table">
-        <tr>
-            <td>
-                <h5>
-                    <asp:Label ID="lblLabPath" Font-Bold="True" runat="server" />
-                    <asp:Label ID="lblLabName" Font-Bold="True" ForeColor="#cc6633" runat="server" /></h5>
-            </td>
-        </tr>
-        <tr>
-            <td>
-                <asp:Label ID="lblDescription" runat="server"></asp:Label>
-            </td>
-        </tr>
-        <tr>
-            <td id="tdImage" runat="server" class="TableCell">
-                <asp:Image ID="imgPicture" runat="server"></asp:Image>
-            </td>
-        </tr>
-        <tr>
-            <td>
-                <div class="table-container" style="margin-top: 5px; visibility: hidden;">
-                    <table class="resources datatable">
-                        <thead>
-                            <tr>
-                                <th>Process Tech</th>
-                                <th>Resource</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <asp:Repeater runat="server" ID="rptResources">
-                                <ItemTemplate>
-                                    <tr>
-                                        <td>
-                                            <a href='<%#Eval("ProcessTechUrl")%>'><%#Eval("ProcessTechName")%></a>
-                                        </td>
-                                        <td>
-                                            <a href='<%#Eval("ResourceUrl")%>'><%#String.Format("[{0}] {1}", Convert.ToInt32(Eval("ResourceID")).ToString("000000"), Eval("ResourceName"))%></a>
-                                        </td>
-                                    </tr>
-                                </ItemTemplate>
-                            </asp:Repeater>
-                        </tbody>
-                    </table>
-                </div>
-            </td>
-        </tr>
-    </table>
+    <h5 style="font-weight: bold;">
+        <asp:Literal runat="server" ID="litLabPath"></asp:Literal>
+        <span style="color: #cc6633;">
+            <asp:Literal runat="server" ID="litLabName" /></span>
+    </h5>
+
+    <asp:Label runat="server" ID="lblDescription" Font-Bold="true"></asp:Label>
+
+    <div style="margin-top: 10px;">
+        <asp:Image runat="server" ID="imgPicture"></asp:Image>
+    </div>
+
+    <div class="table-container" style="margin-top: 10px; visibility: hidden;">
+        <table class="resources datatable table table-striped">
+            <thead>
+                <tr>
+                    <th>Process Tech</th>
+                    <th>Resource</th>
+                </tr>
+            </thead>
+            <tbody>
+                <asp:Repeater runat="server" ID="rptResources">
+                    <ItemTemplate>
+                        <tr>
+                            <td>
+                                <a href='<%#Eval("ProcessTechUrl")%>'><%#Eval("ProcessTechName")%></a>
+                            </td>
+                            <td>
+                                <a href='<%#Eval("ResourceUrl")%>'><%#String.Format("[{0}] {1}", Convert.ToInt32(Eval("ResourceID")).ToString("000000"), Eval("ResourceName"))%></a>
+                            </td>
+                        </tr>
+                    </ItemTemplate>
+                </asp:Repeater>
+            </tbody>
+        </table>
+    </div>
 </asp:Content>
 
 <asp:Content ID="Content3" ContentPlaceHolderID="scripts" runat="server">

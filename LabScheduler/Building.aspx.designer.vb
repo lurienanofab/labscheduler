@@ -11,18 +11,18 @@ Option Strict On
 Option Explicit On
 
 Namespace Pages
-
+    
     Partial Public Class Building
-
+        
         '''<summary>
-        '''lblBuildingName control.
+        '''litBuildingName control.
         '''</summary>
         '''<remarks>
         '''Auto-generated field.
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
-        Protected WithEvents lblBuildingName As Global.System.Web.UI.WebControls.Label
-
+        Protected WithEvents litBuildingName As Global.System.Web.UI.WebControls.Literal
+        
         '''<summary>
         '''lblDescription control.
         '''</summary>
@@ -31,7 +31,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents lblDescription As Global.System.Web.UI.WebControls.Label
-
+        
         '''<summary>
         '''imgPicture control.
         '''</summary>
@@ -40,7 +40,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents imgPicture As Global.System.Web.UI.WebControls.Image
-
+        
         '''<summary>
         '''rptResources control.
         '''</summary>

@@ -16,8 +16,8 @@ Namespace Pages
         Private Sub LoadLab(labId As Integer)
             Dim lab As LabItem = CacheManager.Current.ResourceTree().GetLab(labId)
             If lab IsNot Nothing Then
-                lblLabPath.Text = lab.BuildingName + " > "
-                lblLabName.Text = lab.LabDisplayName
+                litLabPath.Text = lab.BuildingName + " &gt; "
+                litLabName.Text = lab.LabDisplayName
                 lblDescription.Text = lab.LabDescription
                 UploadFileUtility.DisplayImage(imgPicture, "Lab", lab.LabID.ToString())
             End If
