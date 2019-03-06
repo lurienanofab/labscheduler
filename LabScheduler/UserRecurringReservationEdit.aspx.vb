@@ -76,7 +76,7 @@ Namespace Pages
 
             If rr.Pattern.PatternID = 1 Then
                 rdoRecurringPatternWeekly.Checked = True
-                Dim dow As DayOfWeek = CType(rr.PatternParam1 - 1, DayOfWeek)
+                Dim dow As DayOfWeek = CType(rr.PatternParam1, DayOfWeek)
                 Dim radio As HtmlInputRadioButton = Nothing
                 Select Case dow
                     Case DayOfWeek.Monday
@@ -173,7 +173,7 @@ Namespace Pages
                     dow = DayOfWeek.Sunday
                 End If
 
-                rr.PatternParam1 = Convert.ToInt32(dow) + 1
+                rr.PatternParam1 = Convert.ToInt32(dow)
                 rr.PatternParam2 = Nothing
             Else
                 Dim ddlMonthly1 As DropDownList = CType(item.FindControl("ddlMonthly1"), DropDownList)

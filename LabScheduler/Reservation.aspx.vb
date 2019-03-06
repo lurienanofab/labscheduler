@@ -840,8 +840,8 @@ Namespace Pages
                         End If
 
                         If rdoRecurringPatternWeekly.Checked Then
-                            ' must add 1 here because the key is zero based - so Sunday = 0, but in the database Sunday = 1
-                            rr.PatternParam1 = Convert.ToInt32(GetSelectedDayOfWeek()) + 1
+                            ' Day-of-week is stored in SQL as zero based index (0 = Sunday, 1 = Monday, etc). Note that SQL uses a 1 based index.
+                            rr.PatternParam1 = Convert.ToInt32(GetSelectedDayOfWeek())
                         ElseIf rdoRecurringPatternMonthly.Checked Then
                             rr.PatternParam1 = Convert.ToInt32(ddlMonthly1.SelectedValue)
                             rr.PatternParam2 = Convert.ToInt32(ddlMonthly2.SelectedValue)
