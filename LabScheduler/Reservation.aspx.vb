@@ -107,6 +107,7 @@ Namespace Pages
             Try
                 If Not Page.IsPostBack Then
                     ShowLoadError(Nothing)
+                    Session.Remove("IsRecurring")
                     LoadReservation()
                 End If
             Catch ex As Exception
