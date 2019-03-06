@@ -17,6 +17,9 @@ Namespace Pages
 
         Private _EditReservation As ReservationItem
 
+        Private _holidays As IEnumerable(Of Data.Holiday)
+        Private _maxForgivenDay As Integer = Integer.Parse(Utility.GetRequiredAppSetting("MaxForgivenDay"))
+
         Private Function GetClient() As ClientItem
             Dim c As ClientItem = Nothing
             Dim cid As Integer = 0
@@ -192,12 +195,10 @@ Namespace Pages
         End Sub
 
         Private Sub LoadEditForm()
-            Dim canForgive As Boolean = ReservationHistoryUtility.ReservationCanBeForgiven(CurrentUser, EditReservation, Date.Now)
-            Dim canChangeAcct As Boolean = ReservationHistoryUtility.ReservationAccountCanBeChanged(CurrentUser, EditReservation, Date.Now)
+            Dim holidays As IEnumerable(Of Data.Holiday) = GetHolidays()
+            Dim canForgive As Boolean = ReservationHistoryUtility.ReservationCanBeForgiven(CurrentUser, EditReservation, DateTime.Now, _maxForgivenDay, holidays)
+            Dim canChangeAcct As Boolean = ReservationHistoryUtility.ReservationAccountCanBeChanged(CurrentUser, EditReservation, DateTime.Now, holidays)
             Dim canChangeNotes As Boolean = ReservationHistoryUtility.ReservationNotesCanBeChanged(CurrentUser, EditReservation)
-
-            Dim sd As Date = EditReservation.ChargeBeginDateTime().FirstOfMonth()
-            Dim ed As Date = EditReservation.ChargeEndDateTime().FirstOfMonth().AddMonths(1)
 
             litReservationID.Text = EditReservation.ReservationID.ToString()
             litResourceName.Text = EditReservation.GetResourceDisplayName()
@@ -280,9 +281,8 @@ Namespace Pages
         End Function
 
         ' this overload is called from the aspx page
-        Protected Overloads Function IsBeforeForgiveCutoff(reservationId As Integer) As Boolean
-            Dim rsv As ReservationItem = DA.Current.Single(Of Scheduler.Reservation)(reservationId).Model(Of ReservationItem)()
-            Return ReservationHistoryUtility.IsBeforeForgiveCutoff(rsv, Date.Now)
+        Protected Overloads Function IsBeforeForgiveCutoff(item As ReservationHistoryItem) As Boolean
+            Return ReservationHistoryUtility.IsBeforeForgiveCutoff(item, Date.Now, _maxForgivenDay, GetHolidays())
         End Function
 
         Protected Sub BtnSearchHistory_Click(sender As Object, e As EventArgs)
@@ -381,6 +381,25 @@ Namespace Pages
             End If
 
             Return 0
+        End Function
+
+        Private Function GetHolidays() As IEnumerable(Of Data.Holiday)
+            If _holidays Is Nothing Then
+                Dim sd As DateTime
+                Dim ed As DateTime
+
+                If EditReservation Is Nothing Then
+                    sd = ReservationHistoryUtility.GetStartDate(txtStartDate.Text)
+                    ed = ReservationHistoryUtility.GetEndDate(txtEndDate.Text)
+                Else
+                    sd = EditReservation.ChargeBeginDateTime().FirstOfMonth()
+                    ed = EditReservation.ChargeEndDateTime().FirstOfMonth().AddMonths(1)
+                End If
+
+                _holidays = Utility.GetHolidays(sd, ed)
+            End If
+
+            Return _holidays
         End Function
     End Class
 End Namespace

@@ -163,7 +163,7 @@
                                 </td>
                                 <td style="text-align: center; white-space: nowrap;">
                                     <asp:HyperLink runat="server" ID="hypEditReservation" Text="Edit" NavigateUrl='<%#GetEditUrl(Container.DataItem)%>'></asp:HyperLink>
-                                    <asp:Image runat="server" ID="imgCanBeForgiven" ImageUrl="//ssel-apps.eecs.umich.edu/static/images/flag-green.png" AlternateText="green flag" Visible='<%#IsBeforeForgiveCutoff(Convert.ToInt32(Eval("ReservationID")))%>'></asp:Image>
+                                    <asp:Image runat="server" ID="imgCanBeForgiven" ImageUrl="//ssel-apps.eecs.umich.edu/static/images/flag-green.png" AlternateText="green flag" Visible='<%#IsBeforeForgiveCutoff(Container.DataItem)%>'></asp:Image>
                                 </td>
                             </tr>
                         </ItemTemplate>

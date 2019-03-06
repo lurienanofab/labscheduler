@@ -490,7 +490,7 @@ Namespace Pages
         End Sub
 
         Private Sub LoadInvitees()
-            dgInvitees.DataSource = GetReservationInvitees()
+            dgInvitees.DataSource = GetReservationInvitees().Where(Function(x) Not x.Removed)
             dgInvitees.DataBind()
         End Sub
 
@@ -1141,6 +1141,7 @@ Namespace Pages
         End Sub
 
         Protected Sub DgInvitees_ItemCommand(sender As Object, e As DataGridCommandEventArgs)
+            ShowInviteeWarning(String.Empty)
             Dim ddlInvitees As DropDownList = CType(e.Item.FindControl("ddlInvitees"), DropDownList)
             Dim lblInviteeID As Label = CType(e.Item.FindControl("lblInviteeID"), Label)
             Dim lblInviteeName As Label = CType(e.Item.FindControl("lblInviteeName"), Label)

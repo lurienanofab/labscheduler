@@ -1,4 +1,5 @@
 ﻿using LNF.CommonTools;
+using LNF.Models.Scheduler;
 using LNF.Repository.Scheduler;
 using LNF.Scheduler;
 using System;
@@ -10,7 +11,7 @@ namespace LNF.Web.Scheduler
 {
     public class ReservationHistoryItem
     {
-        public Reservation Reservation { get; }
+        public ReservationItem Reservation { get; }
         public int ReservationID { get; set; }
         public DateTime BeginDateTime { get; set; }
         public DateTime EndDateTime { get; set; }
@@ -45,13 +46,13 @@ namespace LNF.Web.Scheduler
             ActualBeginDateTime = Reservation.ActualBeginDateTime;
             ActualEndDateTime = Reservation.ActualEndDateTime;
             Notes = Reservation.Notes;
-            ResourceID = Reservation.Resource.ResourceID;
-            ResourceName = Reservation.Resource.ResourceName;
-            ActivityID = Reservation.Activity.ActivityID;
-            ActivityName = Reservation.Activity.ActivityName;
-            Editable = Reservation.Activity.Editable;
-            AccountID = Reservation.Account.AccountID;
-            AccountName = Reservation.Account.Name;
+            ResourceID = Reservation.ResourceID;
+            ResourceName = Reservation.ResourceName;
+            ActivityID = Reservation.ActivityID;
+            ActivityName = Reservation.ActivityName;
+            Editable = Reservation.Editable;
+            AccountID = Reservation.AccountID;
+            AccountName = Reservation.AccountName;
             ChargeMuliplier = Reservation.ChargeMultiplier;
             ForgiveAmount = (1.0 - Reservation.ChargeMultiplier) * 100.0;
             ApplyLateChargePenalty = Reservation.ApplyLateChargePenalty;
