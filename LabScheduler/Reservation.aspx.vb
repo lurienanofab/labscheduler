@@ -4,6 +4,7 @@ Imports LNF.CommonTools
 Imports LNF.Models.Data
 Imports LNF.Models.Scheduler
 Imports LNF.Repository
+Imports LNF.Repository.Scheduler
 Imports LNF.Scheduler
 Imports LNF.Scheduler.Data
 Imports LNF.Web
@@ -268,9 +269,9 @@ Namespace Pages
                 selectedAccountId = Reservation.Account.AccountID
             End If
 
-            Dim accts As New List(Of ClientAccountItem)
+            Dim accts As New List(Of Data.ClientAccountInfo)
 
-            Dim mustAddInvitee As Boolean = SchedulerUtility.LoadAccounts(accts, act.AccountType, clientId, GetReservationInvitees())
+            Dim mustAddInvitee As Boolean = SchedulerUtility.LoadAccounts(accts, act.AccountType, clientId, GetReservationInvitees(), Context.User.Identity.Name)
 
             ddlAccount.Enabled = True
 
@@ -283,7 +284,7 @@ Namespace Pages
                 phBillingAccountMessage.Visible = False
                 litBillingAccountMessage.Text = String.Empty
 
-                ddlAccount.DataSource = accts.Select(Function(x) New With {.Name = Data.Account.GetFullAccountName(x.ShortCode, x.AccountName, x.OrgName), .AccountID = x.AccountID.ToString()})
+                ddlAccount.DataSource = accts.Select(Function(x) New With {.Name = AccountItem.GetFullAccountName(x.AccountName, x.ShortCode, x.OrgName), .AccountID = x.AccountID.ToString()})
                 ddlAccount.DataBind()
 
                 ' check for scheduled maintenance activity
@@ -947,9 +948,9 @@ Namespace Pages
             dgInvitees.DataBind()
         End Sub
 
-        Private Sub StartReservation(rsv As Scheduler.Reservation, client As Data.Client)
+        Private Sub StartReservation(rsv As ReservationItemWithInvitees, client As ReservationClientItem)
             If rsv IsNot Nothing Then
-                ReservationManager.StartReservation(rsv, client, Context.Request.UserHostAddress)
+                ReservationManager.StartReservation(rsv, client)
             End If
         End Sub
 
@@ -1405,8 +1406,8 @@ Namespace Pages
             Try
                 Dim rd As ReservationDuration = GetReservationDuration()
                 Dim rsv As Scheduler.Reservation = CreateOrModifyReservation(rd)
-                Dim client = DA.Current.Single(Of Data.Client)(CurrentUser.ClientID)
-                StartReservation(rsv, client)
+                Dim reservationItem = rsv.CreateReservationItemWithInvitees()
+                StartReservation(reservationItem, Context.GetReservationClientItem(reservationItem))
             Catch ex As Exception
                 Session("ErrorMessage") = ex.Message
             End Try

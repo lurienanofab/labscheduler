@@ -68,6 +68,17 @@ namespace LNF.Web.Scheduler
             return result;
         }
 
+        public static PathInfo Create(int buildingId, int labId, int procTechId, int resourceId)
+        {
+            return new PathInfo()
+            {
+                BuildingID = buildingId,
+                LabID = labId,
+                ProcessTechID = procTechId,
+                ResourceID = resourceId
+            };
+        }
+
         public static PathInfo Create(BuildingItem bldg)
         {
             PathInfo result = new PathInfo();

@@ -211,11 +211,11 @@ Namespace Pages
 
             '2012-10-23 It's possible that there are no available accounts. For example
             'a remote processing run where no one was ever invited.
-            Dim availAccts As List(Of Data.ClientAccount) = ReservationManager.AvailableAccounts(EditReservation).ToList()
-            Dim accts As IEnumerable(Of Data.Account) = Nothing
+            Dim availAccts As List(Of ClientAccountItem) = ReservationManager.AvailableAccounts(EditReservation).ToList()
+            Dim accts As IEnumerable(Of IAccount) = Nothing
 
             If availAccts IsNot Nothing Then
-                accts = availAccts.Select(Function(ca) ca.Account)
+                accts = availAccts
             End If
 
             If accts IsNot Nothing Then

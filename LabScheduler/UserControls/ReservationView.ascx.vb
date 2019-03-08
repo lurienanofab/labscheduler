@@ -1,6 +1,8 @@
-﻿Imports LNF.Cache
+﻿Imports LNF.PhysicalAccess
+Imports LNF.Cache
 Imports LNF.Models.Scheduler
 Imports LNF.Repository
+Imports LNF.Repository.Scheduler
 Imports LNF.Scheduler
 Imports LNF.Web
 Imports LNF.Web.Controls
@@ -564,6 +566,8 @@ Namespace UserControls
 
             Dim totalReservationCount As Integer = 0
 
+            Dim clientAccounts As List(Of Data.ClientAccountInfo) = DA.Current.Query(Of Data.ClientAccountInfo)().Where(Function(x) x.ClientAccountActive AndAlso x.ClientOrgActive).ToList()
+
             For i As Integer = 1 To tblSchedule.Rows(0).Cells.Count - 1
                 Dim columnCell As CustomTableCell = CType(tblSchedule.Rows(0).Cells(i), CustomTableCell)
                 Dim currentStartTime As Date = columnCell.CellDate
@@ -640,7 +644,9 @@ Namespace UserControls
 
                                 ' Delete/modify buttons are added here if needed.
                                 Dim client As Data.Client = DA.Current.Single(Of Data.Client)(CurrentUser.ClientID)
-                                Dim state As ReservationState = SchedulerUtility.GetReservationCell(rsvCell, rsv, client, Request.UserHostAddress)
+                                Dim item As ReservationItemWithInvitees = rsv.CreateReservationItemWithInvitees()
+                                Dim rci As ReservationClientItem = Context.GetReservationClientItem(item)
+                                Dim state As ReservationState = SchedulerUtility.GetReservationCell(rsvCell, item, rci)
 
                                 SetReservationCellAttributes(rsvCell, state, PathInfo.Create(rsv.Resource))
 
@@ -704,7 +710,9 @@ Namespace UserControls
 
         Public Sub StartReservation(rsv As Scheduler.Reservation, client As Data.Client)
             Try
-                Page.ReservationManager.StartReservation(rsv, client, Request.UserHostAddress)
+                Dim item As ReservationItemWithInvitees = rsv.CreateReservationItemWithInvitees()
+                Dim rci As ReservationClientItem = Context.GetReservationClientItem(item)
+                Page.ReservationManager.StartReservation(item, rci)
             Catch ex As Exception
                 Session("ErrorMessage") = ex.Message
             End Try

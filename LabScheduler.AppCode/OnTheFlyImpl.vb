@@ -27,6 +27,7 @@ Public Class OnTheFlyImpl
     Private returnMessage As String = ""
     Private isProcessFail As Boolean = False
     Private Shared ReadOnly otfActivity As Activity = DA.Current.Single(Of Activity)(6)
+    Private physicalAccessUtil As PhysicalAccess.PhysicalAccessUtility
 
     Protected ReadOnly Property ReservationManager As IReservationManager
         Get
@@ -42,6 +43,7 @@ Public Class OnTheFlyImpl
         rreq.IPAddress = ipAddr
         rreq.OnTheFlyName = otfresource.Resource.ResourceName
         rreq.ResourceID = otfresource.Resource.ResourceID
+        physicalAccessUtil = New PhysicalAccess.PhysicalAccessUtility(ipAddr)
         Init()
     End Sub
 
@@ -396,12 +398,25 @@ Public Class OnTheFlyImpl
             Throw New InvalidOperationException("The default account could not be determined.")
         End If
 
-        StartReservation(clientWhoSwipedTheCard, rsv, rr, res.MinReservTime)
+        StartReservation(clientWhoSwipedTheCard, rsv.CreateReservationItemWithInvitees(), rr, res.MinReservTime)
 
         Return rsv.ReservationID
     End Function
 
-    Private Sub StartReservation(ByVal aclient As Client, ByVal rsv As Reservation, ByVal rr As ResRequest, Optional ByVal reservationTime As Integer = -1)
+    Private Function GetReservationClientItem(rsv As Models.Scheduler.ReservationItemWithInvitees, client As Client) As Models.Scheduler.ReservationClientItem
+        Dim resourceClients As IEnumerable(Of Models.Scheduler.ResourceClientItem) = ReservationManager.GetResourceClients(rsv.ResourceID)
+        Return New Models.Scheduler.ReservationClientItem With {
+             .ClientID = client.ClientID,
+             .ReservationID = rsv.ReservationID,
+             .ResourceID = rsv.ResourceID,
+             .IsReserver = rsv.ClientID = client.ClientID,
+             .IsInvited = rsv.Invitees.Any(Function(x) x.ClientID = client.ClientID),
+             .InLab = physicalAccessUtil.ClientInLab(client.ClientID, rsv.LabID),
+             .UserAuth = ReservationManager.GetAuthLevel(resourceClients, client)
+        }
+    End Function
+
+    Private Sub StartReservation(aclient As Client, rsv As Models.Scheduler.ReservationItemWithInvitees, rr As ResRequest, Optional reservationTime As Integer = -1)
         If rsv Is Nothing Then
             Throw New ArgumentNullException("rsv", "A null Reservation object is not allowed. [LabScheduler.AppCode.OnTheFlyImpl.StartReservation]")
         End If
@@ -412,10 +427,10 @@ Public Class OnTheFlyImpl
 
         ' also create a reservation row in the ReservationOnTF table
         Dim ronfly As ReservationOnTheFly = New ReservationOnTheFly With {
-            .Reservation = rsv
+            .Reservation = DA.Current.Single(Of Reservation)(rsv.ReservationID)
         }
 
-        ReservationManager.StartReservation(rsv, aclient, rr.IPAddress)
+        ReservationManager.StartReservation(rsv, GetReservationClientItem(rsv, aclient))
 
         rr.ReservationID = rsv.ReservationID
         rr.ReservationTime = Convert.ToInt32(reservationTime)
@@ -468,14 +483,14 @@ Public Class OnTheFlyImpl
         If currentlyRunningReservationByUser.IsStarted Then
             Log("StartExistingReservation:AlreadyStarted", True)
         Else
-            StartReservation(clientWhoSwipedTheCard, currentlyRunningReservationByUser, GetResRequest())
+            StartReservation(clientWhoSwipedTheCard, currentlyRunningReservationByUser.CreateReservationItemWithInvitees(), GetResRequest())
             Log("StartExistingReservation:Started", True)
         End If
     End Sub
 
     Public Sub StartNextReservation()
         Dim nexRestInMinTime = GetReservationWhichStartsInMinReservationTime()
-        StartReservation(clientWhoSwipedTheCard, nexRestInMinTime, GetResRequest())
+        StartReservation(clientWhoSwipedTheCard, nexRestInMinTime.CreateReservationItemWithInvitees(), GetResRequest())
     End Sub
 
     Public Sub ExtendExistingReservation()

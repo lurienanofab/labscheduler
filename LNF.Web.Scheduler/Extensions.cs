@@ -1,8 +1,12 @@
-﻿using LNF.Models.PhysicalAccess;
+﻿using LNF.Models.Data;
+using LNF.Models.PhysicalAccess;
+using LNF.Models.Scheduler;
 using LNF.PhysicalAccess;
+using LNF.Repository;
 using LNF.Scheduler;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Web;
 
 namespace LNF.Web.Scheduler
@@ -28,7 +32,7 @@ namespace LNF.Web.Scheduler
         public static IEnumerable<Badge> CurrentlyInLab(this HttpContext context)
         {
             if (!context.Items.Contains("CurrentlyInLab"))
-                context.Items["CurrentlyInLab"] = PhysicalAccessUtility.CurrentlyInLab();
+                context.Items["CurrentlyInLab"] = context.GetPhysicalAccessUtility().CurrentlyInLab;
 
             var result = (IEnumerable<Badge>)context.Items["CurrentlyInLab"];
 
@@ -37,13 +41,13 @@ namespace LNF.Web.Scheduler
 
         public static bool IsInLab(this HttpContext context)
         {
-            return PhysicalAccessUtility.IsInLab(context.CurrentUser().ClientID);
+            return context.GetPhysicalAccessUtility().IsInLab(context.CurrentUser().ClientID);
         }
-        
+
         public static bool ClientInLab(this HttpContext context)
         {
             if (!context.Items.Contains("ClientInLab"))
-                context.Items["ClientInLab"] = PhysicalAccessUtility.ClientInLab(context.CurrentUser().ClientID, context.Request.UserHostAddress);
+                context.Items["ClientInLab"] = context.GetPhysicalAccessUtility().ClientInLab(context.CurrentUser().ClientID);
 
             var result = (bool)context.Items["ClientInLab"];
 
@@ -52,7 +56,42 @@ namespace LNF.Web.Scheduler
 
         public static bool ClientInLab(this HttpContext context, int labId)
         {
-            return PhysicalAccessUtility.ClientInLab(context.CurrentUser().ClientID, context.Request.UserHostAddress, labId);
+            return context.GetPhysicalAccessUtility().ClientInLab(context.CurrentUser().ClientID, labId);
+        }
+
+        public static PhysicalAccessUtility GetPhysicalAccessUtility(this HttpContext context)
+        {
+            if (!context.Items.Contains("PhysicalAccessUtility"))
+                context.Items["PhysicalAccessUtility"] = new PhysicalAccessUtility(context.Request.UserHostAddress);
+
+            var result = (PhysicalAccessUtility)context.Items["PhysicalAccessUtility"];
+
+            return result;
+        }
+
+        public static ReservationClientItem GetReservationClientItem(this HttpContext context, ReservationItemWithInvitees rsv)
+        {
+            return context.GetReservationClientItem(rsv, context.CurrentUser());
+        }
+
+        public static ReservationClientItem GetReservationClientItem(this HttpContext context, ReservationItemWithInvitees rsv, ClientItem client)
+        {
+            var mgr = ServiceProvider.Current.Use<IReservationManager>();
+            var resourceClients = mgr.GetResourceClients(rsv.ResourceID);
+            var userAuth = mgr.GetAuthLevel(resourceClients, client);
+
+            var result = new ReservationClientItem
+            {
+                ClientID = client.ClientID,
+                ReservationID = rsv.ReservationID,
+                ResourceID = rsv.ResourceID,
+                IsReserver = rsv.ClientID == client.ClientID,
+                IsInvited = rsv.Invitees.Any(x => x.ClientID == client.ClientID),
+                InLab = context.ClientInLab(rsv.LabID),
+                UserAuth = userAuth
+            };
+
+            return result;
         }
     }
 }

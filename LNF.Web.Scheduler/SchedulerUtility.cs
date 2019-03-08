@@ -313,13 +313,15 @@ namespace LNF.Web.Scheduler
             rsv.KeepAlive = data.KeepAlive;
         }
 
-        public static ReservationState GetReservationCell(CustomTableCell rsvCell, Reservation rsv, Client client, string kioskIp)
+        public static ReservationState GetReservationCell(CustomTableCell rsvCell, ReservationItem rsv, ReservationClientItem client)
         {
             int reservationId = rsv.ReservationID;
-            int resourceId = rsv.Resource.ResourceID;
+            int resourceId = rsv.ResourceID;
 
             // Reservation State
-            var args = ReservationManager.CreateReservationStateArgs(rsv, client, kioskIp);
+            var args = ReservationStateArgs.Create(rsv, client);
+            //ReservationManager.CreateReservationStateArgs(rsv, client, kioskIp);
+
             var state = ReservationManager.GetReservationState(args);
 
             // 2008-08-15 temp
@@ -345,7 +347,7 @@ namespace LNF.Web.Scheduler
             // Reservation Text
             Literal litReserver = new Literal
             {
-                Text = $"<div>{rsv.Client.DisplayName}</div>"
+                Text = $"<div>{rsv.LName}, {rsv.FName}</div>"
             };
 
             div.Controls.Add(litReserver);
@@ -353,13 +355,13 @@ namespace LNF.Web.Scheduler
             // Delete Button
             // 2/11/05 - GPR: allow tool engineers to cancel any non-started, non-repair reservation in the future
             ClientAuthLevel userAuth = args.UserAuth;
-            var res = CacheManager.Current.ResourceTree().GetResource(rsv.Resource.ResourceID);
+            //var res = CacheManager.Current.ResourceTree().GetResource(rsv.ResourceID);
 
             if (state == ReservationState.Editable || state == ReservationState.StartOrDelete || state == ReservationState.StartOnly || (userAuth == ClientAuthLevel.ToolEngineer && DateTime.Now < rsv.BeginDateTime && rsv.ActualBeginDateTime == null && state != ReservationState.Repair))
             {
                 var hypDelete = new HyperLink
                 {
-                    NavigateUrl = $"~/ReservationController.ashx?Command=DeleteReservation&ReservationID={rsv.ReservationID}&Date={rsvCell.CellDate:yyyy-MM-dd}&Time={rsvCell.CellDate.TimeOfDay.TotalMinutes}&State={state}&Path={PathInfo.Create(res)}",
+                    NavigateUrl = $"~/ReservationController.ashx?Command=DeleteReservation&ReservationID={rsv.ReservationID}&Date={rsvCell.CellDate:yyyy-MM-dd}&Time={rsvCell.CellDate.TimeOfDay.TotalMinutes}&State={state}&Path={PathInfo.Create(rsv.BuildingID, rsv.LabID, rsv.ProcessTechID, rsv.ResourceID)}",
                     ImageUrl = "~/images/deleteGrid.gif",
                     CssClass = "ReservDelete"
                 };
@@ -378,7 +380,7 @@ namespace LNF.Web.Scheduler
             {
                 var hypModify = new HyperLink
                 {
-                    NavigateUrl = $"~/ReservationController.ashx?Command=ModifyReservation&ReservationID={rsv.ReservationID}&Date={rsvCell.CellDate:yyyy-MM-dd}&Time={rsvCell.CellDate.TimeOfDay.TotalMinutes}&State={state}&Path={PathInfo.Create(res)}",
+                    NavigateUrl = $"~/ReservationController.ashx?Command=ModifyReservation&ReservationID={rsv.ReservationID}&Date={rsvCell.CellDate:yyyy-MM-dd}&Time={rsvCell.CellDate.TimeOfDay.TotalMinutes}&State={state}&Path={PathInfo.Create(rsv.BuildingID, rsv.LabID, rsv.ProcessTechID, rsv.ResourceID)}",
                     ImageUrl = "~/images/edit.png",
                     CssClass = "ReservModify"
                 };
@@ -509,37 +511,29 @@ namespace LNF.Web.Scheduler
         /// <summary>
         /// Loads Reservation Billing Account Dropdownlist
         /// </summary>
-        public static bool LoadAccounts(List<ClientAccountItem> accts, ActivityAccountType acctType, int clientId, IList<LNF.Scheduler.ReservationInviteeItem> invitees)
+        public static bool LoadAccounts(List<ClientAccountInfo> accts, ActivityAccountType acctType, int clientId, IList<LNF.Scheduler.ReservationInviteeItem> invitees, string username)
         {
             bool mustAddInvitee = false;
 
-            IList<ClientAccountItem> activeAccounts = new List<ClientAccountItem>();
+            //IList<ClientAccountItem> activeAccounts = new List<ClientAccountItem>();
+            IEnumerable<ClientAccountInfo> activeAccounts = new List<ClientAccountInfo>();
 
             if (acctType == ActivityAccountType.Reserver || acctType == ActivityAccountType.Both)
                 /// Loads reserver's accounts
-                activeAccounts = CacheManager.Current.GetClientAccounts(clientId).ToList();
+                activeAccounts = DA.Current.Query<ClientAccountInfo>().Where(x => x.ClientAccountActive && x.ClientOrgActive && x.UserName == username).ToList(); //CacheManager.Current.GetClientAccounts(clientId).ToList();
 
             if (acctType == ActivityAccountType.Invitee || acctType == ActivityAccountType.Both)
             {
                 // Loads each of the invitee's accounts
 
-                IEnumerable<ClientAccountItem> inviteeAccounts = null;
-
                 if (invitees != null)
                 {
-                    var invited = invitees.Where(x => !x.Removed).ToArray();
+                    var invited = invitees.Where(x => !x.Removed).ToList();
 
-                    if (invited.Length > 0)
+                    if (invited.Count > 0)
                     {
-                        foreach (var inv in invited)
-                        {
-                            inviteeAccounts = CacheManager.Current.GetClientAccounts(inv.InviteeID);
-                            foreach (var invAcct in inviteeAccounts)
-                            {
-                                if (!activeAccounts.Any(x => x.AccountID == invAcct.AccountID))
-                                    activeAccounts.Add(invAcct);
-                            }
-                        }
+                        var inviteeClientIds = invited.Select(x => x.InviteeID).ToArray();
+                        activeAccounts = DA.Current.Query<ClientAccountInfo>().Where(x => x.ClientAccountActive && x.ClientOrgActive && inviteeClientIds.Contains(x.ClientID)).ToList();
                     }
                     else
                         mustAddInvitee = true;

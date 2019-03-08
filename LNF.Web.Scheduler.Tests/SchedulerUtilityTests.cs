@@ -3,6 +3,7 @@ using LNF.Data;
 using LNF.Models.Data;
 using LNF.Models.Scheduler;
 using LNF.Repository;
+using LNF.Repository.Data;
 using LNF.Repository.Scheduler;
 using LNF.Scheduler;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -19,7 +20,7 @@ namespace LNF.Web.Scheduler.Tests
         {
             using (ContextManager.StartRequest(1475))
             {
-                var accts = CacheManager.Current.GetCurrentUserClientAccounts();
+                var accts = DA.Current.Query<ClientAccountInfo>().Where(x => x.ClientAccountActive && x.ClientOrgActive && x.ClientID == 1475);
                 Assert.IsNotNull(accts);
                 Assert.AreEqual(1, accts.Count());
                 Assert.AreEqual(3649, accts.First().ClientAccountID);

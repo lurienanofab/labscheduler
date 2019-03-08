@@ -59,8 +59,11 @@
                 if (typeof opts.onClick === "function")
                     valid = opts.onClick.call(cell, args);
 
-                if (valid)
-                    window.location = getRedirectUrl(args);
+                if (valid) {
+                    var redirectUrl = getRedirectUrl(args);
+                    alert(redirectUrl);
+                    //window.location = redirectUrl;
+                }
             }).on("click", ".ReservDelete", function (e) {
                 e.stopPropagation();
                 if (!confirm("Are you sure you want to cancel this reservation?"))

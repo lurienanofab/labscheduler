@@ -181,8 +181,8 @@ namespace LNF.Web.Scheduler.Controllers
                     }
                     else
                     {
-                        var client = DA.Current.Single<Client>(context.CurrentUser().ClientID);
-                        ReservationManager.StartReservation(rsv, client, context.Request.UserHostAddress);
+                        var reservationItem = rsv.CreateReservationItemWithInvitees();
+                        ReservationManager.StartReservation(reservationItem, context.GetReservationClientItem(reservationItem));
                     }
                     break;
                 case ReservationState.Endable:
@@ -233,7 +233,7 @@ namespace LNF.Web.Scheduler.Controllers
             }
 
             // Check if user has accounts
-            if (GetCurrentUserActiveClientAccountsCount() == 0)
+            if (GetCurrentUserActiveClientAccountsCount(context) == 0)
             {
                 throw new Exception("You do not have any accounts with which to make reservations.");
             }
@@ -261,9 +261,10 @@ namespace LNF.Web.Scheduler.Controllers
             return true;
         }
 
-        private int GetCurrentUserActiveClientAccountsCount()
+        private int GetCurrentUserActiveClientAccountsCount(HttpContext context)
         {
-            return CacheManager.Current.GetCurrentUserClientAccounts().Count();
+            string un = context.User.Identity.Name;
+            return DA.Current.Query<ClientAccountInfo>().Count(x => x.ClientAccountActive && x.ClientOrgActive && x.UserName == un);
         }
 
         private ClientAuthLevel GetAuthorization(ResourceItem res)

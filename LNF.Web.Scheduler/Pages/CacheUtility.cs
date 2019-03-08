@@ -45,7 +45,7 @@ namespace LNF.Web.Scheduler.Pages
             lblClientCount.Text = CacheManager.Current.Clients().Count().ToString();
             lblOrgCount.Text = CacheManager.Current.Orgs().Count().ToString();
             lblAccountCount.Text = CacheManager.Current.Accounts().Count().ToString();
-            lblClientAccountCount.Text = CacheManager.Current.ClientAccounts().Count().ToString();
+            lblClientAccountCount.Text = "n/a"; //CacheManager.Current.ClientAccounts().Count().ToString();
             lblClientOrgCount.Text = CacheManager.Current.ClientOrgs().Count().ToString();
             lblRoomCount.Text = CacheManager.Current.Rooms().Count().ToString();
             lblActivityCount.Text = CacheManager.Current.Activities().Count().ToString();
@@ -200,10 +200,10 @@ namespace LNF.Web.Scheduler.Pages
                             CacheManager.Current.RemoveMemoryCacheValue("Accounts");
                             Response.Write(JsonConvert.SerializeObject(new { command, key, count = CacheManager.Current.Accounts().Count() }));
                             break;
-                        case "ClientAccounts":
-                            CacheManager.Current.RemoveMemoryCacheValue("ClientAccounts");
-                            Response.Write(JsonConvert.SerializeObject(new { command, key, count = CacheManager.Current.ClientAccounts().Count() }));
-                            break;
+                        //case "ClientAccounts":
+                        //    CacheManager.Current.RemoveMemoryCacheValue("ClientAccounts");
+                        //    Response.Write(JsonConvert.SerializeObject(new { command, key, count = CacheManager.Current.ClientAccounts().Count() }));
+                        //    break;
                         case "ClientOrgs":
                             CacheManager.Current.RemoveMemoryCacheValue("ClientOrgs");
                             Response.Write(JsonConvert.SerializeObject(new { command, key, count = CacheManager.Current.ClientOrgs().Count() }));
@@ -241,7 +241,7 @@ namespace LNF.Web.Scheduler.Pages
                         clients = CacheManager.Current.Clients().Count(),
                         orgs = CacheManager.Current.Orgs().Count(),
                         accounts = CacheManager.Current.Accounts().Count(),
-                        clientAccounts = CacheManager.Current.ClientAccounts().Count(),
+                        clientAccounts = -1, //CacheManager.Current.ClientAccounts().Count(),
                         clientOrgs = CacheManager.Current.ClientOrgs().Count(),
                         rooms = CacheManager.Current.Rooms().Count(),
                         activities = CacheManager.Current.Activities().Count()

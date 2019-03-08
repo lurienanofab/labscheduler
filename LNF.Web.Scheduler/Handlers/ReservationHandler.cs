@@ -33,7 +33,7 @@ namespace LNF.Web.Scheduler.Handlers
                 {
                     case "start-reservation":
                         clientId = context.CurrentUser().ClientID;
-                        result = ReservationHandlerUtility.Start(reservationId, clientId, context.Request.UserHostAddress);
+                        result = ReservationHandlerUtility.Start(context, reservationId, clientId);
                         break;
                     case "get-reservation":
                         result = ReservationHandlerUtility.GetReservation(context, reservationId);
@@ -93,16 +93,19 @@ namespace LNF.Web.Scheduler.Handlers
     {
         public static IReservationManager ReservationManager => ServiceProvider.Current.Use<IReservationManager>();
 
-        public static object Start(int reservationId, int clientId, string kioskIp)
+        public static object Start(HttpContext context, int reservationId, int clientId)
         {
             try
             {
                 var rsv = DA.Current.Single<Reservation>(reservationId);
-                var client = DA.Current.Single<Client>(clientId);
+                var client = DA.Current.Single<ClientInfo>(clientId);
+
+                var reservationItem = rsv.CreateReservationItemWithInvitees();
+                var clientItem = client.CreateClientItem();
 
                 if (rsv != null)
                 {
-                    ReservationManager.StartReservation(rsv, client, kioskIp);
+                    ReservationManager.StartReservation(reservationItem, context.GetReservationClientItem(reservationItem, clientItem));
                     return new { Error = false, Message = "OK" };
                 }
                 else
@@ -158,7 +161,8 @@ namespace LNF.Web.Scheduler.Handlers
                 item.StartedByClientName = string.Format("{0} {1}", context.CurrentUser().FName, context.CurrentUser().LName);
             }
 
-            var args = ReservationManager.CreateReservationStateArgs(rsv, client, context.Request.UserHostAddress);
+            var reservationItem = rsv.CreateReservationItemWithInvitees();
+            var args = ReservationStateArgs.Create(reservationItem, context.GetReservationClientItem(reservationItem));
             ReservationState state = ReservationManager.GetReservationState(args);
             item.Startable = ReservationManager.IsStartable(state);
             item.NotStartableMessage = GetNotStartableMessage(state);
