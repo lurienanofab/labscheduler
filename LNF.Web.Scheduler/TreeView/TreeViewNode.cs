@@ -1,14 +1,35 @@
-﻿namespace LNF.Web.Scheduler.TreeView
+﻿using LNF.Scheduler;
+using System;
+
+namespace LNF.Web.Scheduler.TreeView
 {
     public abstract class TreeViewNode<T> : INode
     {
+        public IProvider Provider { get; }
         public INode Parent { get; }
         public TreeViewItemCollection Children { get; protected set; }
+        public ResourceTreeItemCollection ResourceTree { get; }
         public abstract NodeType Type { get; }
         public int ID { get; protected set; }
         public string Name { get; protected set; }
         public string Description { get; protected set; }
         protected abstract void Load(T item);
+
+        protected TreeViewNode(IProvider provider, ResourceTreeItemCollection resourceTree, T item)
+        {
+            Provider = provider;
+            ResourceTree = resourceTree;
+            Parent = null;
+            Load(item);
+        }
+
+        protected TreeViewNode(T item, INode parent)
+        {
+            Provider = parent.Provider;
+            ResourceTree = parent.ResourceTree;
+            Parent = parent ?? throw new ArgumentNullException("parent");
+            Load(item);
+        }
 
         private string _Value;
 
@@ -34,12 +55,6 @@
         public PathInfo GetPath()
         {
             return PathInfo.Parse(Value);
-        }
-
-        protected TreeViewNode(T item, INode parent)
-        {
-            Parent = parent;
-            Load(item);
         }
     }
 }

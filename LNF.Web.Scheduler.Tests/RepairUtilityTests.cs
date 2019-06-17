@@ -20,8 +20,8 @@ namespace LNF.Web.Scheduler.Tests
             int id1 = 0;
             int id2 = 0;
             int repairId = 0;
-            Reservation rsv = null;
-            Reservation repair = null;
+            ReservationItem rsv = null;
+            ReservationItem repair = null;
             ResourceItem res = null;
 
             // actual repair start and end
@@ -41,7 +41,7 @@ namespace LNF.Web.Scheduler.Tests
                 // is canceled/forgiven when the repair is extended
 
                 // First reservation starts one hour from now, lasting for 15 minutes
-                rsv = SchedulerUtility.CreateNewReservation(new SchedulerUtility.ReservationData(null, null)
+                rsv = ReservationUtility.Create(new ReservationData(null, null)
                 {
                     ResourceID = resourceId,
                     ClientID = 1301,
@@ -57,7 +57,7 @@ namespace LNF.Web.Scheduler.Tests
 
                 // Second reservation starts 3 hours from now, lasting for 15 minutes
 
-                rsv = SchedulerUtility.CreateNewReservation(new SchedulerUtility.ReservationData(null, null)
+                rsv = ReservationUtility.Create(new ReservationData(null, null)
                 {
                     ResourceID = resourceId,
                     ClientID = 1301,
@@ -90,11 +90,11 @@ namespace LNF.Web.Scheduler.Tests
             {
                 // Make sure the first reservation is canceled/forgiven, but not the second.
 
-                rsv = DA.Current.Single<Reservation>(id1);
+                rsv = DA.Current.Single<ReservationInfo>(id1).CreateModel<ReservationItem>();
                 Assert.AreEqual(0, rsv.ChargeMultiplier);
                 Assert.AreEqual(false, rsv.IsActive);
 
-                rsv = DA.Current.Single<Reservation>(id2);
+                rsv = DA.Current.Single<ReservationInfo>(id2).CreateModel<ReservationItem>();
                 Assert.AreEqual(1, rsv.ChargeMultiplier);
                 Assert.AreEqual(true, rsv.IsActive);
             }
@@ -111,11 +111,11 @@ namespace LNF.Web.Scheduler.Tests
             // make sure the reservation was forgiven
             using (ContextManager.StartRequest(1301))
             {
-                rsv = DA.Current.Single<Reservation>(id1);
+                rsv = DA.Current.Single<ReservationInfo>(id1).CreateModel<ReservationItem>();
                 Assert.AreEqual(0, rsv.ChargeMultiplier);
                 Assert.AreEqual(false, rsv.IsActive);
 
-                rsv = DA.Current.Single<Reservation>(id2);
+                rsv = DA.Current.Single<ReservationInfo>(id2).CreateModel<ReservationItem>();
                 Assert.AreEqual(0, rsv.ChargeMultiplier);
                 Assert.AreEqual(false, rsv.IsActive);
             }

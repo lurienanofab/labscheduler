@@ -2,7 +2,7 @@
 
 <asp:HiddenField runat="server" ID="hidResourceID" />
 
-<asp:Repeater runat="server" ID="rptResourceInfo" OnItemDataBound="rptResourceInfo_ItemDataBound">
+<asp:Repeater runat="server" ID="rptResourceInfo" OnItemDataBound="RptResourceInfo_ItemDataBound">
     <HeaderTemplate>
         <table border="0" style="border-spacing: 3px; border-collapse: separate; width: 100%;">
             <tbody>

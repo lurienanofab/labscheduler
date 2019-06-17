@@ -11,7 +11,7 @@ namespace LNF.Web.Scheduler
 {
     public class ReservationHistoryItem
     {
-        public ReservationItem Reservation { get; }
+        public IReservation Reservation { get; }
         public int ReservationID { get; set; }
         public DateTime BeginDateTime { get; set; }
         public DateTime EndDateTime { get; set; }

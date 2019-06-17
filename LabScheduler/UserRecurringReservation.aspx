@@ -31,7 +31,7 @@
                 <ItemTemplate>
                     <tr>
                         <td>
-                            <asp:HyperLink runat="server" ID="hypResource" NavigateUrl='<%#CType(Container.DataItem, RecurrenceItem).GetResourceUrl()%>'><%#Eval("ResourceName")%></asp:HyperLink>
+                            <asp:HyperLink runat="server" ID="hypResource" NavigateUrl='<%#CType(Container.DataItem, RecurrenceItem).GetResourceUrl(ContextBase)%>'><%#Eval("ResourceName")%></asp:HyperLink>
                         </td>
                         <td><%#Eval("BeginDate", "{0:MM/dd/yyyy}")%></td>
                         <td><%#CType(Container.DataItem, RecurrenceItem).GetEndDateString()%></td>

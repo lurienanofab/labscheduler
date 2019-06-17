@@ -1,4 +1,5 @@
-﻿using LNF.CommonTools;
+﻿using LNF.Cache;
+using LNF.CommonTools;
 using LNF.Control;
 using LNF.Models.Scheduler;
 using LNF.Models.Worker;
@@ -6,7 +7,6 @@ using LNF.Repository;
 using LNF.Repository.Data;
 using LNF.Repository.Scheduler;
 using LNF.Scheduler;
-using OnlineServices.Api.Scheduler;
 using System;
 using System.Web;
 using System.Web.SessionState;
@@ -17,36 +17,36 @@ namespace LNF.Web.Scheduler.Handlers
     {
         public void ProcessRequest(HttpContext context)
         {
-            context.Response.ContentType = "application/json";
+            HttpContextBase ctx = new HttpContextWrapper(context);
 
-            string command = context.Request["Command"];
+            ctx.Response.ContentType = "application/json";
+
+            string command = ctx.Request["Command"];
 
             object result = null;
 
             int clientId;
 
-            if (int.TryParse(context.Request["ReservationID"], out int reservationId))
+            if (int.TryParse(ctx.Request["ReservationID"], out int reservationId))
             {
                 var rsv = DA.Current.Single<Reservation>(reservationId);
 
                 switch (command)
                 {
                     case "start-reservation":
-                        clientId = context.CurrentUser().ClientID;
-                        result = ReservationHandlerUtility.Start(context, reservationId, clientId);
+                        clientId = ctx.CurrentUser().ClientID;
+                        result = ReservationHandlerUtility.Start(ctx, reservationId, clientId);
                         break;
                     case "get-reservation":
-                        result = ReservationHandlerUtility.GetReservation(context, reservationId);
+                        result = ReservationHandlerUtility.GetReservation(ctx, reservationId);
                         break;
                     case "save-reservation-history":
-                        string notes = context.Request["Notes"];
-                        double forgivenPct = Utility.ConvertTo(context.Request["ForgivenPct"], 0D);
-                        int accountId = Utility.ConvertTo(context.Request["AccountId"], 0);
-                        bool emailClient = Utility.ConvertTo(context.Request["EmailClient"], false);
+                        string notes = ctx.Request["Notes"];
+                        double forgivenPct = Utility.ConvertTo(ctx.Request["ForgivenPct"], 0D);
+                        int accountId = Utility.ConvertTo(ctx.Request["AccountId"], 0);
+                        bool emailClient = Utility.ConvertTo(ctx.Request["EmailClient"], false);
 
                         double chargeMultiplier = 1.00 - (forgivenPct / 100.0);
-
-                        var sc = new SchedulerClient();
 
                         var model = new ReservationHistoryUpdate()
                         {
@@ -57,15 +57,15 @@ namespace LNF.Web.Scheduler.Handlers
                             EmailClient = emailClient
                         };
 
-                        bool updateResult = sc.UpdateReservationHistory(model);
+                        bool updateResult = ServiceProvider.Current.Scheduler.Reservation.UpdateReservationHistory(model);
                         string msg = updateResult ? "OK" : "An error occurred.";
                         result = new { Error = !updateResult, Message = msg };
 
                         break;
                     case "update-billing":
-                        DateTime sd = Convert.ToDateTime(context.Request["StartDate"]);
-                        DateTime ed = Convert.ToDateTime(context.Request["EndDate"]);
-                        clientId = Utility.ConvertTo(context.Request["ClientID"], 0);
+                        DateTime sd = Convert.ToDateTime(ctx.Request["StartDate"]);
+                        DateTime ed = Convert.ToDateTime(ctx.Request["EndDate"]);
+                        clientId = Utility.ConvertTo(ctx.Request["ClientID"], 0);
                         ServiceProvider.Current.Worker.Execute(new UpdateBillingWorkerRequest(sd, clientId, new[] { "tool", "room" }));
                         result = new { Error = false, Message = "ok" };
                         break;
@@ -83,7 +83,7 @@ namespace LNF.Web.Scheduler.Handlers
                 throw new Exception("Missing parameter: id");
             }
 
-            context.Response.Write(ServiceProvider.Current.Serialization.Json.SerializeObject(result));
+            ctx.Response.Write(ServiceProvider.Current.Serialization.Json.SerializeObject(result));
         }
 
         public bool IsReusable => false;
@@ -91,21 +91,21 @@ namespace LNF.Web.Scheduler.Handlers
 
     public static class ReservationHandlerUtility
     {
-        public static IReservationManager ReservationManager => ServiceProvider.Current.Use<IReservationManager>();
+        public static IReservationManager ReservationManager => ServiceProvider.Current.Scheduler.Reservation;
+        public static IProcessInfoManager ProcessInfoManager => ServiceProvider.Current.Scheduler.ProcessInfo;
+        public static IEmailManager EmailManager => ServiceProvider.Current.EmailManager;
 
-        public static object Start(HttpContext context, int reservationId, int clientId)
+        public static object Start(HttpContextBase context, int reservationId, int clientId)
         {
             try
             {
-                var rsv = DA.Current.Single<Reservation>(reservationId);
-                var client = DA.Current.Single<ClientInfo>(clientId);
-
-                var reservationItem = rsv.CreateReservationItemWithInvitees();
-                var clientItem = client.CreateClientItem();
+                var util = GetReservationUtility(DateTime.Now);
+                var rsv = ReservationManager.GetReservationWithInvitees(reservationId);
+                var client = CacheManager.Current.GetClient(clientId);
 
                 if (rsv != null)
                 {
-                    ReservationManager.StartReservation(reservationItem, context.GetReservationClientItem(reservationItem, clientItem));
+                    util.Start(rsv, context.GetReservationClientItem(rsv, client), context.CurrentUser().ClientID);
                     return new { Error = false, Message = "OK" };
                 }
                 else
@@ -119,7 +119,7 @@ namespace LNF.Web.Scheduler.Handlers
             }
         }
 
-        public static object GetReservation(HttpContext context, int reservationId)
+        public static object GetReservation(HttpContextBase context, int reservationId)
         {
             var rsv = DA.Current.Single<Reservation>(reservationId);
             var client = DA.Current.Single<Client>(context.CurrentUser().ClientID);
@@ -130,8 +130,10 @@ namespace LNF.Web.Scheduler.Handlers
                 return new { Error = true, Message = string.Format("Cannot find record for ReservationID {0}", reservationId) };
         }
 
-        public static StartReservationItem CreateStartReservationItem(HttpContext context, Reservation rsv, Client client)
+        public static StartReservationItem CreateStartReservationItem(HttpContextBase context, Reservation rsv, Client client)
         {
+            var util = GetReservationUtility(DateTime.Now);
+
             var item = new StartReservationItem
             {
                 ReservationID = rsv.ReservationID,
@@ -161,10 +163,11 @@ namespace LNF.Web.Scheduler.Handlers
                 item.StartedByClientName = string.Format("{0} {1}", context.CurrentUser().FName, context.CurrentUser().LName);
             }
 
-            var reservationItem = rsv.CreateReservationItemWithInvitees();
+            var reservationItem = rsv.CreateModel<IReservationWithInvitees>();
             var args = ReservationStateArgs.Create(reservationItem, context.GetReservationClientItem(reservationItem));
-            ReservationState state = ReservationManager.GetReservationState(args);
-            item.Startable = ReservationManager.IsStartable(state);
+            ReservationState state = util.GetReservationState(args);
+
+            item.Startable = ReservationUtility.IsStartable(state);
             item.NotStartableMessage = GetNotStartableMessage(state);
 
             var inst = ActionInstanceUtility.Find(ActionType.Interlock, rsv.Resource.ResourceID);
@@ -203,9 +206,14 @@ namespace LNF.Web.Scheduler.Handlers
             }
         }
 
-        public static string GetResourceUrl(HttpContext context, Resource res)
+        public static string GetResourceUrl(HttpContextBase context, Resource res)
         {
             return VirtualPathUtility.ToAbsolute(string.Format("~/ResourceDayWeek.aspx?Path={0}&Date={1:yyyy-MM-dd}", PathInfo.Create(res), context.Request.SelectedDate()));
+        }
+
+        public static ReservationUtility GetReservationUtility(DateTime now)
+        {
+            return new ReservationUtility(now, ServiceProvider.Current);
         }
     }
 

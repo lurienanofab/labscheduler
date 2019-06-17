@@ -28,10 +28,11 @@ Public Class Global_asax
         Dim lastEx As Exception = Server.GetLastError()
         If lastEx IsNot Nothing Then
             Dim baseEx As Exception = lastEx.GetBaseException()
+            Dim util As New ErrorUtility(New HttpContextWrapper(Context))
             If baseEx IsNot Nothing Then
-                errors = ErrorUtility.GetErrorData(baseEx)
+                errors = util.GetErrorData(baseEx)
             Else
-                errors = ErrorUtility.GetErrorData(lastEx)
+                errors = util.GetErrorData(lastEx)
             End If
 
             'do not use the custom

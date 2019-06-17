@@ -1,15 +1,9 @@
-﻿using LNF.Cache;
-using LNF.CommonTools;
-using LNF.Models.Scheduler;
+﻿using LNF.Models.Scheduler;
 using LNF.Repository;
 using LNF.Repository.Scheduler;
 using LNF.Scheduler;
 using LNF.Web.Scheduler.Content;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Web.UI;
 using System.Web.UI.HtmlControls;
 using System.Web.UI.WebControls;
 
@@ -48,7 +42,7 @@ namespace LNF.Web.Scheduler.Pages
         {
             if (!Page.IsPostBack)
             {
-                ResourceItem res = Request.SelectedPath().GetResource();
+                IResource res = GetCurrentResource();
                 LoadResourceStatus(res);
                 LoadInterlockState(res);
             }
@@ -74,7 +68,7 @@ namespace LNF.Web.Scheduler.Pages
             litRepairEndMessage.Text = string.Format("<div>Current scheduled end time: <b>{0} ({1} hours from now)</b>.</div>", rsv.EndDateTime, GetDuration(rsv).TotalHours.ToString("#0.00"));
         }
 
-        private void LoadResourceStatus(ResourceItem res)
+        private void LoadResourceStatus(IResource res)
         {
             if (res.HasState(ResourceState.Online))
             {
@@ -96,7 +90,7 @@ namespace LNF.Web.Scheduler.Pages
             else if (res.HasState(ResourceState.Offline))
             {
                 // Tool state is offline
-                var rip = ReservationManager.GetRepairReservationInProgress(res.ResourceID);
+                var rip = ReservationUtility.GetRepairReservationInProgress(ContextBase.ResourceTree().Find(res.ResourceID));
 
                 Reservation rsv = null;
 
@@ -156,7 +150,7 @@ namespace LNF.Web.Scheduler.Pages
             }
         }
 
-        private void LoadInterlockState(ResourceItem res)
+        private void LoadInterlockState(IResource res)
         {
             divInterlockState.Attributes.Add("data-id", res.ResourceID.ToString());
         }
@@ -177,27 +171,30 @@ namespace LNF.Web.Scheduler.Pages
             {
                 litErrMsg.Text = string.Empty;
 
-                ResourceItem res = Request.SelectedPath().GetResource();
-                Reservation repair;
+                IResource res = GetCurrentResource();
+                ResourceTreeItem treeItem = ContextBase.ResourceTree().Find(res.ResourceID);
+                IReservation repair;
 
-                switch(e.CommandName)
+                var util = new RepairUtility(treeItem, CurrentUser, Provider);
+
+                switch (e.CommandName)
                 {
                     case "start":
-                        repair = RepairUtility.StartRepair(res, GetSelectedState(), GetRepairActualBeginDateTime(), GetRepairActualEndDateTime(), txtNotes.Text);
+                        repair = util.StartRepair(GetSelectedState(), GetRepairActualBeginDateTime(), GetRepairActualEndDateTime(), txtNotes.Text);
                         break;
                     case "update":
-                        repair = RepairUtility.UpdateRepair(res, GetRepairActualBeginDateTime(), GetRepairActualEndDateTime(), txtNotes.Text);
+                        repair = util.UpdateRepair(GetRepairActualBeginDateTime(), GetRepairActualEndDateTime(), txtNotes.Text);
                         break;
                     case "end":
-                        repair = RepairUtility.EndRepair(res);
+                        repair = util.EndRepair(DateTime.Now);
                         break;
                     default:
-                        throw new InvalidOperationException("Unknown command: " + e.CommandName);
+                        throw new InvalidOperationException($"Unknown command: {e.CommandName}");
                 }
 
                 RefreshAndRedirect(res);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 litErrMsg.Text = WebUtility.BootstrapAlert("danger", ex.Message, true);
             }
@@ -234,10 +231,10 @@ namespace LNF.Web.Scheduler.Pages
                 throw new Exception("You must specify the start time and estimated time to repair.");
         }
 
-        private void RefreshAndRedirect(ResourceItem res)
+        private void RefreshAndRedirect(IResource res)
         {
             // Last, reload and refresh everything to reflect the new change made
-            Response.Redirect(string.Format("~/ResourceMaintenance.aspx?Path={0}&Date={1:yyyy-MM-dd}", PathInfo.Create(res), Request.SelectedDate()), false);
+            Response.Redirect(string.Format("~/ResourceMaintenance.aspx?Path={0}&Date={1:yyyy-MM-dd}", PathInfo.Create(res), ContextBase.Request.SelectedDate()), false);
         }
     }
 }

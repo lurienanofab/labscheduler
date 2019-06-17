@@ -1,7 +1,5 @@
-﻿using LNF.Cache;
-using LNF.Models.Scheduler;
+﻿using LNF.Models.Scheduler;
 using LNF.Repository.Scheduler;
-using LNF.Scheduler;
 using System;
 using System.Configuration;
 using System.Linq;
@@ -66,6 +64,12 @@ namespace LNF.Web.Scheduler
                 result.BuildingID = int.Parse(splitter[0]);
 
             return result;
+        }
+
+        public static PathInfo Create(int resourceId)
+        {
+            var res = ServiceProvider.Current.Scheduler.Resource.GetResource(resourceId);
+            return Create(res);
         }
 
         public static PathInfo Create(int buildingId, int labId, int procTechId, int resourceId)
@@ -156,38 +160,6 @@ namespace LNF.Web.Scheduler
             }
 
             return result;
-        }
-
-        public BuildingItem GetBuilding()
-        {
-            if (BuildingID > 0)
-                return CacheManager.Current.ResourceTree().GetBuilding(BuildingID);
-            else
-                return null;
-        }
-
-        public LabItem GetLab()
-        {
-            if (LabID > 0)
-                return CacheManager.Current.ResourceTree().GetLab(LabID);
-            else
-                return null;
-        }
-
-        public ProcessTechItem GetProcessTech()
-        {
-            if (ProcessTechID > 0)
-                return CacheManager.Current.ResourceTree().GetProcessTech(ProcessTechID);
-            else
-                return null;
-        }
-
-        public ResourceItem GetResource()
-        {
-            if (ResourceID > 0)
-                return CacheManager.Current.ResourceTree().GetResource(ResourceID).GetResourceItem();
-            else
-                return null;
         }
 
         public bool IsEmpty()

@@ -24,6 +24,15 @@ Namespace Pages
         Protected WithEvents hypRecurringPage As Global.System.Web.UI.WebControls.HyperLink
         
         '''<summary>
+        '''litDate control.
+        '''</summary>
+        '''<remarks>
+        '''Auto-generated field.
+        '''To modify move field declaration from designer file to code-behind file.
+        '''</remarks>
+        Protected WithEvents litDate As Global.System.Web.UI.WebControls.Literal
+        
+        '''<summary>
         '''litCurrentUser control.
         '''</summary>
         '''<remarks>
@@ -42,13 +51,13 @@ Namespace Pages
         Protected WithEvents litLocation As Global.System.Web.UI.WebControls.Literal
         
         '''<summary>
-        '''lblDate control.
+        '''litComputer control.
         '''</summary>
         '''<remarks>
         '''Auto-generated field.
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
-        Protected WithEvents lblDate As Global.System.Web.UI.WebControls.Label
+        Protected WithEvents litComputer As Global.System.Web.UI.WebControls.Literal
         
         '''<summary>
         '''rvReserv control.

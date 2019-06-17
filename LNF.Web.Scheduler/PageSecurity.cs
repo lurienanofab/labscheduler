@@ -3,9 +3,8 @@ using LNF.Models.Data;
 using LNF.Models.Scheduler;
 using LNF.Repository.Data;
 using LNF.Scheduler;
+using LNF.Web.Scheduler.Content;
 using System.IO;
-using System.Web;
-using System.Web.UI;
 
 namespace LNF.Web.Scheduler
 {
@@ -18,7 +17,7 @@ namespace LNF.Web.Scheduler
 
         public static readonly ClientPrivilege AdminAuthTypes = ClientPrivilege.Administrator;
 
-        public static bool CheckAccessRight(Page page, Client currentUser)
+        public static bool CheckAccessRight(SchedulerPage page, Client currentUser)
         {
             var pageName = Path.GetFileName(page.AppRelativeVirtualPath).ToLower();
 
@@ -34,7 +33,7 @@ namespace LNF.Web.Scheduler
                     case "resourcedocs.aspx":
                     case "resourceconfig.aspx":
                     case "resourcemaintenance.aspx":
-                        var resourceId = page.Request.SelectedPath().ResourceID;
+                        var resourceId = page.ContextBase.Request.SelectedPath().ResourceID;
                         if (resourceId > 0)
                         {
                             ClientAuthLevel authLevel = CacheManager.Current.GetAuthLevel(resourceId, currentUser.ClientID);

@@ -61,8 +61,7 @@
 
                 if (valid) {
                     var redirectUrl = getRedirectUrl(args);
-                    alert(redirectUrl);
-                    //window.location = redirectUrl;
+                    window.location = redirectUrl;
                 }
             }).on("click", ".ReservDelete", function (e) {
                 e.stopPropagation();

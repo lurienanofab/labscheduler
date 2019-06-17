@@ -9,7 +9,7 @@ Namespace DBAccess
 
         ' Inserts a resource doc
         Public Function InsertDoc(ByVal ResourceID As Integer, ByVal DocName As String, ByVal FileExtension As String) As Integer
-            Return DA.Command().Param(New With {.ResourceID = "ResourceID", DocName, FileExtension}).ExecuteScalar(Of Integer)("sselScheduler.dbo.procResourceDocInsert")
+            Return DA.Command().Param(New With {.ResourceID = "ResourceID", DocName, FileExtension}).ExecuteScalar(Of Integer)("sselScheduler.dbo.procResourceDocInsert").Value
         End Function
 
         ' Updates a resource doc

@@ -13,7 +13,7 @@ Namespace DBAccess
 
         ' Returns specified Building
         Public Sub New(ByVal id As Integer)
-            Using reader As IDataReader = DA.Command().Param(New With {.Action = "Select", .BuildingID = id}).ExecuteReader("sselScheduler.dbo.procBuildingSelect")
+            Using reader As ExecuteReaderResult = DA.Command().Param(New With {.Action = "Select", .BuildingID = id}).ExecuteReader("sselScheduler.dbo.procBuildingSelect")
                 If reader.Read() Then
                     IsValid = True
                     BuildingID = Convert.ToInt32(reader("BuildingID"))
@@ -25,7 +25,7 @@ Namespace DBAccess
         End Sub
 
         ' Returns all Buildings
-        Public Function SelectAllDataReader() As IDataReader
+        Public Function SelectAllDataReader() As ExecuteReaderResult
             Return DA.Command().Param(New With {.Action = "SelectAll"}).ExecuteReader("sselScheduler.dbo.procBuildingSelect")
         End Function
 
@@ -35,7 +35,7 @@ Namespace DBAccess
         End Function
 
         Public Shared Function HasLabs(ByVal BuildingID As Integer) As Boolean
-            Dim count As Integer = DA.Command().Param(New With {.Action = "HasLabs", BuildingID}).ExecuteScalar(Of Integer)("sselScheduler.dbo.procBuildingSelect")
+            Dim count As Integer = DA.Command().Param(New With {.Action = "HasLabs", BuildingID}).ExecuteScalar(Of Integer)("sselScheduler.dbo.procBuildingSelect").Value
             Return count > 0
         End Function
 

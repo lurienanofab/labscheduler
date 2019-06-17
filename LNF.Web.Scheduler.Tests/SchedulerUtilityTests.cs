@@ -1,10 +1,7 @@
 ﻿using LNF.Cache;
-using LNF.Data;
-using LNF.Models.Data;
 using LNF.Models.Scheduler;
 using LNF.Repository;
 using LNF.Repository.Data;
-using LNF.Repository.Scheduler;
 using LNF.Scheduler;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
@@ -30,7 +27,7 @@ namespace LNF.Web.Scheduler.Tests
         [TestMethod]
         public void CanCreateAndModifyReservationWithoutInsertForModification()
         {
-            Reservation rsv1, rsv2;
+            ReservationItem rsv1, rsv2;
             ResourceItem res;
 
             int resourceId = 62020;
@@ -59,7 +56,7 @@ namespace LNF.Web.Scheduler.Tests
                 };
 
                 // Step 2.2: Create the new Reservation
-                rsv1 = SchedulerUtility.CreateNewReservation(new SchedulerUtility.ReservationData(processInfos)
+                rsv1 = ReservationUtility.Create(new ReservationData(processInfos)
                 {
                     ClientID = 1301,
                     ResourceID = res.ResourceID,
@@ -84,12 +81,12 @@ namespace LNF.Web.Scheduler.Tests
                 processInfos.First().Value = 200;
 
                 // Step 4.2: Modify the existing Reservation
-                rsv2 = SchedulerUtility.ModifyExistingReservation(rsv1, new SchedulerUtility.ReservationData(processInfos)
+                rsv2 = ReservationUtility.Modify(rsv1, new ReservationData(processInfos)
                 {
                     ClientID = 1301,
                     ResourceID = res.ResourceID,
-                    AccountID = rsv1.Account.AccountID,
-                    ActivityID = rsv1.Activity.ActivityID,
+                    AccountID = rsv1.AccountID,
+                    ActivityID = rsv1.ActivityID,
                     AutoEnd = true,
                     KeepAlive = true,
                     Notes = "modified by unit test",
@@ -112,7 +109,7 @@ namespace LNF.Web.Scheduler.Tests
         [TestMethod]
         public void CanCreateAndModifyReservationWithInsertForModification()
         {
-            Reservation rsv1, rsv2;
+            ReservationItem rsv1, rsv2;
             ResourceItem res;
 
             int resourceId = 62020;
@@ -141,7 +138,7 @@ namespace LNF.Web.Scheduler.Tests
                 };
 
                 // Step 2.2: Create the new Reservation
-                rsv1 = SchedulerUtility.CreateNewReservation(new SchedulerUtility.ReservationData(processInfos)
+                rsv1 = ReservationUtility.Create(new ReservationData(processInfos)
                 {
                     ClientID = 1301,
                     ResourceID = res.ResourceID,
@@ -166,12 +163,12 @@ namespace LNF.Web.Scheduler.Tests
                 processInfos.First().Value = 200;
 
                 // Step 4.2: Modify the existing Reservation
-                rsv2 = SchedulerUtility.ModifyExistingReservation(rsv1, new SchedulerUtility.ReservationData(processInfos)
+                rsv2 = ReservationUtility.Modify(rsv1, new ReservationData(processInfos)
                 {
                     ClientID = 1301,
                     ResourceID = res.ResourceID,
-                    AccountID = rsv1.Account.AccountID,
-                    ActivityID = rsv1.Activity.ActivityID,
+                    AccountID = rsv1.AccountID,
+                    ActivityID = rsv1.ActivityID,
                     AutoEnd = true,
                     KeepAlive = true,
                     Notes = "modified by unit test",

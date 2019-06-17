@@ -1,13 +1,8 @@
-﻿using LNF.Cache;
-using LNF.Data;
-using LNF.Models.PhysicalAccess;
-using LNF.Models.Scheduler;
+﻿using LNF.Models.Scheduler;
 using LNF.Repository;
 using LNF.Repository.Data;
-using LNF.Repository.Scheduler;
 using LNF.Scheduler;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using System.Web.SessionState;
@@ -16,60 +11,62 @@ namespace LNF.Web.Scheduler.Controllers
 {
     public class ReservationController : IHttpHandler, IRequiresSessionState
     {
-        protected IReservationManager ReservationManager => ServiceProvider.Current.Use<IReservationManager>();
+        protected IProvider Provider => ServiceProvider.Current;
 
         public bool IsReusable => false;
 
         public void ProcessRequest(HttpContext context)
         {
-            string command = GetCommand(context);
+            HttpContextBase ctx = new HttpContextWrapper(context);
+
+            string command = GetCommand(ctx);
 
             string redirectUrl;
 
-            var currentView = CacheManager.Current.CurrentViewType();
+            var currentView = ctx.GetCurrentViewType();
 
             try
             {
-                context.Session.Remove("ErrorMessage");
+                ctx.Session.Remove("ErrorMessage");
 
                 if (command == "ReservationAction")
                 {
-                    redirectUrl = ReservationAction(context);
+                    redirectUrl = GetReservationAction(ctx);
                 }
                 else
                 {
-                    Reservation rsv;
+                    IReservation rsv;
+                    IResource res;
 
                     switch (command)
                     {
                         case "ChangeHourRange":
-                            string range = context.Request.QueryString["Range"];
+                            string range = ctx.Request.QueryString["Range"];
 
                             if (range == "FullDay")
-                                CacheManager.Current.DisplayDefaultHours(false);
+                                ctx.SetDisplayDefaultHours(false);
                             else
-                                CacheManager.Current.DisplayDefaultHours(true);
+                                ctx.SetDisplayDefaultHours(true);
 
                             redirectUrl = SchedulerUtility.GetReservationViewReturnUrl(currentView);
                             break;
                         case "NewReservation":
-                            if (CanCreateNewReservation(context))
-                                redirectUrl = SchedulerUtility.GetReservationReturnUrl(context.Request.SelectedPath(), 0, context.Request.SelectedDate(), GetReservationTime(context));
+                            if (CanCreateNewReservation(ctx))
+                                redirectUrl = SchedulerUtility.GetReservationReturnUrl(ctx.Request.SelectedPath(), 0, ctx.Request.SelectedDate(), GetReservationTime(ctx));
                             else
                                 redirectUrl = SchedulerUtility.GetReservationViewReturnUrl(currentView);
                             break;
                         case "ModifyReservation":
-                            rsv = GetReservation(context);
+                            rsv = ctx.GetReservationWithInvitees();
+                            res = ctx.ResourceTree().GetResource(rsv.ResourceID);
+                            var currentDate = ctx.Request.SelectedDate();
+                            var currentTime = GetReservationTime(ctx);
 
-                            var res = CacheManager.Current.ResourceTree().GetResource(rsv.Resource.ResourceID);
-                            var currentDate = context.Request.SelectedDate();
-                            var currentTime = GetReservationTime(context);
-
-                            redirectUrl = SchedulerUtility.GetReservationReturnUrl(PathInfo.Create(res), rsv.ReservationID, currentDate, currentTime);
+                            redirectUrl = SchedulerUtility.GetReservationReturnUrl(PathInfo.Create(rsv), rsv.ReservationID, currentDate, currentTime);
                             break;
                         case "DeleteReservation":
-                            rsv = GetReservation(context);
-                            ReservationManager.DeleteReservation(rsv.ReservationID);
+                            rsv = ctx.GetReservationWithInvitees();
+                            GetReservationUtility().Delete(rsv, ctx.CurrentUser().ClientID);
 
                             redirectUrl = SchedulerUtility.GetReservationViewReturnUrl(currentView);
                             break;
@@ -80,7 +77,7 @@ namespace LNF.Web.Scheduler.Controllers
             }
             catch (Exception ex)
             {
-                context.Session["ErrorMessage"] = ex.Message;
+                ctx.Session["ErrorMessage"] = ex.Message;
 
                 try
                 {
@@ -93,12 +90,12 @@ namespace LNF.Web.Scheduler.Controllers
             }
 
             if (!string.IsNullOrEmpty(redirectUrl))
-                context.Response.Redirect(redirectUrl);
+                ctx.Response.Redirect(redirectUrl);
             else
-                context.Response.Redirect("~");
+                ctx.Response.Redirect("~");
         }
 
-        private string GetCommand(HttpContext context)
+        private string GetCommand(HttpContextBase context)
         {
             if (string.IsNullOrEmpty(context.Request.QueryString["Command"]))
                 throw new InvalidOperationException("Required parameter missing: Command");
@@ -106,45 +103,7 @@ namespace LNF.Web.Scheduler.Controllers
             return context.Request.QueryString["Command"];
         }
 
-        private ReservationState GetReservationState(HttpContext context)
-        {
-            ReservationState state = ReservationState.Undefined;
-
-            if (!string.IsNullOrEmpty(context.Request.QueryString["State"]))
-                state = (ReservationState)Enum.Parse(typeof(ReservationState), context.Request.QueryString["State"], true);
-
-            return state;
-        }
-
-        private int GetReservationID(HttpContext context)
-        {
-            if (!string.IsNullOrEmpty(context.Request.QueryString["ReservationID"]))
-            {
-                if (int.TryParse(context.Request.QueryString["ReservationID"], out int reservationId))
-                {
-                    return reservationId;
-                }
-            }
-
-            return 0;
-        }
-
-        private Reservation GetReservation(HttpContext context)
-        {
-            if (int.TryParse(context.Request.QueryString["ReservationID"], out int reservationId))
-            {
-                var result = DA.Current.Single<Reservation>(reservationId);
-
-                if (result == null)
-                    throw new InvalidOperationException($"Cannot find a Reservation with ReservationID = {reservationId}");
-
-                return result;
-            }
-            else
-                throw new InvalidOperationException("Missing query string parameter: reservationId");
-        }
-
-        private TimeSpan GetReservationTime(HttpContext context)
+        private TimeSpan GetReservationTime(HttpContextBase context)
         {
             if (int.TryParse(context.Request.QueryString["Time"], out int result))
                 return TimeSpan.FromMinutes(result);
@@ -152,27 +111,41 @@ namespace LNF.Web.Scheduler.Controllers
             throw new Exception("Missing required querystring parameter: Time");
         }
 
-        private string ReservationAction(HttpContext context)
+        /// <summary>
+        /// The requested state. May differ from the actual current reservation state so be sure to check and throw an appropriate error if necessary.
+        /// </summary>
+        private ReservationState GetReservationState(HttpContextBase context)
+        {
+            if (!string.IsNullOrEmpty(context.Request.QueryString["State"]))
+                return (ReservationState)Enum.Parse(typeof(ReservationState), context.Request.QueryString["State"], true);
+
+            throw new Exception("Missing required querystring parameter: State");
+        }
+
+        public string GetReservationAction(HttpContextBase context)
         {
             context.Session.Remove("ActiveReservationMessage");
             context.Session.Remove("ShowStartConfirmationDialog");
 
-            Reservation rsv = GetReservation(context);
-            ReservationState state = GetReservationState(context);
+            var util = GetReservationUtility();
+            var requestedState = GetReservationState(context);
+            var rsv = context.GetReservation();
+            var client = context.GetReservationClientItem(rsv);
+            var args = ReservationStateArgs.Create(rsv, client);
+            var state = util.GetReservationState(args);
+            var currentView = context.GetCurrentViewType();
 
             bool confirm = false;
             int reservationId = 0;
 
-            var currentView = CacheManager.Current.CurrentViewType();
-
-            switch (state)
+            switch (requestedState)
             {
                 case ReservationState.StartOnly:
                 case ReservationState.StartOrDelete:
                     // If there are previous unended reservations, then ask for confirmation
-                    IList<Reservation> endable = ReservationManager.SelectEndableReservations(rsv.Resource.ResourceID);
+                    var endable = Provider.Scheduler.Reservation.SelectEndableReservations(rsv.ResourceID);
 
-                    if (endable.Count > 0)
+                    if (endable.Count() > 0)
                     {
                         var endableReservations = string.Join(",", endable.Select(x => x.ReservationID));
                         context.Session["ActiveReservationMessage"] = $"[Previous ReservationID: {endableReservations}, Current ReservationID: {rsv.ReservationID}]";
@@ -181,15 +154,14 @@ namespace LNF.Web.Scheduler.Controllers
                     }
                     else
                     {
-                        var reservationItem = rsv.CreateReservationItemWithInvitees();
-                        ReservationManager.StartReservation(reservationItem, context.GetReservationClientItem(reservationItem));
+                        util.Start(rsv, context.GetReservationClientItem(rsv), context.CurrentUser().ClientID);
                     }
                     break;
                 case ReservationState.Endable:
                     // End reservation
                     if (state == ReservationState.Endable)
                     {
-                        ReservationManager.EndReservation(rsv.ReservationID);
+                        util.End(rsv, context.CurrentUser().ClientID, context.CurrentUser().ClientID);
                     }
                     else
                     {
@@ -199,12 +171,12 @@ namespace LNF.Web.Scheduler.Controllers
                     break;
                 case ReservationState.PastSelf:
                     if (currentView == ViewType.DayView || currentView == ViewType.WeekView)
-                        CacheManager.Current.WeekStartDate(rsv.BeginDateTime.Date);
-                    return SchedulerUtility.GetReturnUrl("ReservationRunNotes.aspx", context.Request.SelectedPath(), rsv.ReservationID, context.Request.SelectedDate());
+                        context.SetWeekStartDate(rsv.BeginDateTime.Date);
+                    return SchedulerUtility.GetReturnUrl("ReservationRunNotes.aspx", PathInfo.Create(rsv), rsv.ReservationID, context.Request.SelectedDate());
                 case ReservationState.Other:
                 case ReservationState.Invited:
                 case ReservationState.PastOther:
-                    return SchedulerUtility.GetReturnUrl("Contact.aspx", context.Request.SelectedPath(), rsv.ReservationID, context.Request.SelectedDate());
+                    return SchedulerUtility.GetReturnUrl("Contact.aspx", PathInfo.Create(rsv), rsv.ReservationID, context.Request.SelectedDate());
                 default:
                     throw new NotImplementedException($"ReservationState = {state} is not implemented");
             }
@@ -214,9 +186,9 @@ namespace LNF.Web.Scheduler.Controllers
             return result;
         }
 
-        private bool CanCreateNewReservation(HttpContext context)
+        private bool CanCreateNewReservation(HttpContextBase context)
         {
-            var currentView = CacheManager.Current.CurrentViewType();
+            var currentView = context.GetCurrentViewType();
 
             // copied from the old EmptyCell_Click event handler in ReservationView.ascx.vb
 
@@ -241,13 +213,13 @@ namespace LNF.Web.Scheduler.Controllers
             // The reservation fence cannot truly be checked until the activity type is selected
             // however, authorized users are always impacted by it/
 
-            var res = context.Request.SelectedPath().GetResource();
+            IResource res = context.GetCurrentResource();
 
-            ClientAuthLevel authLevel = GetAuthorization(res);
+            ClientAuthLevel authLevel = context.GetCurrentAuthLevel(res.ResourceID);
 
             if (authLevel < ClientAuthLevel.SuperUser)
             {
-                if (DateTime.Now.Add(res.ReservFence) < date)
+                if (DateTime.Now.AddMinutes(res.ReservFence) < date)
                 {
                     throw new Exception("You are trying to make a reservation that is too far in the future.");
                 }
@@ -255,25 +227,19 @@ namespace LNF.Web.Scheduler.Controllers
 
             if (currentView == ViewType.DayView || currentView == ViewType.WeekView)
             {
-                CacheManager.Current.WeekStartDate(GetWeekStartDate(context));
+                context.SetWeekStartDate(GetWeekStartDate(context));
             }
 
             return true;
         }
 
-        private int GetCurrentUserActiveClientAccountsCount(HttpContext context)
+        private int GetCurrentUserActiveClientAccountsCount(HttpContextBase context)
         {
             string un = context.User.Identity.Name;
             return DA.Current.Query<ClientAccountInfo>().Count(x => x.ClientAccountActive && x.ClientOrgActive && x.UserName == un);
         }
 
-        private ClientAuthLevel GetAuthorization(ResourceItem res)
-        {
-            ClientAuthLevel result = CacheManager.Current.GetAuthLevel(res.ResourceID, CacheManager.Current.CurrentUser.ClientID);
-            return result;
-        }
-
-        private DateTime GetWeekStartDate(HttpContext context)
+        private DateTime GetWeekStartDate(HttpContextBase context)
         {
             // This makes it so whenever the date is changed by clicking the calendar, the week start date
             // (the first column in the grid) is the selected date. Not sure if this is intended behavior or not.
@@ -282,6 +248,11 @@ namespace LNF.Web.Scheduler.Controllers
             //      return CacheManager.Current.CurrentUserState().Date.AddDays(-(int)dow);
 
             return Convert.ToDateTime(context.Request.QueryString["Date"]);
+        }
+
+        private ReservationUtility GetReservationUtility()
+        {
+            return new ReservationUtility(DateTime.Now, Provider);
         }
     }
 }

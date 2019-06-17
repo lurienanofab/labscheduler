@@ -22,7 +22,7 @@ namespace LNF.Web.Scheduler.Tests
             {
                 // Create a reservation that starts at 10 am tomorrow.
 
-                var data = new SchedulerUtility.ReservationData()
+                var data = new ReservationData()
                 {
                     ClientID = 1600,
                     ResourceID = resourceId,
@@ -34,7 +34,7 @@ namespace LNF.Web.Scheduler.Tests
                     ReservationDuration = new ReservationDuration(DateTime.Now.Date.AddDays(1).AddHours(10), TimeSpan.FromMinutes(5))
                 };
 
-                var rsv = SchedulerUtility.CreateNewReservation(data);
+                var rsv = ReservationUtility.Create(data);
                 rid = rsv.ReservationID;
             }
 

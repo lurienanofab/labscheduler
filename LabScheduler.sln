@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26730.16
+VisualStudioVersion = 15.0.26228.57
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "LabScheduler", "LabScheduler\LabScheduler.vbproj", "{20DF9C91-18CC-498C-B7EC-CF728C89F52A}"
 EndProject
@@ -9,19 +9,17 @@ Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "LabScheduler.AppCode", "Lab
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LNF.Web.Scheduler", "LNF.Web.Scheduler\LNF.Web.Scheduler.csproj", "{74C5AD4F-71FB-47CE-A2BC-AA8774774661}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OnlineServices.Api", "..\lnf\OnlineServices.Api\OnlineServices.Api.csproj", "{D0C76FE8-7233-4DA5-B106-8E4F51A32AD2}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LNF", "..\lnf\LNF\LNF.csproj", "{E3B73410-869B-4BA2-99AC-AD6708A27ADE}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LNF.Impl", "..\lnf\LNF.Impl\LNF.Impl.csproj", "{F490B789-B824-4A8C-90FC-AC447C3277F0}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LNF.Web", "..\lnf\LNF.Web\LNF.Web.csproj", "{F79683FF-E524-4107-A6E1-29579EE544E1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LNF.Web.Scheduler.Tests", "LNF.Web.Scheduler.Tests\LNF.Web.Scheduler.Tests.csproj", "{D78BF06B-B48D-4E2D-BFF2-24202023EBEC}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LNF.WebApi", "..\lnf\LNF.WebApi\LNF.WebApi.csproj", "{85BE7662-47C8-4E82-8090-3F2BD61CC0F7}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LNF.Models", "..\lnf\LNF.Models\LNF.Models.csproj", "{98C7F73D-EF9D-4A87-8B79-A1208085CFBD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LabScheduler.Tests", "LabScheduler.Tests\LabScheduler.Tests.csproj", "{DC1E6C45-114F-49BC-8A44-A814CA69080C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -48,12 +46,6 @@ Global
 		{74C5AD4F-71FB-47CE-A2BC-AA8774774661}.Release|Any CPU.Build.0 = Release|Any CPU
 		{74C5AD4F-71FB-47CE-A2BC-AA8774774661}.Staging|Any CPU.ActiveCfg = Staging|Any CPU
 		{74C5AD4F-71FB-47CE-A2BC-AA8774774661}.Staging|Any CPU.Build.0 = Staging|Any CPU
-		{D0C76FE8-7233-4DA5-B106-8E4F51A32AD2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D0C76FE8-7233-4DA5-B106-8E4F51A32AD2}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D0C76FE8-7233-4DA5-B106-8E4F51A32AD2}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D0C76FE8-7233-4DA5-B106-8E4F51A32AD2}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D0C76FE8-7233-4DA5-B106-8E4F51A32AD2}.Staging|Any CPU.ActiveCfg = Staging|Any CPU
-		{D0C76FE8-7233-4DA5-B106-8E4F51A32AD2}.Staging|Any CPU.Build.0 = Staging|Any CPU
 		{E3B73410-869B-4BA2-99AC-AD6708A27ADE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{E3B73410-869B-4BA2-99AC-AD6708A27ADE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E3B73410-869B-4BA2-99AC-AD6708A27ADE}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -72,12 +64,6 @@ Global
 		{F79683FF-E524-4107-A6E1-29579EE544E1}.Release|Any CPU.Build.0 = Release|Any CPU
 		{F79683FF-E524-4107-A6E1-29579EE544E1}.Staging|Any CPU.ActiveCfg = Staging|Any CPU
 		{F79683FF-E524-4107-A6E1-29579EE544E1}.Staging|Any CPU.Build.0 = Staging|Any CPU
-		{D78BF06B-B48D-4E2D-BFF2-24202023EBEC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D78BF06B-B48D-4E2D-BFF2-24202023EBEC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D78BF06B-B48D-4E2D-BFF2-24202023EBEC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D78BF06B-B48D-4E2D-BFF2-24202023EBEC}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D78BF06B-B48D-4E2D-BFF2-24202023EBEC}.Staging|Any CPU.ActiveCfg = Staging|Any CPU
-		{D78BF06B-B48D-4E2D-BFF2-24202023EBEC}.Staging|Any CPU.Build.0 = Staging|Any CPU
 		{85BE7662-47C8-4E82-8090-3F2BD61CC0F7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{85BE7662-47C8-4E82-8090-3F2BD61CC0F7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{85BE7662-47C8-4E82-8090-3F2BD61CC0F7}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -90,6 +76,12 @@ Global
 		{98C7F73D-EF9D-4A87-8B79-A1208085CFBD}.Release|Any CPU.Build.0 = Release|Any CPU
 		{98C7F73D-EF9D-4A87-8B79-A1208085CFBD}.Staging|Any CPU.ActiveCfg = Release|Any CPU
 		{98C7F73D-EF9D-4A87-8B79-A1208085CFBD}.Staging|Any CPU.Build.0 = Release|Any CPU
+		{DC1E6C45-114F-49BC-8A44-A814CA69080C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DC1E6C45-114F-49BC-8A44-A814CA69080C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DC1E6C45-114F-49BC-8A44-A814CA69080C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DC1E6C45-114F-49BC-8A44-A814CA69080C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DC1E6C45-114F-49BC-8A44-A814CA69080C}.Staging|Any CPU.ActiveCfg = Release|Any CPU
+		{DC1E6C45-114F-49BC-8A44-A814CA69080C}.Staging|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

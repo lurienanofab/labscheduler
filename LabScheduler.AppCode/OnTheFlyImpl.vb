@@ -3,6 +3,7 @@ Imports LNF.Cache
 Imports LNF.CommonTools
 Imports LNF.Data
 Imports LNF.Models.Data
+Imports LNF.Models.Scheduler
 Imports LNF.Repository
 Imports LNF.Repository.Data
 Imports LNF.Repository.Scheduler
@@ -16,27 +17,46 @@ Public Class OnTheFlyImpl
     Private otfresource As OnTheFlyResource = Nothing
     Private guid As Guid
     Private cardSwipeTime As Date
-    Private clientWhoSwipedTheCard As Client = Nothing
+    Private clientWhoSwipedTheCard As IClient = Nothing
     Private ReadOnly reservationID As Integer = -1  ' this may not be available in cases like first time request
-    Private allReservationListAtTimeOfSwipe As IList(Of Reservation) = Nothing
-    Private currentlyRunningReservationByUser As Reservation = Nothing
-    Private currentlyRunningReservationMayNotBeUsers As Reservation = Nothing
-    Private nextReservationInMinTime As Reservation = Nothing
+    Private allReservationListAtTimeOfSwipe As IEnumerable(Of IReservation) = Nothing
+    Private currentlyRunningReservationByUser As IReservation = Nothing
+    Private currentlyRunningReservationMayNotBeUsers As IReservation = Nothing
+    Private nextReservationInMinTime As IReservation = Nothing
     Private rreq As ResRequest = New ResRequest()
     Private logArray As List(Of OnTheFlyLog) = New List(Of OnTheFlyLog)
     Private returnMessage As String = ""
     Private isProcessFail As Boolean = False
     Private Shared ReadOnly otfActivity As Activity = DA.Current.Single(Of Activity)(6)
     Private physicalAccessUtil As PhysicalAccess.PhysicalAccessUtility
+    Private ReadOnly resourceItem As ResourceItem = Nothing
+
+    Public Property Now As Date = Date.Now
+
+    Protected ReadOnly Property Provider As IProvider
 
     Protected ReadOnly Property ReservationManager As IReservationManager
         Get
-            Return ServiceProvider.Current.Use(Of IReservationManager)()
+            Return Provider.Scheduler.Reservation
         End Get
     End Property
 
-    Sub New(potfResource As OnTheFlyResource, pcardswipedata As String, ipAddr As String)
+    Protected ReadOnly Property ProcessInfoManager As IProcessInfoManager
+        Get
+            Return Provider.Scheduler.ProcessInfo
+        End Get
+    End Property
+
+    Protected ReadOnly Property EmailManager As IEmailManager
+        Get
+            Return Provider.EmailManager
+        End Get
+    End Property
+
+    Sub New(provider As IProvider, potfResource As OnTheFlyResource, pcardswipedata As String, ipAddr As String)
+        Me.Provider = provider
         otfresource = potfResource
+        resourceItem = otfresource.Resource.CreateModel(Of ResourceItem)
         cardswipedata = pcardswipedata
         cardNum = ReservationOnTheFlyUtil.GetCardNumber(pcardswipedata)
         rreq.CardNum = cardNum
@@ -53,7 +73,7 @@ Public Class OnTheFlyImpl
         ' get the user details from the cardnum     
         Dim bcc As BadgeCardClient = GetBadgeCardClient(cardNum)
         If bcc IsNot Nothing Then
-            clientWhoSwipedTheCard = bcc.Client
+            clientWhoSwipedTheCard = bcc.Client.CreateModel(Of IClient)
         End If
     End Sub
 
@@ -97,7 +117,7 @@ Public Class OnTheFlyImpl
 
     Public Function _ExistingReservation() As Boolean  'is there currently any reservation(which ever state, running or not activated) at this time on this tool ?
         If allReservationListAtTimeOfSwipe Is Nothing Then
-            allReservationListAtTimeOfSwipe = ReservationManager.SelectExisting(GetResource())
+            allReservationListAtTimeOfSwipe = ReservationManager.SelectExisting(GetResourceItem().ResourceID)
             If (allReservationListAtTimeOfSwipe.Count > 1) Then
                 Log("_[1]ExistingReservation", "There is more than one current reservation, how can this be??")
             End If
@@ -116,7 +136,7 @@ Public Class OnTheFlyImpl
 
     Public Function _Running() As Boolean ' is that reservation activated or still need to be activated(this is the scheduler reservation)
         If allReservationListAtTimeOfSwipe IsNot Nothing Then
-            Dim running As Reservation = allReservationListAtTimeOfSwipe.FirstOrDefault(Function(x) x.IsRunning())
+            Dim running As IReservation = allReservationListAtTimeOfSwipe.FirstOrDefault(Function(x) x.IsRunning())
             If running IsNot Nothing Then
                 Log("_[2]Running", True)
                 currentlyRunningReservationMayNotBeUsers = running
@@ -139,7 +159,7 @@ Public Class OnTheFlyImpl
     End Function
 
     Public Function _IsAnotherReservationStartInMinimumTime() As Boolean
-        Dim reservationsInMinimumTime As IList(Of Reservation) = GetResource().InGranularityWindow()
+        Dim reservationsInMinimumTime As IEnumerable(Of IReservation) = ReservationManager.ReservationsInGranularityWindow(GetResourceItem())
         If reservationsInMinimumTime IsNot Nothing Then
             If reservationsInMinimumTime.Count > 0 Then
                 If currentlyRunningReservationMayNotBeUsers IsNot Nothing Then
@@ -162,7 +182,7 @@ Public Class OnTheFlyImpl
         ' is current user in group of an exisiting and running reservation ?
         ' get the list of group who are belong to the current reservation
         If allReservationListAtTimeOfSwipe IsNot Nothing Then
-            For Each aRsv As Reservation In allReservationListAtTimeOfSwipe
+            For Each aRsv As ReservationItem In allReservationListAtTimeOfSwipe
                 If IsUserInTheReservationInviteesList(aRsv, clientWhoSwipedTheCard) Then
                     currentlyRunningReservationByUser = aRsv
                     Log("_[3]InGroupExisitingReservation", True)
@@ -180,10 +200,10 @@ Public Class OnTheFlyImpl
     End Function
 
     Public Function _DoesAnotherReservationStartWithInGranularity() As Boolean
-        Dim reservationsInGranularityPeriod As IList(Of Reservation) = GetResource().InGranularityWindow()
+        Dim reservationsInGranularityPeriod As IEnumerable(Of IReservation) = ReservationManager.ReservationsInGranularityWindow(GetResourceItem())
 
         If reservationsInGranularityPeriod IsNot Nothing Then
-            If reservationsInGranularityPeriod.Count > 0 Then
+            If reservationsInGranularityPeriod.Count() > 0 Then
                 If GetCurrentReservationIfExists().ReservationID <> reservationsInGranularityPeriod.ElementAt(0).ReservationID Then
                     Log("_[4]DoesAnotherReservationStartWithInGranularity", True)
                     Return True
@@ -199,12 +219,12 @@ Public Class OnTheFlyImpl
         Return False
     End Function
 
-    Private Function GetReservationWhichStartsInMinReservationTime() As Reservation
+    Private Function GetReservationWhichStartsInMinReservationTime() As IReservation
         ' what is minmum reservation time for this tool.
         ' in currenttime + minimum reservation time is there a new reservation ?
-        Dim nextReservation As Reservation = GetNextReservationIfExists()
+        Dim nextReservation As IReservation = GetNextReservationIfExists()
         If nextReservation IsNot Nothing Then
-            If (Date.Now.AddMinutes(GetResource().MinReservTime)) > nextReservation.BeginDateTime Then
+            If (DateTime.Now.AddMinutes(GetResourceItem().MinReservTime)) > nextReservation.BeginDateTime Then
                 Return nextReservation
             End If
         End If
@@ -227,7 +247,7 @@ Public Class OnTheFlyImpl
         ' who are all(group) there in the next reservation ?
         ' is current user(who swiped the card) is in the next reservation ?
         Dim result As Boolean = False
-        Dim nextReservation As Reservation = GetNextReservationIfExists()
+        Dim nextReservation As IReservation = GetNextReservationIfExists()
         If nextReservation IsNot Nothing Then
             result = IsUserInTheReservationInviteesList(nextReservation, clientWhoSwipedTheCard)
         End If
@@ -239,9 +259,9 @@ Public Class OnTheFlyImpl
     Public Function _AfterGracePeriod() As Boolean
         ' is it after the next reservation  and in the graceperiod ?
         Dim result As Boolean = False
-        Dim currentReseration As Reservation = GetCurrentReservationIfExists()
+        Dim currentReseration As IReservation = GetCurrentReservationIfExists()
         If currentReseration IsNot Nothing Then
-            Dim dt As Date = currentReseration.EndDateTime.AddMinutes(GetResource().GracePeriod)
+            Dim dt As Date = currentReseration.EndDateTime.AddMinutes(GetResourceItem().GracePeriod)
             If cardSwipeTime < dt Then
                 result = True
             End If
@@ -253,7 +273,7 @@ Public Class OnTheFlyImpl
     Public Function _KeepAlive() As Boolean
         ' is KeepAlive True for the current reservation ?
         Dim result As Boolean = False
-        Dim currentReseration As Reservation = GetCurrentReservationIfExists()
+        Dim currentReseration As IReservation = GetCurrentReservationIfExists()
         If currentReseration IsNot Nothing Then
             result = currentReseration.KeepAlive
         End If
@@ -272,7 +292,7 @@ Public Class OnTheFlyImpl
             Return True
         End If
 
-        Dim resoID = GetResource().ResourceID
+        Dim resoID = GetResourceItem().ResourceID
 
         'is it for everyone? ResourceClient   ResourceID AuthLevel is 2 Expiration date is > datetimenow and ClientID is -1
         Dim isForEveryOne As IEnumerable(Of ResourceClient) = DA.Current.Query(Of ResourceClient)().Where(Function(x) x.ClientID = -1 AndAlso x.Resource.ResourceID = resoID AndAlso (x.Expiration Is Nothing OrElse x.Expiration.Value > Date.Now))
@@ -298,14 +318,14 @@ Public Class OnTheFlyImpl
     End Function
 
     '------------------------Utility methods -------------------------
-    Private Function IsUserInTheReservationInviteesList(ByVal rsv As Reservation, ByVal currentClient As Client) As Boolean
+    Private Function IsUserInTheReservationInviteesList(ByVal rsv As IReservation, ByVal currentClient As IClient) As Boolean
         If rsv IsNot Nothing Then
-            Dim allInvs As IList(Of ReservationInvitee) = ReservationManager.GetInvitees(rsv.ReservationID).ToList()
+            Dim allInvs As IList(Of IReservationInvitee) = ReservationManager.GetInvitees(rsv.ReservationID).ToList()
             If allInvs IsNot Nothing Then
-                Dim isReservedOrIsInvted As ReservationInvitee = allInvs.Where(Function(x) x.Invitee.ClientID = currentClient.ClientID).FirstOrDefault()
+                Dim isReservedOrIsInvted As IReservationInvitee = allInvs.Where(Function(x) x.InviteeID = currentClient.ClientID).FirstOrDefault()
 
                 If isReservedOrIsInvted Is Nothing Then
-                    If rsv.Client.ClientID = clientWhoSwipedTheCard.ClientID Then
+                    If rsv.ClientID = clientWhoSwipedTheCard.ClientID Then
                         Return True
                     End If
                     Return False
@@ -325,14 +345,14 @@ Public Class OnTheFlyImpl
         Return False
     End Function
 
-    Private Function GetCurrentReservationIfExists() As Reservation
+    Private Function GetCurrentReservationIfExists() As IReservation
         Return currentlyRunningReservationByUser
     End Function
 
-    Private Function GetNextReservationIfExists() As Reservation  ' startable next reservation
+    Private Function GetNextReservationIfExists() As IReservation  ' startable next reservation
         If nextReservationInMinTime Is Nothing Then
-            Dim minResTime As Integer = GetResource().MinReservTime
-            Dim nextNearestReservationInMinimumTime As IList(Of Reservation) = ReservationManager.SelectByResource(GetResourceID(), cardSwipeTime, cardSwipeTime.AddMinutes(minResTime), False)
+            Dim minResTime As TimeSpan = TimeSpan.FromMinutes(GetResourceItem().MinReservTime)
+            Dim nextNearestReservationInMinimumTime As IEnumerable(Of IReservation) = ReservationManager.SelectByResource(GetResourceID(), cardSwipeTime, cardSwipeTime.Add(minResTime), False)
 
             If nextNearestReservationInMinimumTime IsNot Nothing Then
                 If nextNearestReservationInMinimumTime.Count > 0 Then
@@ -354,18 +374,22 @@ Public Class OnTheFlyImpl
         Return otfresource.Resource
     End Function
 
+    Private Function GetResourceItem() As IResource
+        Return resourceItem
+    End Function
+
     Private Function GetResourceID() As Integer
         Return otfresource.Resource.ResourceID
     End Function
 
     Private Function CreateAndStartReservation() As Integer
         'create and start reservation  ------------
-        Dim rsv As Reservation = New Reservation()
+        Dim args As InsertReservationArgs = New InsertReservationArgs()
 
-        Dim res As Resource = GetResource()
+        Dim res As IResource = GetResourceItem()
         Dim rr As ResRequest = GetResRequest()
 
-        rsv.Resource = res
+        args.ResourceID = GetResourceItem().ResourceID
 
         Dim defaultMinResTime As Integer = 5 ' 5 minutes
         If 0 = res.MinReservTime Then
@@ -375,48 +399,48 @@ Public Class OnTheFlyImpl
         Dim reservationStartDatetTime As Date = GetNearestStartTime(res.MinReservTime)
         Dim resDuration As Double = res.MinReservTime
 
-        rsv.RecurrenceID = -1 'always -1 for non-recurring reservation
-        rsv.MaxReservedDuration = resDuration
-        rsv.Duration = resDuration
-        rsv.Notes = "On The Fly Reservation"
-        rsv.AutoEnd = True
-        rsv.CreatedOn = Date.Now
-        rsv.Activity = otfActivity 'Processing
-        rsv.BeginDateTime = reservationStartDatetTime
-        rsv.EndDateTime = reservationStartDatetTime.AddMinutes(defaultMinResTime)
-        rsv.OriginalBeginDateTime = rsv.BeginDateTime
-        rsv.OriginalEndDateTime = rsv.EndDateTime
-        rsv.LastModifiedOn = Date.Now
-        rsv.Client = clientWhoSwipedTheCard
+        args.ClientID = clientWhoSwipedTheCard.ClientID
+        args.RecurrenceID = -1 'always -1 for non-recurring reservation
+        args.Notes = "On The Fly Reservation"
+        args.AutoEnd = True
+        args.ActivityID = otfActivity.ActivityID 'Processing
+        args.BeginDateTime = reservationStartDatetTime
+        args.EndDateTime = reservationStartDatetTime.AddMinutes(defaultMinResTime)
+        args.Now = Now
+        args.ModifiedByClientID = clientWhoSwipedTheCard.ClientID
 
-        Dim account As Account = ClientPreferenceUtility.OrderAccountsByUserPreference(clientWhoSwipedTheCard.ClientID).FirstOrDefault()  ' first account in the list is default account
+        Dim util As New ClientPreferenceUtility(Provider)
+        Dim account As IAccount = util.OrderAccountsByUserPreference(clientWhoSwipedTheCard).FirstOrDefault()  ' first account in the list is default account
+
+        Dim rsv As IReservation
 
         If account IsNot Nothing Then
-            rsv.Account = account
-            ReservationManager.Insert(rsv, clientWhoSwipedTheCard.ClientID)
+            args.AccountID = account.AccountID
+            rsv = ReservationManager.InsertReservation(args)
         Else
             Throw New InvalidOperationException("The default account could not be determined.")
         End If
 
-        StartReservation(clientWhoSwipedTheCard, rsv.CreateReservationItemWithInvitees(), rr, res.MinReservTime)
+        StartReservation(clientWhoSwipedTheCard, rsv, rr, res.MinReservTime)
 
         Return rsv.ReservationID
     End Function
 
-    Private Function GetReservationClientItem(rsv As Models.Scheduler.ReservationItemWithInvitees, client As Client) As Models.Scheduler.ReservationClientItem
-        Dim resourceClients As IEnumerable(Of Models.Scheduler.ResourceClientItem) = ReservationManager.GetResourceClients(rsv.ResourceID)
-        Return New Models.Scheduler.ReservationClientItem With {
+    Private Function GetReservationClientItem(rsv As IReservation, client As IClient) As ReservationClient
+        Dim resourceClients As IEnumerable(Of IResourceClient) = ReservationManager.GetResourceClients(rsv.ResourceID)
+        Dim invitees As IEnumerable(Of IReservationInvitee) = ReservationManager.GetInvitees(rsv.ReservationID)
+        Return New ReservationClient With {
              .ClientID = client.ClientID,
              .ReservationID = rsv.ReservationID,
              .ResourceID = rsv.ResourceID,
              .IsReserver = rsv.ClientID = client.ClientID,
-             .IsInvited = rsv.Invitees.Any(Function(x) x.ClientID = client.ClientID),
+             .IsInvited = invitees.Any(Function(x) x.InviteeID = client.ClientID),
              .InLab = physicalAccessUtil.ClientInLab(client.ClientID, rsv.LabID),
-             .UserAuth = ReservationManager.GetAuthLevel(resourceClients, client)
+             .UserAuth = ReservationUtility.GetAuthLevel(resourceClients, client)
         }
     End Function
 
-    Private Sub StartReservation(aclient As Client, rsv As Models.Scheduler.ReservationItemWithInvitees, rr As ResRequest, Optional reservationTime As Integer = -1)
+    Private Sub StartReservation(aclient As IClient, rsv As IReservation, rr As ResRequest, Optional reservationTime As Double = -1)
         If rsv Is Nothing Then
             Throw New ArgumentNullException("rsv", "A null Reservation object is not allowed. [LabScheduler.AppCode.OnTheFlyImpl.StartReservation]")
         End If
@@ -430,10 +454,10 @@ Public Class OnTheFlyImpl
             .Reservation = DA.Current.Single(Of Reservation)(rsv.ReservationID)
         }
 
-        ReservationManager.StartReservation(rsv, GetReservationClientItem(rsv, aclient))
+        GetReservationUtility().Start(rsv, GetReservationClientItem(rsv, aclient), aclient.ClientID)
 
         rr.ReservationID = rsv.ReservationID
-        rr.ReservationTime = Convert.ToInt32(reservationTime)
+        rr.ReservationTime = reservationTime
         ronfly.CardNumber = rr.CardNum
         ronfly.IPAddress = rr.IPAddress
         ronfly.OnTheFlyName = rr.OnTheFlyName
@@ -441,13 +465,13 @@ Public Class OnTheFlyImpl
         DA.Current.Insert(ronfly)
     End Sub
 
-    Private Shared Function GetNearestStartTime(ByVal minResTimeInMins As Integer) As Date
-        Dim pDt = New Date(Date.Now.Year, Date.Now.Month, Date.Now.Day, Date.Now.Hour, 0, 0)
-        Dim resDT As Date = pDt.AddMinutes(minResTimeInMins * -1)
+    Private Shared Function GetNearestStartTime(minResTimeInMins As Double) As DateTime
+        Dim pDt = New DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, DateTime.Now.Hour, 0, 0)
+        Dim resDT As DateTime = pDt.AddMinutes(minResTimeInMins * -1)
 
         While True
             resDT = resDT.AddMinutes(minResTimeInMins)
-            If resDT > Date.Now Then
+            If resDT > DateTime.Now Then
                 Return resDT
             End If
         End While
@@ -461,9 +485,9 @@ Public Class OnTheFlyImpl
 
     '------------------------Action methods --------------------------
     Public Sub EndExistingReservation()
-        Dim currentReservation As Reservation = GetCurrentReservationIfExists()
+        Dim currentReservation As IReservation = GetCurrentReservationIfExists()
         If currentReservation IsNot Nothing Then
-            ReservationManager.EndReservation(currentReservation.ReservationID)
+            GetReservationUtility().End(currentReservation, GetSwipedByClientID(), GetSwipedByClientID())
         End If
     End Sub
 
@@ -483,22 +507,21 @@ Public Class OnTheFlyImpl
         If currentlyRunningReservationByUser.IsStarted Then
             Log("StartExistingReservation:AlreadyStarted", True)
         Else
-            StartReservation(clientWhoSwipedTheCard, currentlyRunningReservationByUser.CreateReservationItemWithInvitees(), GetResRequest())
+            StartReservation(clientWhoSwipedTheCard, currentlyRunningReservationByUser, GetResRequest())
             Log("StartExistingReservation:Started", True)
         End If
     End Sub
 
     Public Sub StartNextReservation()
         Dim nexRestInMinTime = GetReservationWhichStartsInMinReservationTime()
-        StartReservation(clientWhoSwipedTheCard, nexRestInMinTime.CreateReservationItemWithInvitees(), GetResRequest())
+        StartReservation(clientWhoSwipedTheCard, nexRestInMinTime, GetResRequest())
     End Sub
 
     Public Sub ExtendExistingReservation()
         Log("[5]ExtendExistingReservation", True)
         If currentlyRunningReservationByUser IsNot Nothing Then
-            Dim minTimeInMinutes As Integer = -1
-            Dim extraTime As Integer = GetResource().Granularity
-            currentlyRunningReservationByUser.EndDateTime = currentlyRunningReservationByUser.EndDateTime.AddMinutes(extraTime)
+            Dim extraTime As TimeSpan = TimeSpan.FromMinutes(GetResourceItem().Granularity)
+            currentlyRunningReservationByUser.EndDateTime = currentlyRunningReservationByUser.EndDateTime.Add(extraTime)
         End If
     End Sub
 
@@ -556,6 +579,10 @@ Public Class OnTheFlyImpl
         Log("--SwipeEnd-ForEnd--", cardNum)
         DA.Current.Insert(logArray)
         Return (result)
+    End Function
+
+    Private Function GetReservationUtility() As ReservationUtility
+        Return New ReservationUtility(Now, Provider)
     End Function
 End Class
 

@@ -1,4 +1,4 @@
-﻿using LNF.Cache;
+﻿using LNF.Models.Scheduler;
 using LNF.Repository;
 using LNF.Repository.Data;
 using LNF.Repository.Scheduler;
@@ -10,9 +10,6 @@ namespace LNF.Web.Scheduler
 {
     public static class FacilityDownTimeUtility
     {
-        public static IReservationManager ReservationManager => ServiceProvider.Current.Use<IReservationManager>();
-        public static IEmailManager EmailManager => ServiceProvider.Current.Use<IEmailManager>();
-
         public static ReservationGroup CreateFacilityDownTimeGroup(int clientId, DateTime beginDateTime, DateTime endDateTime)
         {
             //FacilityDownTimeDB.CreateNew()
@@ -59,39 +56,20 @@ namespace LNF.Web.Scheduler
             return result;
         }
 
-        public static InsertFacilityDownTimeResult InsertFacilityDownTime(int resourceId, int groupId, int clientId, DateTime beginDateTime, DateTime endDateTime, string notes)
+        public static InsertFacilityDownTimeResult InsertFacilityDownTime(int resourceId, int groupId, int clientId, DateTime beginDateTime, DateTime endDateTime, string notes, int modifiedByClientId)
         {
-            Reservation rsv = new Reservation
-            {
-                Resource = DA.Current.Single<Resource>(resourceId),
-                RecurrenceID = -1, //always -1 for non-recurring reservation
-                GroupID = groupId,
-                Client = DA.Current.Single<Client>(clientId),
-                BeginDateTime = beginDateTime,
-                EndDateTime = endDateTime,
-                ActualBeginDateTime = beginDateTime,
-                ActualEndDateTime = endDateTime,
-                Account = DA.Current.Single<Account>(Properties.Current.LabAccount.AccountID),
-                Activity = DA.Current.Single<Activity>(Properties.Current.Activities.FacilityDownTime.ActivityID),
-                Duration = (beginDateTime - endDateTime).TotalMinutes,
-                Notes = notes,
-                AutoEnd = false,
-                HasProcessInfo = false,
-                HasInvitees = false,
-                CreatedOn = DateTime.Now
-            };
-
             IList<CanceledReservation> canceled = new List<CanceledReservation>();
 
             // Find and Remove any un-started reservations made during time of repair
-            var query = ReservationManager.SelectByResource(resourceId, beginDateTime, endDateTime, false);
+            var query = ServiceProvider.Current.Scheduler.Reservation.SelectByResource(resourceId, beginDateTime, endDateTime, false);
+
             foreach (var existing in query)
             {
                 // Only if the reservation has not begun
                 if (existing.ActualBeginDateTime == null)
                 {
-                    ReservationManager.Delete(existing, CacheManager.Current.CurrentUser.ClientID);
-                    EmailManager.EmailOnCanceledByRepair(existing, true, "LNF Facility Down", "Facility is down, thus we have to disable the tool.", endDateTime);
+                    ServiceProvider.Current.Scheduler.Reservation.CancelReservation(existing.ReservationID, modifiedByClientId);
+                    ServiceProvider.Current.EmailManager.EmailOnCanceledByRepair(existing, true, "LNF Facility Down", "Facility is down, thus we have to disable the tool.", endDateTime, modifiedByClientId);
                     canceled.Add(new CanceledReservation(existing.ReservationID));
                 }
                 else
@@ -102,9 +80,9 @@ namespace LNF.Web.Scheduler
                 }
             }
 
-            ReservationManager.InsertFacilityDownTime(rsv, CacheManager.Current.CurrentUser.ClientID);
+            var rsv = ServiceProvider.Current.Scheduler.Reservation.InsertFacilityDownTime(resourceId, clientId, groupId, beginDateTime, endDateTime, notes, modifiedByClientId);
 
-            InsertFacilityDownTimeResult result = new InsertFacilityDownTimeResult(rsv.ReservationID, canceled);
+            var result = new InsertFacilityDownTimeResult(rsv.ReservationID, canceled);
 
             return result;
         }

@@ -2,6 +2,7 @@
 Imports LabScheduler.AppCode.DBAccess
 Imports LNF.CommonTools
 Imports LNF.Models.Data
+Imports LNF.Repository
 Imports LNF.Web
 Imports LNF.Web.Scheduler
 Imports LNF.Web.Scheduler.Content
@@ -43,7 +44,7 @@ Namespace Pages
         End Sub
 
         Private Sub LoadRooms()
-            Using reader As IDataReader = dbLab.SelectRooms()
+            Using reader As ExecuteReaderResult = dbLab.SelectRooms()
                 ddlRooms.DataSource = reader
                 ddlRooms.DataBind()
                 ddlRooms.Items.Insert(0, New ListItem("None", "-1"))

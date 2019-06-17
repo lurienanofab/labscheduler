@@ -1,5 +1,4 @@
-﻿using LNF.Cache;
-using LNF.Models.Scheduler;
+﻿using LNF.Models.Scheduler;
 using LNF.Scheduler;
 using System.Linq;
 
@@ -16,7 +15,7 @@ namespace LNF.Web.Scheduler.TreeView
             ID = item.LabID;
             Name = item.LabDisplayName;
             Description = item.LabDescription;
-            var procTechs = CacheManager.Current.ResourceTree().ProcessTechs().Where(x => x.ProcessTechIsActive && x.LabID == item.LabID).ToList();
+            var procTechs = ResourceTree.ProcessTechs().Where(x => x.ProcessTechIsActive && x.LabID == item.LabID).ToList();
             Children = new TreeViewItemCollection(procTechs.Select(x => new ProcessTechNode(x, this)));
         }
     }

@@ -63,6 +63,8 @@
     <!-- /.modal -->
 </div>
 
-<div style="padding-top: 20px; font-weight: bold; color: #990000;">
-    <asp:Label runat="server" ID="lblNoData" Visible="false"></asp:Label>
-</div>
+<asp:PlaceHolder runat="server" ID="phNoData" Visible="false">
+    <div style="padding: 20px 0 20px 0; font-weight: bold; color: #990000;">
+        <asp:Literal runat="server" ID="litNoData"></asp:Literal>
+    </div>
+</asp:PlaceHolder>

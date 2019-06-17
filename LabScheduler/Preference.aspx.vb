@@ -1,7 +1,7 @@
 ﻿Imports LabScheduler.AppCode.DBAccess
-Imports LNF.Cache
 Imports LNF.CommonTools
 Imports LNF.Data
+Imports LNF.Models.Data
 Imports LNF.Models.Scheduler
 Imports LNF.Repository
 Imports LNF.Repository.Data
@@ -9,6 +9,7 @@ Imports LNF.Repository.Scheduler
 Imports LNF.Scheduler
 Imports LNF.Scheduler.Data
 Imports LNF.Web
+Imports LNF.Web.Scheduler
 Imports LNF.Web.Scheduler.Content
 
 Namespace Pages
@@ -60,7 +61,7 @@ Namespace Pages
         End Sub
 
         Private Sub LoadResourceClients()
-            Dim dtResources = ResourceClientData.SelectByClient(CacheManager.Current.CurrentUser.ClientID)
+            Dim dtResources = ResourceClientData.SelectByClient(CurrentUser.ClientID)
             dtResources.DefaultView.RowFilter = "ClientID <> -1"
             dgResources.DataSource = dtResources.DefaultView
             dgResources.DataBind()
@@ -95,7 +96,7 @@ Namespace Pages
         End Sub
 
         Private Sub InitSettings()
-            Dim clientId As Integer = CacheManager.Current.CurrentUser.ClientID
+            Dim clientId As Integer = CurrentUser.ClientID
 
             Dim cs As ClientSetting = DA.Current.Single(Of ClientSetting)(clientId)
 
@@ -149,7 +150,8 @@ Namespace Pages
         Protected Sub GetAccountOrdering()
             'Dim cp As ClientPreference = ClientPreferenceUtility.Find(ClientUtility.CurrentUser, "common")
             'Dim orderedAccounts As IList(Of Account) = DataUtility.OrderAccountsByUserPreference(cp)
-            Dim orderedAccounts As IList(Of Account) = ClientPreferenceUtility.OrderAccountsByUserPreference(CacheManager.Current.CurrentUser.ClientID)
+            Dim util As New ClientPreferenceUtility(Provider)
+            Dim orderedAccounts As IList(Of IAccount) = util.OrderAccountsByUserPreference(CurrentUser)
             Dim resultIdList As New List(Of String)
             Dim resultNamesList As New List(Of String)
 
@@ -165,17 +167,17 @@ Namespace Pages
         Protected Sub SetAccountOrdering()
             'Dim cp As ClientPreference = ClientPreferenceUtility.Find(ClientUtility.CurrentUser, "common")
             'cp.SetPreference("account-order", hidAccountsResult.Value)
-            Dim cs As ClientSetting = DA.Current.Single(Of ClientSetting)(CacheManager.Current.CurrentUser.ClientID)
+            Dim cs As ClientSetting = DA.Current.Single(Of ClientSetting)(CurrentUser.ClientID)
             cs.AccountOrder = hidAccountsResult.Value
         End Sub
 
         Protected Sub GetShowTreeviewImages()
-            Dim cp As ClientPreference = ClientPreferenceUtility.Find(CacheManager.Current.CurrentUser.ClientID, "scheduler")
+            Dim cp As ClientPreference = ClientPreferenceUtility.Find(CurrentUser.ClientID, "scheduler")
             chkShowTreeViewImages.Checked = cp.GetPreference("show-treeview-images", False)
         End Sub
 
         Protected Sub SetShowTreeviewImages()
-            Dim cp As ClientPreference = ClientPreferenceUtility.Find(CacheManager.Current.CurrentUser.ClientID, "scheduler")
+            Dim cp As ClientPreference = ClientPreferenceUtility.Find(CurrentUser.ClientID, "scheduler")
             cp.SetPreference("show-treeview-images", chkShowTreeViewImages.Checked)
         End Sub
 
@@ -199,11 +201,11 @@ Namespace Pages
             Next
         End Sub
 
-        Protected Sub ddlBuilding_SelectedIndexChanged(sender As Object, e As EventArgs) Handles ddlBuilding.SelectedIndexChanged
+        Protected Sub DdlBuilding_SelectedIndexChanged(sender As Object, e As EventArgs) Handles ddlBuilding.SelectedIndexChanged
             LoadLabs()
         End Sub
 
-        Protected Sub dgResources_ItemDataBound(sender As Object, e As DataGridItemEventArgs) Handles dgResources.ItemDataBound
+        Protected Sub DgResources_ItemDataBound(sender As Object, e As DataGridItemEventArgs) Handles dgResources.ItemDataBound
             If e.Item.ItemType = ListItemType.Item Or e.Item.ItemType = ListItemType.AlternatingItem Then
                 Dim di As New DataItemHelper(e.Item.DataItem)
                 If Not di("EmailNotify") Is DBNull.Value Then
@@ -215,7 +217,7 @@ Namespace Pages
             End If
         End Sub
 
-        Private Sub btnSubmit_Click(sender As Object, e As EventArgs) Handles btnSubmit.Click
+        Private Sub BtnSubmit_Click(sender As Object, e As EventArgs) Handles btnSubmit.Click
             ClearErrorMessage()
             ClearSuccessMessage()
 
@@ -233,7 +235,7 @@ Namespace Pages
 
             Try
                 ' Insert/Update Setting
-                Dim cs As ClientSetting = CacheManager.Current.GetClientSetting()
+                Dim cs As ClientSetting = ContextBase.GetClientSetting()
 
                 cs.BuildingID = Integer.Parse(ddlBuilding.SelectedValue)
                 cs.LabID = Integer.Parse(ddlLab.SelectedValue)
@@ -293,7 +295,7 @@ Namespace Pages
             End Try
         End Sub
 
-        Protected Sub gvResourcePractice_ItemDataBound(sender As Object, e As DataGridItemEventArgs) Handles dgResourcePractice.ItemDataBound
+        Protected Sub GvResourcePractice_ItemDataBound(sender As Object, e As DataGridItemEventArgs) Handles dgResourcePractice.ItemDataBound
             If e.Item.ItemType = ListItemType.Item OrElse e.Item.ItemType = ListItemType.AlternatingItem Then
                 Dim di As New DataItemHelper(e.Item.DataItem)
                 Dim practiceResEmailNotify As Integer = di("PracticeResEmailNotify").AsInt32

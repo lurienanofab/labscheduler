@@ -16,7 +16,7 @@ Namespace DBAccess
 
         Public Shared Function GetFacilityDownTimeByGroupID(GroupID As Integer) As FacilityDownTimeRes
             Dim result As New FacilityDownTimeRes
-            Using reader As IDataReader = DA.Command().Param(New With {.Action = "ByGroupID", GroupID}).ExecuteReader("sselScheduler.dbo.procReservationGroupSelect")
+            Using reader As ExecuteReaderResult = DA.Command().Param(New With {.Action = "ByGroupID", GroupID}).ExecuteReader("sselScheduler.dbo.procReservationGroupSelect")
                 If reader.Read() Then
                     result.DisplayName = reader("DisplayName").ToString()
                     result.ClientID = Convert.ToInt32(reader("ClientID"))

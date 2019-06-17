@@ -20,7 +20,7 @@ Namespace Pages
 
         Protected Sub Page_Load(ByVal sender As Object, ByVal e As EventArgs) Handles Me.Load
             'If user types url directly, we have to return immediately if resDB is not loaded
-            If Request.SelectedPath().ResourceID = 0 Then
+            If ContextBase.Request.SelectedPath().ResourceID = 0 Then
                 Return
             End If
 
@@ -30,12 +30,12 @@ Namespace Pages
         End Sub
 
         Private Sub LoadDocs()
-            dtDocs = dbDocs.SelectDocs(Request.SelectedPath().ResourceID)
+            dtDocs = dbDocs.SelectDocs(ContextBase.Request.SelectedPath().ResourceID)
             dgDocs.DataSource = dtDocs
             dgDocs.DataBind()
         End Sub
 
-        Private Sub dgDocs_ItemDataBound(ByVal sender As Object, ByVal e As DataGridItemEventArgs) Handles dgDocs.ItemDataBound
+        Private Sub DgDocs_ItemDataBound(ByVal sender As Object, ByVal e As DataGridItemEventArgs) Handles dgDocs.ItemDataBound
             If e.Item.ItemType = ListItemType.Item Or e.Item.ItemType = ListItemType.AlternatingItem Then
                 Dim di As New DataItemHelper(e.Item.DataItem)
                 Dim lblDocName As Label = CType(e.Item.FindControl("lblDocName"), Label)
@@ -51,7 +51,7 @@ Namespace Pages
             End If
         End Sub
 
-        Private Sub dgDocs_ItemCommand(ByVal source As Object, ByVal e As DataGridCommandEventArgs) Handles dgDocs.ItemCommand
+        Private Sub DgDocs_ItemCommand(ByVal source As Object, ByVal e As DataGridCommandEventArgs) Handles dgDocs.ItemCommand
             Dim docId As Integer
             Dim fileExt As String, fileName As String
             Try
@@ -66,7 +66,7 @@ Namespace Pages
                         fileExt = IO.Path.GetExtension(fileNewDoc.Value).ToLower
                         If Not ValidFileExtensions.Contains(fileExt) Then Throw New Exception("Please upload .doc and .pdf files only.")
 
-                        docId = dbDocs.InsertDoc(Request.SelectedPath().ResourceID, txbNewDocName.Text, fileExt)
+                        docId = dbDocs.InsertDoc(ContextBase.Request.SelectedPath().ResourceID, txbNewDocName.Text, fileExt)
                         fileName = "doc" + docId.ToString().PadLeft(5, Char.Parse("0")) + fileExt
 
                         ' Upload doc to server

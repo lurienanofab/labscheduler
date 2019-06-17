@@ -10,7 +10,7 @@ Namespace Pages
         Inherits SchedulerPage
 
         Protected Sub Page_Load(ByVal sender As Object, ByVal e As EventArgs) Handles Me.Load
-            Dim res As ResourceItem = GetCurrentResource()
+            Dim res As IResource = GetCurrentResource()
 
             If Not IsPostBack Then
                 If res IsNot Nothing Then
@@ -28,7 +28,7 @@ Namespace Pages
             End If
         End Sub
 
-        Private Sub LoadReservationView(res As ResourceItem)
+        Private Sub LoadReservationView(res As IResource)
             If res.IsSchedulable Then
                 'Initialize the ReservationView UserControl
                 Dim index As Integer
@@ -58,7 +58,7 @@ Namespace Pages
                 ReservationView1.Resource = res
                 txtCalendarURL.Text = FeedGenerator.Scheduler.Reservations.GetUrl(FeedFormats.Calendar, "all", res.ResourceID.ToString(), "tool-reservations")
             Else
-                Response.Redirect(String.Format("~/ResourceClients.aspx?Path={0}&Date={1:yyyy-MM-dd}", Request.SelectedPath().UrlEncode(), Request.SelectedDate()))
+                Redirect("ResourceClients.aspx")
             End If
         End Sub
 
@@ -75,7 +75,7 @@ Namespace Pages
         ''' </summary>
         Private Function GetDayViewOrWeekView() As ViewType
             If Session("DayViewOrWeekView") Is Nothing Then
-                Dim defval As ViewType = CacheManager.Current.GetClientSetting().GetDefaultViewOrDefault()
+                Dim defval As ViewType = ContextBase.GetClientSetting().GetDefaultViewOrDefault()
                 If defval = ViewType.DayView OrElse defval = ViewType.WeekView Then
                     Session("DayViewOrWeekView") = defval
                 Else

@@ -1,7 +1,6 @@
-﻿Imports LNF.Repository
+﻿Imports LNF.Models.Scheduler
 Imports LNF.Web
 Imports LNF.Web.Scheduler.Content
-Imports Scheduler = LNF.Repository.Scheduler
 
 Namespace Pages
     Public Class ReservationCharges
@@ -16,7 +15,7 @@ Namespace Pages
             End If
         End Function
 
-        Private Sub Page_Load(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles MyBase.Load
+        Private Sub Page_Load(ByVal sender As Object, ByVal e As EventArgs) Handles MyBase.Load
             If Not IsPostBack Then
                 Dim reservationId As Integer = GetReservationID()
 
@@ -28,12 +27,12 @@ Namespace Pages
 
                 LoadReservation(reservationId)
 
-                btnSubmit.CommandArgument = ReservationID.ToString()
+                btnSubmit.CommandArgument = reservationId.ToString()
                 btnSubmit.Attributes.Add("onclick", "return confirm('Are you sure you want to forgive charges to this reservation?');")
             End If
         End Sub
 
-        Private Sub btnSubmit_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles btnSubmit.Click
+        Private Sub BtnSubmit_Click(sender As Object, e As EventArgs) Handles btnSubmit.Click
             Dim dblChargeMultiplier As Double = Double.Parse(txtChargeMultiplier.Text)
 
             If dblChargeMultiplier > 1 Then
@@ -42,15 +41,15 @@ Namespace Pages
             End If
 
             Dim reservationId As Integer = Convert.ToInt32(btnSubmit.CommandArgument)
-            Dim rsv As Scheduler.Reservation = DA.Current.Single(Of Scheduler.Reservation)(reservationId)
-            ReservationManager.UpdateCharges(rsv, dblChargeMultiplier, chkApplyLateChargePenalty.Checked, CurrentUser.ClientID)
+            Dim rsv As IReservation = Provider.Scheduler.Reservation.GetReservation(reservationId)
+            Provider.Scheduler.Reservation.UpdateCharges(rsv.ReservationID, dblChargeMultiplier, chkApplyLateChargePenalty.Checked, CurrentUser.ClientID)
 
             Response.Write("<script language='javascript'> { self.close() }</script>")
         End Sub
 
         Private Sub LoadReservation(reservationId As Integer)
             ' Get Reservation Charges
-            Dim rsv As Scheduler.Reservation = DA.Current.Single(Of Scheduler.Reservation)(reservationId)
+            Dim rsv As IReservation = Provider.Scheduler.Reservation.GetReservation(reservationId)
 
             If rsv Is Nothing Then
                 lblErrMsg.Text = "Error: Invalid ReservationID"

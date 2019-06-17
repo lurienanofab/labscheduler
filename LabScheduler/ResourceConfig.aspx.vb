@@ -43,7 +43,7 @@ Namespace Pages
         End Property
 
         Protected Sub Page_Load(ByVal sender As Object, ByVal e As EventArgs) Handles Me.Load
-            Dim res As ResourceItem = Request.SelectedPath().GetResource()
+            Dim res As IResource = GetCurrentResource()
 
             hidResourceID.Value = res.ResourceID.ToString()
 
@@ -74,25 +74,26 @@ Namespace Pages
             Return DA.Current.Query(Of Scheduler.ResourceActivityAuth)().FirstOrDefault(Function(x) x.Resource.ResourceID = resourceId AndAlso x.Activity.ActivityID = activityId)
         End Function
 
-        Private Sub InitCreateActivity(res As ResourceItem, act As ActivityItem)
+        Private Sub InitCreateActivity(res As IResource, act As ActivityItem)
             Dim rauth As Scheduler.ResourceActivityAuth = GetResourceActivityAuth(res.ResourceID, act.ActivityID)
             If rauth Is Nothing Then
-                rauth = New Scheduler.ResourceActivityAuth()
-                rauth.Resource = DA.Current.Single(Of Scheduler.Resource)(res.ResourceID)
-                rauth.Activity = DA.Current.Single(Of Scheduler.Activity)(act.ActivityID)
-                rauth.UserAuth = CType(act.UserAuth, ClientAuthLevel)
-                rauth.InviteeAuth = CType(act.InviteeAuth, ClientAuthLevel)
-                rauth.StartEndAuth = CType(act.StartEndAuth, ClientAuthLevel)
-                rauth.NoReservFenceAuth = CType(act.NoReservFenceAuth, ClientAuthLevel)
-                rauth.NoMaxSchedAuth = CType(act.NoMaxSchedAuth, ClientAuthLevel)
+                rauth = New Scheduler.ResourceActivityAuth() With {
+                    .Resource = DA.Current.Single(Of Scheduler.Resource)(res.ResourceID),
+                    .Activity = DA.Current.Single(Of Scheduler.Activity)(act.ActivityID),
+                    .UserAuth = CType(act.UserAuth, ClientAuthLevel),
+                    .InviteeAuth = CType(act.InviteeAuth, ClientAuthLevel),
+                    .StartEndAuth = CType(act.StartEndAuth, ClientAuthLevel),
+                    .NoReservFenceAuth = CType(act.NoReservFenceAuth, ClientAuthLevel),
+                    .NoMaxSchedAuth = CType(act.NoMaxSchedAuth, ClientAuthLevel)
+                }
                 DA.Current.Insert(rauth)
             End If
         End Sub
 
-        Private Sub InitReseourceAuth(res As ResourceItem)
+        Private Sub InitReseourceAuth(res As IResource)
             ' fetch the reseource details from the ResourceActivityAuth table.
             'Dim act As Activity = Activity.DataAccess.Single(20)
-            Dim allActivities As IList(Of ActivityItem) = CacheManager.Current.Activities().ToList()
+            Dim allActivities As IEnumerable(Of ActivityItem) = CacheManager.Current.Activities()
             Dim table As Table = New Table()
             Dim columnIndex As Integer = 1
             Dim trow As TableRow = Nothing
@@ -142,7 +143,7 @@ Namespace Pages
 
         End Sub
 
-        Private Sub UpdateResourceUIFromDB(cbl As CheckBoxList, res As ResourceItem, act As ActivityItem)
+        Private Sub UpdateResourceUIFromDB(cbl As CheckBoxList, res As IResource, act As ActivityItem)
             Dim rauth As Scheduler.ResourceActivityAuth = GetResourceActivityAuth(res.ResourceID, act.ActivityID)
             For i = 0 To cbl.Items.Count - 1
                 'txtboxtest.Text = txtboxtest.Text + "   ,  " + cbl.Items(i).Text + ":" + cblInviteeAuths.Items(i).Value
@@ -186,8 +187,8 @@ Namespace Pages
         'End Sub
 
 #Region " Resource Info Events and Functions "
-        Private Sub ddlGranularity_SelectedIndexChanged(sender As Object, e As EventArgs) Handles ddlGranularity.SelectedIndexChanged
-            Dim res As ResourceItem = Request.SelectedPath().GetResource()
+        Private Sub DdlGranularity_SelectedIndexChanged(sender As Object, e As EventArgs) Handles ddlGranularity.SelectedIndexChanged
+            Dim res As IResource = GetCurrentResource()
 
             LoadOffset(res)
             LoadMinReservTime(res)
@@ -197,21 +198,21 @@ Namespace Pages
             'trIPAddress.Visible = Convert.ToInt32(ddlGranularity.SelectedValue) <= 60
         End Sub
 
-        Private Sub ddlMinReservTime_SelectedIndexChanged(sender As Object, e As EventArgs) Handles ddlMinReservTime.SelectedIndexChanged
-            Dim res As ResourceItem = Request.SelectedPath().GetResource()
+        Private Sub DdlMinReservTime_SelectedIndexChanged(sender As Object, e As EventArgs) Handles ddlMinReservTime.SelectedIndexChanged
+            Dim res As IResource = GetCurrentResource()
 
             LoadMaxReservTime(res)
             LoadGracePeriodHour(res)
             LoadGracePeriodMin(res)
         End Sub
 
-        Private Sub ddlGracePeriodHour_SelectedIndexChanged(sender As Object, e As EventArgs) Handles ddlGracePeriodHour.SelectedIndexChanged
-            Dim res As ResourceItem = Request.SelectedPath().GetResource()
+        Private Sub DdlGracePeriodHour_SelectedIndexChanged(sender As Object, e As EventArgs) Handles ddlGracePeriodHour.SelectedIndexChanged
+            Dim res As IResource = GetCurrentResource()
             LoadGracePeriodMin(res)
         End Sub
 
-        Private Sub btnSubmit_Click(sender As Object, e As EventArgs) Handles btnSubmit.Click
-            Dim res As ResourceItem = Request.SelectedPath().GetResource()
+        Private Sub BtnSubmit_Click(sender As Object, e As EventArgs) Handles btnSubmit.Click
+            Dim res As IResource = GetCurrentResource()
 
             ' need to check ReservFence, MaxReservTime, and MaxAlloc
             ' these are displayed in hours but saved in the db in minutes
@@ -264,35 +265,35 @@ Namespace Pages
             'End If
 
             Try
-                Dim oldGranularityMinutes As Double = res.Granularity.TotalMinutes
+                Dim oldGranularityMinutes As Double = res.Granularity
                 res.ResourceName = txtResourceName.Text
                 res.AuthDuration = Convert.ToInt32(txtAuthDuration.Text)
                 res.AuthState = chkAuthState.Checked
-                res.ReservFence = TimeSpan.FromHours(fenceHours)
-                res.Granularity = TimeSpan.FromMinutes(granularityMinutes)
-                res.Offset = TimeSpan.FromHours(offsetHours)
-                res.MinReservTime = TimeSpan.FromMinutes(minReservationMinutes)
-                res.MaxReservTime = TimeSpan.FromHours(maxReservationHours)
-                res.MinCancelTime = TimeSpan.FromMinutes(minCancelMinutes)
-                res.MaxAlloc = TimeSpan.FromHours(maxSchedulableHours)
-                res.GracePeriod = TimeSpan.FromMinutes(gracePeriodMinutes)
-                res.AutoEnd = TimeSpan.FromMinutes(autoEndMinutes)
-                res.UnloadTime = TimeSpan.FromMinutes(unloadMinutes)
+                res.ReservFence = Convert.ToInt32(TimeSpan.FromHours(fenceHours).TotalMinutes)
+                res.Granularity = granularityMinutes
+                res.Offset = offsetHours
+                res.MinReservTime = minReservationMinutes
+                res.MaxReservTime = Convert.ToInt32(TimeSpan.FromHours(maxReservationHours).TotalMinutes)
+                res.MinCancelTime = minCancelMinutes
+                res.MaxAlloc = Convert.ToInt32(TimeSpan.FromHours(maxSchedulableHours).TotalMinutes)
+                res.GracePeriod = gracePeriodMinutes
+                res.ResourceAutoEnd = autoEndMinutes
+                res.UnloadTime = unloadMinutes
                 'res.IPAddress = txtIPAddress.Text
                 'res.OTFSchedTime = otfSchedTime
                 res.ResourceDescription = txtDesc.Text
                 res.WikiPageUrl = txtWikiPageUrl.Text
-                If res.GracePeriod = TimeSpan.Zero Then ServerJScript.JSAlert(Page, "Warning: You have set grace period to 0 for this resource.")
+                If res.GracePeriod = 0 Then ServerJScript.JSAlert(Page, "Warning: You have set grace period to 0 for this resource.")
                 UploadFileUtility.UploadImage(fileIcon, "Resource", res.ResourceID.ToString().PadLeft(6, Char.Parse("0")))
                 ResourceUtility.EngineerUpdate(res)
 
                 ' If update was successful and
                 ' If Granularity changes to bigger number then, remove all future reservations
                 If granularityMinutes > oldGranularityMinutes Then
-                    Dim query As IList(Of Scheduler.Reservation) = ReservationManager.SelectByResource(res.ResourceID, Date.Now, Date.Now.AddYears(100), False)
-                    For Each rsv As Scheduler.Reservation In query
-                        ReservationManager.DeleteReservation(rsv.ReservationID)
-                        EmailManager.EmailOnCanceledByResource(rsv)
+                    Dim query As IEnumerable(Of IReservation) = Provider.Scheduler.Reservation.SelectByResource(res.ResourceID, Date.Now, Date.Now.AddYears(100), False)
+                    For Each rsv As IReservation In query
+                        Provider.Scheduler.Reservation.CancelReservation(rsv.ReservationID, CurrentUser.ClientID)
+                        Provider.EmailManager.EmailOnCanceledByResource(rsv, CurrentUser.ClientID)
                     Next
                 End If
 
@@ -301,10 +302,10 @@ Namespace Pages
                 Session("ErrorMessage") = ex.Message
             End Try
 
-            Response.Redirect(String.Format("~/ResourceConfig.aspx?Path={0}&Date={1:yyyy-MM-dd}", Request.SelectedPath(), Request.SelectedDate()))
+            Redirect("ResourceConfig.aspx")
         End Sub
 
-        Private Sub LoadMinReservTime(res As ResourceItem)
+        Private Sub LoadMinReservTime(res As IResource)
             Dim granularity As Integer = Convert.ToInt32(ddlGranularity.SelectedValue)
 
             ' Load Hours
@@ -322,7 +323,7 @@ Namespace Pages
                 ddlMinReservTime.Items.Add(New ListItem(text, minReservTime.ToString()))
             Next
 
-            Dim defaultValue As Double = res.MinReservTime.TotalMinutes
+            Dim defaultValue As Double = res.MinReservTime
             Dim itemMRT As ListItem = ddlMinReservTime.Items.FindByValue(defaultValue.ToString())
             If Not itemMRT Is Nothing Then
                 ddlMinReservTime.ClearSelection()
@@ -330,7 +331,7 @@ Namespace Pages
             End If
         End Sub
 
-        Private Sub LoadMaxReservTime(res As ResourceItem)
+        Private Sub LoadMaxReservTime(res As IResource)
             '                                                                             1               2   3    6   12   24   days
             Dim maxReservTimeList As Integer() = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 18, 24, 30, 36, 42, 48, 72, 144, 288, 576} 'hours
             ' the max is 576 because the max granularity is now 1440 (1440 * 24 / 60 = 576)
@@ -349,7 +350,7 @@ Namespace Pages
                 End If
             Next
 
-            Dim defaultValue As Double = res.MaxReservTime.TotalHours
+            Dim defaultValue As Double = TimeSpan.FromMinutes(res.MaxReservTime).TotalHours
             Dim itemMRT As ListItem = ddlMaxReservation.Items.FindByValue(defaultValue.ToString())
             If Not itemMRT Is Nothing Then
                 ddlMaxReservation.ClearSelection()
@@ -357,7 +358,7 @@ Namespace Pages
             End If
         End Sub
 
-        Private Sub LoadGracePeriodHour(res As ResourceItem)
+        Private Sub LoadGracePeriodHour(res As IResource)
             Dim granularity As Integer = Convert.ToInt32(ddlGranularity.SelectedValue)
             Dim maxHour As Integer = Convert.ToInt32(Math.Floor(Convert.ToInt32(ddlMinReservTime.SelectedValue) / 60))
 
@@ -369,7 +370,7 @@ Namespace Pages
                 ddlGracePeriodHour.Items.Add(New ListItem(i.ToString(), i.ToString()))
             Next
 
-            Dim defaultValue As Integer = res.GracePeriod.Hours
+            Dim defaultValue As Integer = TimeSpan.FromMinutes(res.GracePeriod).Hours
             Dim item As ListItem = ddlGracePeriodHour.Items.FindByValue(defaultValue.ToString())
             If Not item Is Nothing Then
                 ddlGracePeriodHour.ClearSelection()
@@ -377,7 +378,7 @@ Namespace Pages
             End If
         End Sub
 
-        Private Sub LoadGracePeriodMin(res As ResourceItem)
+        Private Sub LoadGracePeriodMin(res As IResource)
             Dim granularity As Integer = Convert.ToInt32(ddlGranularity.SelectedValue)
             Dim maxHour As Integer = Convert.ToInt32(Math.Floor(Convert.ToInt32(ddlMinReservTime.SelectedValue) / 60))
 
@@ -395,7 +396,7 @@ Namespace Pages
                 Next
             End If
 
-            Dim defaultValue As Double = res.GracePeriod.Minutes
+            Dim defaultValue As Double = res.GracePeriod
             Dim itemGPM As ListItem = ddlGracePeriodMin.Items.FindByValue(defaultValue.ToString())
             If Not itemGPM Is Nothing Then
                 ddlGracePeriodMin.ClearSelection()
@@ -403,7 +404,7 @@ Namespace Pages
             End If
         End Sub
 
-        Private Sub LoadOffset(res As ResourceItem)
+        Private Sub LoadOffset(res As IResource)
             Dim granularity As Integer = Convert.ToInt32(ddlGranularity.SelectedValue)
             ddlOffset.Items.Clear()
             ddlOffset.Items.Add(New ListItem("0", "0"))
@@ -447,22 +448,22 @@ Namespace Pages
         '    trIPAddress.Visible = Convert.ToInt32(ddlGranularity.SelectedValue) <= 60
         'End Sub
 
-        Private Sub LoadResource(res As ResourceItem)
+        Private Sub LoadResource(res As IResource)
             ' need to check ReservFence, MaxReservTime, and MaxAlloc
             ' these are displayed in hours but saved in the db in minutes
 
             txtResourceName.Text = res.ResourceName
             txtAuthDuration.Text = res.AuthDuration.ToString()
             chkAuthState.Checked = res.AuthState
-            txtFence.Text = res.ReservFence.TotalHours.ToString()
-            txtMaxSchedulable.Text = res.MaxAlloc.TotalHours.ToString()
-            txtMinCancel.Text = res.MinCancelTime.TotalMinutes.ToString()
-            txtAutoEnd.Text = res.AutoEnd.TotalMinutes.ToString()
-            txtUnload.Text = res.UnloadTime.TotalMinutes.ToString()
+            txtFence.Text = TimeSpan.FromMinutes(res.ReservFence).TotalHours.ToString()
+            txtMaxSchedulable.Text = TimeSpan.FromMinutes(res.MaxAlloc).TotalHours.ToString()
+            txtMinCancel.Text = res.MinCancelTime.ToString()
+            txtAutoEnd.Text = res.ResourceAutoEnd.ToString()
+            txtUnload.Text = res.UnloadTime.ToString()
             'lblIPPrefix.Text = Properties.Current.ResourceIPPrefix
             'txtIPAddress.Text = res.IPAddress
             ddlGranularity.ClearSelection()
-            Dim listItem As ListItem = ddlGranularity.Items.FindByValue(res.Granularity.TotalMinutes.ToString())
+            Dim listItem As ListItem = ddlGranularity.Items.FindByValue(res.Granularity.ToString())
             If listItem IsNot Nothing Then
                 listItem.Selected = True
             End If
@@ -481,7 +482,7 @@ Namespace Pages
 
 #Region " ProcessInfo Events and Functions "
         ' ProcessInfo OnItemDataBound
-        Private Sub dgProcessInfo_ItemDataBound(sender As Object, e As DataGridItemEventArgs) Handles dgProcessInfo.ItemDataBound
+        Private Sub DgProcessInfo_ItemDataBound(sender As Object, e As DataGridItemEventArgs) Handles dgProcessInfo.ItemDataBound
             Try
 
                 If e.Item.ItemType = ListItemType.Item OrElse e.Item.ItemType = ListItemType.AlternatingItem OrElse e.Item.ItemType = ListItemType.SelectedItem Then
@@ -551,9 +552,9 @@ Namespace Pages
         End Sub
 
         ' ProcessInfo OnItemCommand
-        Private Sub dgProcessInfo_ItemCommand(source As Object, e As DataGridCommandEventArgs) Handles dgProcessInfo.ItemCommand
+        Private Sub DgProcessInfo_ItemCommand(source As Object, e As DataGridCommandEventArgs) Handles dgProcessInfo.ItemCommand
             Try
-                Dim res As ResourceItem = Request.SelectedPath().GetResource()
+                Dim res As IResource = GetCurrentResource()
 
                 Select Case e.CommandName
                     Case "Expand"       ' Expand ProcessInfo row to display ProcessInfoLine datagrid
@@ -733,7 +734,7 @@ Namespace Pages
         End Sub
 
         ' Loads Process Info
-        Private Sub LoadProcessInfo(res As ResourceItem)
+        Private Sub LoadProcessInfo(res As IResource)
             Try
                 ProcessInfoDataTable = ProcessInfoData.SelectProcessInfo(res.ResourceID)
 
@@ -761,7 +762,7 @@ Namespace Pages
 
 #Region " ProcessInfoLine Events and Functions "
         ' ProcessInfoLine OnItemDataBound
-        Protected Sub dgProcessInfoLine_ItemDataBound(sender As Object, e As DataGridItemEventArgs)
+        Protected Sub DgProcessInfoLine_ItemDataBound(sender As Object, e As DataGridItemEventArgs)
             Try
                 If e.Item.ItemType = ListItemType.Item Or e.Item.ItemType = ListItemType.AlternatingItem Then
                     Dim di As New DataItemHelper(e.Item.DataItem)
@@ -781,10 +782,10 @@ Namespace Pages
         End Sub
 
         ' ProcessInfoLine OnItemCommand
-        Protected Sub dgProcessInfoLine_ItemCommand(source As Object, e As DataGridCommandEventArgs)
+        Protected Sub DgProcessInfoLine_ItemCommand(source As Object, e As DataGridCommandEventArgs)
             Try
                 If ProcessInfoLineDataTable Is Nothing Then
-                    Response.Redirect(String.Format("~/ResourceConfig.aspx?Path={0}&Date={1:yyyy-MM-dd}", Request.SelectedPath().UrlEncode(), Request.SelectedDate()), False)
+                    Redirect("ResourceConfig.aspx", False)
                     Return
                 End If
 

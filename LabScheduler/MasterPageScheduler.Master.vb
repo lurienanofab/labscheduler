@@ -43,12 +43,12 @@ Namespace Pages
             End If
 
             If Not IsPostBack Then
-                hypAdmin.NavigateUrl = String.Format("~/AdminActivities.aspx?Date={0:yyyy-MM-dd}", Request.SelectedDate())
-                hypMyReservations.NavigateUrl = String.Format("~/UserReservations.aspx?Date={0:yyyy-MM-dd}", Request.SelectedDate())
-                hypReservationHistory.NavigateUrl = String.Format("~/ReservationHistory.aspx?Date={0:yyyy-MM-dd}", Request.SelectedDate())
-                hypPreference.NavigateUrl = String.Format("~/Preference.aspx?Date={0:yyyy-MM-dd}", Request.SelectedDate())
-                hypContact.NavigateUrl = String.Format("~/Contact.aspx?AdminOnly=1&Date={0:yyyy-MM-dd}", Request.SelectedDate())
-                hypFDT.NavigateUrl = String.Format("~/ReservationFacilityDownTime.aspx?Date={0:yyyy-MM-dd}", Request.SelectedDate())
+                hypAdmin.NavigateUrl = String.Format("~/AdminActivities.aspx?Date={0:yyyy-MM-dd}", ContextBase.Request.SelectedDate())
+                hypMyReservations.NavigateUrl = String.Format("~/UserReservations.aspx?Date={0:yyyy-MM-dd}", ContextBase.Request.SelectedDate())
+                hypReservationHistory.NavigateUrl = String.Format("~/ReservationHistory.aspx?Date={0:yyyy-MM-dd}", ContextBase.Request.SelectedDate())
+                hypPreference.NavigateUrl = String.Format("~/Preference.aspx?Date={0:yyyy-MM-dd}", ContextBase.Request.SelectedDate())
+                hypContact.NavigateUrl = String.Format("~/Contact.aspx?AdminOnly=1&Date={0:yyyy-MM-dd}", ContextBase.Request.SelectedDate())
+                hypFDT.NavigateUrl = String.Format("~/ReservationFacilityDownTime.aspx?Date={0:yyyy-MM-dd}", ContextBase.Request.SelectedDate())
 
                 phAdmin.Visible = CurrentUser.HasPriv(ClientPrivilege.Administrator)
                 phFDT.Visible = CurrentUser.HasPriv(ClientPrivilege.Staff)
@@ -63,7 +63,7 @@ Namespace Pages
                 Return True
             End If
 
-            Dim origUser As ClientItem = Nothing
+            Dim origUser As IClient = Nothing
             If Session("LogInAsOriginalUser") IsNot Nothing Then
                 Dim un As String = Session("LogInAsOriginalUser").ToString()
                 origUser = CacheManager.Current.GetClient(un)

@@ -11,72 +11,12 @@ namespace LNF.Web.Scheduler
 {
     public class ResourceTreeManager
     {
-        // Stores the data used to display the resource tree view. The data is retrieved once per request in stored in
-        // the request context. The current tree is dependent on the logged in user.
-
-        public static ResourceTreeManager Current
-        {
-            get
-            {
-                ResourceTreeManager result = null;
-
-                if (HttpContext.Current.Items["ResourceTreeManager"] == null)
-                {
-                    result = new ResourceTreeManager();
-                    HttpContext.Current.Items["ResourceTree"] = result;
-                }
-                else
-                {
-                    result = (ResourceTreeManager)HttpContext.Current.Items["ResourceTreeManager"];
-                }
-
-                return result;
-            }
-        }
-
         private IList<ResourceTree> _items;
 
-        public ResourceTreeManager()
+        public ResourceTreeManager(int clientId)
         {
             // create a new ResourceTreeManager based on the currently logged in user
-            var clientId = CacheManager.Current.CurrentUser.ClientID;
             _items = DA.Current.Query<ResourceTree>().Where(x => x.ClientID == clientId).ToList();
-        }
-
-        public static ResourceItem CreateResourceModel(ResourceTree item)
-        {
-            return new ResourceItem()
-            {
-                ResourceID = item.ResourceID,
-                ResourceName = item.ResourceName,
-                BuildingID = item.BuildingID,
-                BuildingName = item.BuildingName,
-                LabID = item.LabID,
-                LabName = item.LabName,
-                LabDisplayName = item.LabDisplayName,
-                ProcessTechID = item.ProcessTechID,
-                ProcessTechName = item.ProcessTechName,
-                ResourceDescription = item.ResourceDescription,
-                Granularity = TimeSpan.FromMinutes(item.Granularity),
-                ReservFence = TimeSpan.FromMinutes(item.ReservFence),
-                MinReservTime = TimeSpan.FromMinutes(item.MinReservTime),
-                MaxReservTime = TimeSpan.FromMinutes(item.MaxReservTime),
-                MaxAlloc = TimeSpan.FromMinutes(item.MaxAlloc),
-                Offset = TimeSpan.FromHours(item.Offset),
-                GracePeriod = TimeSpan.FromMinutes(item.GracePeriod),
-                AutoEnd = TimeSpan.FromMinutes(item.AutoEnd),
-                MinCancelTime = TimeSpan.FromMinutes(item.MinCancelTime),
-                UnloadTime = TimeSpan.FromMinutes(item.UnloadTime),
-                AuthDuration = item.AuthDuration,
-                AuthState = item.AuthState,
-                IsSchedulable = item.IsSchedulable,
-                State = item.State,
-                StateNotes = item.StateNotes,
-                IsReady = item.IsReady,
-                ResourceIsActive = item.ResourceIsActive,
-                HelpdeskEmail = item.HelpdeskEmail,
-                WikiPageUrl = item.WikiPageUrl
-            };
         }
 
         public static ProcessTechItem CreateProcessTechModel(ResourceTree item)
@@ -87,8 +27,8 @@ namespace LNF.Web.Scheduler
                 ProcessTechName = item.ProcessTechName,
                 ProcessTechDescription = item.ProcessTechDescription,
                 ProcessTechIsActive = item.ProcessTechIsActive,
-                GroupID = item.ProcessTechGroupID,
-                GroupName = item.ProcessTechGroupName,
+                ProcessTechGroupID = item.ProcessTechGroupID,
+                ProcessTechGroupName = item.ProcessTechGroupName,
                 LabID = item.LabID,
                 LabName = item.LabName,
                 LabDisplayName = item.LabDisplayName,
@@ -132,9 +72,9 @@ namespace LNF.Web.Scheduler
             return _items.AsEnumerable();
         }
 
-        public IEnumerable<ResourceItem> GetResources()
+        public IEnumerable<IResource> GetResources()
         {
-            var result = _items.Select(CreateResourceModel).OrderBy(x => x.BuildingID).ThenBy(x => x.LabID).ThenBy(x => x.ProcessTechID).ThenBy(x => x.ResourceID);
+            var result = _items.AsQueryable().CreateModels<ResourceTreeItem>().OrderBy(x => x.BuildingID).ThenBy(x => x.LabID).ThenBy(x => x.ProcessTechID).ThenBy(x => x.ResourceID).ToList();
             return result;
         }
 
@@ -159,13 +99,13 @@ namespace LNF.Web.Scheduler
             return result;
         }
 
-        public ResourceItem GetResource(int resourceId)
+        public IResource GetResource(int resourceId)
         {
             var item = _items.FirstOrDefault(x => x.ResourceID == resourceId);
 
             if (item == null) return null;
 
-            var result = CreateResourceModel(item);
+            var result = item.CreateModel<ResourceTreeItem>();
 
             return result;
         }

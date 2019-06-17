@@ -6,11 +6,10 @@ using System.Linq;
 using System.Web;
 using System.Web.UI;
 using System.Web.UI.HtmlControls;
-using System.Web.UI.WebControls;
 
 namespace LNF.Web.Scheduler.Controls
 {
-    public class ResourceTabMenu : WebControl
+    public class ResourceTabMenu : SchedulerWebControl
     {
         public ResourceTabMenu() : base(HtmlTextWriterTag.Div) { }
 
@@ -34,8 +33,10 @@ namespace LNF.Web.Scheduler.Controls
             var divTabsTitle = new HtmlGenericControl("div");
             divTabsTitle.Attributes.Add("class", "tabs-title");
 
-            var h5 = new HtmlGenericControl("h5");
-            h5.InnerHtml = GetHeaderText();
+            var h5 = new HtmlGenericControl("h5")
+            {
+                InnerHtml = GetHeaderText()
+            };
 
             divTabsTitle.Controls.Add(h5);
 
@@ -72,7 +73,7 @@ namespace LNF.Web.Scheduler.Controls
 
         protected virtual string GetHeaderText()
         {
-            ResourceItem res = Page.Request.SelectedPath().GetResource();
+            IResource res = ContextBase.ResourceTree().GetResource(SelectedPathFromViewState.ResourceID);
 
             if (res == null)
                 return string.Empty;
@@ -83,17 +84,19 @@ namespace LNF.Web.Scheduler.Controls
 
         protected virtual IList<TabItem> GetTabs()
         {
-            ClientAuthLevel authLevel = CacheManager.Current.GetAuthLevel(Page.Request.SelectedPath().ResourceID, CacheManager.Current.CurrentUser.ClientID);
+            ClientAuthLevel authLevel = CacheManager.Current.GetAuthLevel(SelectedPathFromViewState.ResourceID, CurrentUser.ClientID);
             bool authorized = (authLevel & ClientAuthLevel.ToolEngineer) > 0;
 
-            List<TabItem> tabs = new List<TabItem>();
-            tabs.Add(new TabItem() { CssClass = GetTabCssClass(0), NavigateUrl = VirtualPathUtility.ToAbsolute(string.Format("~/ResourceDayWeek.aspx?TabIndex=0&Path={0}&Date={1:yyyy-MM-dd}", Page.Request.SelectedPath(), Page.Request.SelectedDate())), Text = "Day", Visible = true });
-            tabs.Add(new TabItem() { CssClass = GetTabCssClass(1), NavigateUrl = VirtualPathUtility.ToAbsolute(string.Format("~/ResourceDayWeek.aspx?TabIndex=1&Path={0}&Date={1:yyyy-MM-dd}", Page.Request.SelectedPath(), Page.Request.SelectedDate())), Text = "Week", Visible = true });
-            tabs.Add(new TabItem() { CssClass = GetTabCssClass(2), NavigateUrl = VirtualPathUtility.ToAbsolute(string.Format("~/ResourceClients.aspx?Path={0}&Date={1:yyyy-MM-dd}", Page.Request.SelectedPath(), Page.Request.SelectedDate())), Text = "Clients", Visible = true });
-            tabs.Add(new TabItem() { CssClass = GetTabCssClass(3), NavigateUrl = VirtualPathUtility.ToAbsolute(string.Format("~/ResourceContact.aspx?Path={0}&Date={1:yyyy-MM-dd}", Page.Request.SelectedPath(), Page.Request.SelectedDate())), Text = "Helpdesk", Visible = true });
-            tabs.Add(new TabItem() { CssClass = GetTabCssClass(4), NavigateUrl = VirtualPathUtility.ToAbsolute(string.Format("~/ResourceConfig.aspx?Path={0}&Date={1:yyyy-MM-dd}", Page.Request.SelectedPath(), Page.Request.SelectedDate())), Text = "Configuration", Visible = authorized });
-            tabs.Add(new TabItem() { CssClass = GetTabCssClass(5), NavigateUrl = VirtualPathUtility.ToAbsolute(string.Format("~/ResourceMaintenance.aspx?Path={0}&Date={1:yyyy-MM-dd}", Page.Request.SelectedPath(), Page.Request.SelectedDate())), Text = "Repair", Visible = authorized });
-            tabs.Add(new TabItem() { CssClass = GetTabCssClass(6), NavigateUrl = VirtualPathUtility.ToAbsolute(string.Format("~/ResourceDocs.aspx?Path={0}&Date={1:yyyy-MM-dd}", Page.Request.SelectedPath(), Page.Request.SelectedDate())), Text = "Docs", Visible = authorized });
+            List<TabItem> tabs = new List<TabItem>
+            {
+                new TabItem() { CssClass = GetTabCssClass(0), NavigateUrl = VirtualPathUtility.ToAbsolute(string.Format("~/ResourceDayWeek.aspx?TabIndex=0&Path={0}&Date={1:yyyy-MM-dd}", SelectedPathFromViewState, ContextBase.Request.SelectedDate())), Text = "Day", Visible = true },
+                new TabItem() { CssClass = GetTabCssClass(1), NavigateUrl = VirtualPathUtility.ToAbsolute(string.Format("~/ResourceDayWeek.aspx?TabIndex=1&Path={0}&Date={1:yyyy-MM-dd}", SelectedPathFromViewState, ContextBase.Request.SelectedDate())), Text = "Week", Visible = true },
+                new TabItem() { CssClass = GetTabCssClass(2), NavigateUrl = VirtualPathUtility.ToAbsolute(string.Format("~/ResourceClients.aspx?Path={0}&Date={1:yyyy-MM-dd}", SelectedPathFromViewState, ContextBase.Request.SelectedDate())), Text = "Clients", Visible = true },
+                new TabItem() { CssClass = GetTabCssClass(3), NavigateUrl = VirtualPathUtility.ToAbsolute(string.Format("~/ResourceContact.aspx?Path={0}&Date={1:yyyy-MM-dd}", SelectedPathFromViewState, ContextBase.Request.SelectedDate())), Text = "Helpdesk", Visible = true },
+                new TabItem() { CssClass = GetTabCssClass(4), NavigateUrl = VirtualPathUtility.ToAbsolute(string.Format("~/ResourceConfig.aspx?Path={0}&Date={1:yyyy-MM-dd}", SelectedPathFromViewState, ContextBase.Request.SelectedDate())), Text = "Configuration", Visible = authorized },
+                new TabItem() { CssClass = GetTabCssClass(5), NavigateUrl = VirtualPathUtility.ToAbsolute(string.Format("~/ResourceMaintenance.aspx?Path={0}&Date={1:yyyy-MM-dd}", SelectedPathFromViewState, ContextBase.Request.SelectedDate())), Text = "Repair", Visible = authorized },
+                new TabItem() { CssClass = GetTabCssClass(6), NavigateUrl = VirtualPathUtility.ToAbsolute(string.Format("~/ResourceDocs.aspx?Path={0}&Date={1:yyyy-MM-dd}", SelectedPathFromViewState, ContextBase.Request.SelectedDate())), Text = "Docs", Visible = authorized }
+            };
 
             return tabs;
         }

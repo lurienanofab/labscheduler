@@ -48,11 +48,9 @@ namespace LNF.Web.Scheduler.Pages
 
         private IList<ResourceClientItem> CurrentClients { get; set; }
 
-        private ResourceItem CurrentResource => Request.SelectedPath().GetResource();
-
         protected void Page_Load(object sender, EventArgs e)
         {
-            CurrentClients = CreateResourceClientItems(DA.Current.Query<ResourceClientInfo>().Where(x => x.ResourceID == CurrentResource.ResourceID)).ToList();
+            CurrentClients = CreateResourceClientItems(DA.Current.Query<ResourceClientInfo>().Where(x => x.ResourceID == GetCurrentResource().ResourceID)).ToList();
 
             if (!Page.IsPostBack)
             {
@@ -60,7 +58,7 @@ namespace LNF.Web.Scheduler.Pages
                 FillClients();
                 FillToolEngineers();
 
-                if (CurrentResource.IsSchedulable)
+                if (GetCurrentResource().IsSchedulable)
                 {
                     FillTrainers();
                     FillSuperUsers();
@@ -117,7 +115,7 @@ namespace LNF.Web.Scheduler.Pages
 
         private void FillToolEngineers()
         {
-            var items = CurrentClients.Where(x => x.AuthLevel == ClientAuthLevel.ToolEngineer).OrderByDescending(x => x.IsEveryone).ThenBy(x => x.DisplayName);
+            var items = CurrentClients.Where(x => x.AuthLevel == ClientAuthLevel.ToolEngineer).OrderByDescending(x => x.IsEveryone()).ThenBy(x => x.DisplayName);
             ToolEngineersRepeater.DataSource = items;
             ToolEngineersRepeater.DataBind();
             NoToolEngineersPlaceHolder.Visible = items.Count() == 0;
@@ -125,7 +123,7 @@ namespace LNF.Web.Scheduler.Pages
 
         private void FillTrainers()
         {
-            var items = CurrentClients.Where(x => x.AuthLevel == ClientAuthLevel.Trainer).OrderByDescending(x => x.IsEveryone).ThenBy(x => x.DisplayName);
+            var items = CurrentClients.Where(x => x.AuthLevel == ClientAuthLevel.Trainer).OrderByDescending(x => x.IsEveryone()).ThenBy(x => x.DisplayName);
             TrainersRepeater.DataSource = items;
             TrainersRepeater.DataBind();
             NoTrainersPlaceHolder.Visible = items.Count() == 0;
@@ -133,7 +131,7 @@ namespace LNF.Web.Scheduler.Pages
 
         private void FillSuperUsers()
         {
-            var items = CurrentClients.Where(x => x.AuthLevel == ClientAuthLevel.SuperUser).OrderByDescending(x => x.IsEveryone).ThenBy(x => x.DisplayName);
+            var items = CurrentClients.Where(x => x.AuthLevel == ClientAuthLevel.SuperUser).OrderByDescending(x => x.IsEveryone()).ThenBy(x => x.DisplayName);
             SuperUsersRepeater.DataSource = items;
             SuperUsersRepeater.DataBind();
             NoSuperUsersPlaceHolder.Visible = items.Count() == 0;
@@ -141,7 +139,7 @@ namespace LNF.Web.Scheduler.Pages
 
         private void FillAuthorizedUsers()
         {
-            var items = CurrentClients.Where(x => x.AuthLevel == ClientAuthLevel.AuthorizedUser).OrderByDescending(x => x.IsEveryone).ThenByDescending(x => x.ShowExtendButton).ThenBy(x => x.DisplayName);
+            var items = CurrentClients.Where(x => x.AuthLevel == ClientAuthLevel.AuthorizedUser).OrderByDescending(x => x.IsEveryone()).ThenByDescending(x => x.ShowExtendButton).ThenBy(x => x.DisplayName);
             AuthorizedUsersRepeater.DataSource = items;
             AuthorizedUsersRepeater.DataBind();
             NoAuthorizedUsersPlaceHolder.Visible = items.Count() == 0;
@@ -163,13 +161,13 @@ namespace LNF.Web.Scheduler.Pages
                 ContactUrl = GetContactUrl(x.ClientID),
                 AuthLevel = x.AuthLevel,
                 Expiration = x.Expiration,
-                AuthDuration = CurrentResource.AuthDuration
+                AuthDuration = GetCurrentResource().AuthDuration
             });
         }
 
         private string GetContactUrl(int clientId)
         {
-            return $"~/Contact.aspx?ClientID={clientId}&Path={Request.SelectedPath()}&Date={Request.SelectedDate():yyyy-MM-dd}";
+            return $"~/Contact.aspx?ClientID={clientId}&Path={ContextBase.Request.SelectedPath()}&Date={ContextBase.Request.SelectedDate():yyyy-MM-dd}";
         }
 
         private void Fill(ClientAuthLevel authLevel)
@@ -192,7 +190,7 @@ namespace LNF.Web.Scheduler.Pages
         private void SetExpiration(ResourceClient rc)
         {
             if (rc.AuthLevel == ClientAuthLevel.AuthorizedUser)
-                rc.Expiration = DateTime.Now.AddMonths(CurrentResource.AuthDuration);
+                rc.Expiration = DateTime.Now.AddMonths(GetCurrentResource().AuthDuration);
         }
 
         private void CancelEdit()
@@ -218,7 +216,7 @@ namespace LNF.Web.Scheduler.Pages
 
         private void SetHyperLinkNavigateUrl(HyperLink hyp, ClientAuthLevel authLevel)
         {
-            hyp.NavigateUrl = $"~/Contact.aspx?Privs={(int)authLevel}&Path={Request.SelectedPath()}&Date={Request.SelectedDate():yyyy-MM-dd}";
+            hyp.NavigateUrl = $"~/Contact.aspx?Privs={(int)authLevel}&Path={ContextBase.Request.SelectedPath()}&Date={ContextBase.Request.SelectedDate():yyyy-MM-dd}";
         }
 
         private string GetEmailAddress(int clientId)
@@ -249,7 +247,7 @@ namespace LNF.Web.Scheduler.Pages
         protected bool CanAuthorize()
         {
             var p = ClientAuthLevel.Trainer | ClientAuthLevel.ToolEngineer;
-            var currentUserAuthLevel = ServiceProvider.Current.Use<IReservationManager>().GetAuthLevel(CurrentClients, CurrentUser);
+            var currentUserAuthLevel = ReservationUtility.GetAuthLevel(CurrentClients, CurrentUser);
             return (currentUserAuthLevel & p) > 0;
         }
 
@@ -267,7 +265,7 @@ namespace LNF.Web.Scheduler.Pages
             {
                 int clientId;
                 var selectedAuthLevel = GetSelectedAuthLevel();
-                var resourceId = CurrentResource.ResourceID;
+                var resourceId = GetCurrentResource().ResourceID;
                 ClientAuthLevel refreshAuthLevel = selectedAuthLevel;
 
                 if (e.CommandName == "Authorize")
@@ -295,7 +293,7 @@ namespace LNF.Web.Scheduler.Pages
                         DisplayName = ClientsDropDownList.SelectedItem.Text,
                         Expiration = rc.Expiration,
                         ContactUrl = GetContactUrl(clientId),
-                        AuthDuration = CurrentResource.AuthDuration,
+                        AuthDuration = GetCurrentResource().AuthDuration,
                         Email = GetEmailAddress(clientId)
                     });
                 }
@@ -382,7 +380,7 @@ namespace LNF.Web.Scheduler.Pages
             if (cc != null)
             {
                 var rc = DA.Current.Single<ResourceClient>(cc.ResourceClientID);
-                rc.Expiration = DateTime.Now.AddMonths(CurrentResource.AuthDuration);
+                rc.Expiration = DateTime.Now.AddMonths(GetCurrentResource().AuthDuration);
             }
 
             Fill(authLevel);
@@ -400,7 +398,8 @@ namespace LNF.Web.Scheduler.Pages
         public string DisplayName { get; set; }
         public string ContactUrl { get; set; }
         public int AuthDuration { get; set; }
-        public bool IsEveryone => ClientID == -1;
+        public bool IsEveryone() => LNF.Models.Scheduler.ResourceClientItem.IsEveryone(ClientID);
+        public bool HasAuth(ClientAuthLevel auths) => LNF.Models.Scheduler.ResourceClientItem.HasAuth(AuthLevel, auths);
 
         public bool ShowExtendButton
         {

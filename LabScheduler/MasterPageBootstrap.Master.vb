@@ -2,7 +2,6 @@
 Imports LNF.Models.Data
 Imports LNF.Web.Content
 Imports LNF.Web.Scheduler
-Imports Scheduler = LNF.Repository.Data
 
 Public Class MasterPageBootstrap
     Inherits LNFMasterPage
@@ -22,18 +21,18 @@ Public Class MasterPageBootstrap
         UseJavascriptNavigation = False
     End Sub
 
-    Protected Sub Page_Load(ByVal sender As Object, ByVal e As System.EventArgs) Handles Me.Load
+    Protected Sub Page_Load(ByVal sender As Object, ByVal e As EventArgs) Handles Me.Load
         If Not Page.IsPostBack Then
             If ShowMenu Then
                 ' load the page menu
                 _menu = New SiteMenu(CurrentUser, Nothing)
-                Dim parents As IList(Of MenuItem) = _menu.Where(Function(x) x.MenuParentID = 0).ToList()
+                Dim parents As IList(Of IMenu) = _menu.Where(Function(x) x.MenuParentID = 0).ToList()
                 rptMenu.DataSource = parents
                 rptMenu.DataBind()
             End If
 
             ' handle the current date
-            Dim selectedDate As Date = Request.SelectedDate()
+            Dim selectedDate As Date = ContextBase.Request.SelectedDate()
             txtCurrentDate.Value = selectedDate.ToString("MM/dd/yyyy")
             hidSelectedDate.Value = selectedDate.ToString("yyyy-MM-dd")
 
@@ -54,12 +53,12 @@ Public Class MasterPageBootstrap
         End If
     End Sub
 
-    Protected Sub rptMenu_ItemDataBound(sender As Object, e As RepeaterItemEventArgs)
+    Protected Sub RptMenu_ItemDataBound(sender As Object, e As RepeaterItemEventArgs)
         If e.Item.ItemType = ListItemType.Item OrElse e.Item.ItemType = ListItemType.AlternatingItem Then
             Dim liParentDropdown As UI.Control = e.Item.FindControl("liParentDropdown")
             Dim liParentLink As UI.Control = e.Item.FindControl("liParentLink")
             Dim parent As MenuItem = CType(e.Item.DataItem, MenuItem)
-            Dim children As IList(Of MenuItem) = _menu.Where(Function(x) x.MenuParentID = parent.MenuID).ToList()
+            Dim children As IList(Of IMenu) = _menu.Where(Function(x) x.MenuParentID = parent.MenuID).ToList()
             If children.Count > 0 Then
                 liParentDropdown.Visible = True
                 liParentLink.Visible = False

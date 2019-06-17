@@ -12,7 +12,7 @@ using System.Web.UI.WebControls;
 
 namespace LNF.Web.Scheduler.Controls
 {
-    public class ResourceTreeView : WebControl
+    public class ResourceTreeView : SchedulerWebControl
     {
         #region Control Definitions
         protected HtmlInputHidden hidPathDelimiter;
@@ -20,30 +20,6 @@ namespace LNF.Web.Scheduler.Controls
         #endregion
 
         public ResourceTreeView() : base(HtmlTextWriterTag.Div) { }
-
-        public PathInfo SelectedPath
-        {
-            get
-            {
-                PathInfo result;
-
-                if (ViewState["SelectedPath"] == null)
-                {
-                    result = Page.Request.SelectedPath();
-                    ViewState["SelectedPath"] = result.ToString();
-                }
-                else
-                {
-                    result = PathInfo.Parse(ViewState["SelectedPath"].ToString());
-                }
-
-                return result;
-            }
-            set
-            {
-                ViewState["SelectedPath"] = value.ToString();
-            }
-        }
 
         protected override void CreateChildControls()
         {
@@ -57,18 +33,18 @@ namespace LNF.Web.Scheduler.Controls
             var divTreeView = new HtmlGenericControl("div");
             divTreeView.Attributes.Add("class", "treeview");
 
-            if (SelectedPath.IsEmpty())
+            if (SelectedPathFromViewState.IsEmpty())
             {
                 // no path specified, need to use client defaults
-                var lab = CacheManager.Current.GetClientSetting().GetLabOrDefault();
+                var lab = ContextBase.GetClientSetting().GetLabOrDefault();
 
                 if (lab != null)
-                    SelectedPath = PathInfo.Create(lab);
+                    SelectedPathFromViewState = PathInfo.Create(lab);
             }
 
             var hidSelectedPath = new HtmlInputHidden();
             hidSelectedPath.Attributes.Add("class", "selected-path");
-            hidSelectedPath.Value = SelectedPath.ToString();
+            hidSelectedPath.Value = SelectedPathFromViewState.ToString();
 
             var hidPathDelimiter = new HtmlInputHidden();
             hidPathDelimiter.Attributes.Add("class", "path-delimiter");
@@ -77,7 +53,7 @@ namespace LNF.Web.Scheduler.Controls
             divTreeView.Controls.Add(hidSelectedPath);
             divTreeView.Controls.Add(hidPathDelimiter);
 
-            var buildingItems = SchedulerResourceTreeView.Current.Buildings;
+            var buildingItems = ContextBase.CurrentResourceTreeView(Provider).Buildings;
 
             if (buildingItems != null)
             {
@@ -111,7 +87,7 @@ namespace LNF.Web.Scheduler.Controls
                             var ulProcTechs = new HtmlGenericControl("ul");
                             ulProcTechs.Attributes.Add("class", "child proctechs");
 
-                            foreach(var pt in lab.Children)
+                            foreach (var pt in lab.Children)
                             {
                                 var liProcTech = CreateNode(pt, "branch");
 
@@ -263,11 +239,11 @@ namespace LNF.Web.Scheduler.Controls
                     // only add if it isn't there already
                     if (!items.Any(x => x.ID == 10030))
                     {
-                        var plasma790 = CacheManager.Current.ResourceTree().GetResource(10030);
-                        
+                        var plasma790 = ContextBase.ResourceTree().Find(10030);
+
                         if (plasma790 != null)
                         {
-                            ClientAuthLevel auth = GetCurrentUserAuthLevel(plasma790.ResourceID);
+                            ClientAuthLevel auth = ContextBase.GetCurrentAuthLevel(plasma790.ResourceID);
                             if ((plasma790.IsReady && plasma790.IsSchedulable) || auth == ClientAuthLevel.ToolEngineer)
                                 items.Add(new ResourceNode(plasma790, parent));
                         }
@@ -276,15 +252,9 @@ namespace LNF.Web.Scheduler.Controls
             }
         }
 
-        private ClientAuthLevel GetCurrentUserAuthLevel(int resourceId)
-        {
-            return CacheManager.Current.GetAuthLevel(resourceId, CacheManager.Current.CurrentUser.ClientID);
-        }
-
         private bool ShowImages()
         {
-            bool result;
-            if (bool.TryParse(ConfigurationManager.AppSettings["TreeView.ShowImages"], out result))
+            if (bool.TryParse(ConfigurationManager.AppSettings["TreeView.ShowImages"], out bool result))
                 return result;
             else
                 return false;
@@ -295,8 +265,7 @@ namespace LNF.Web.Scheduler.Controls
             if (ShowImages())
             {
                 string imageUrl = string.Format("/scheduler/image/{0}_icon/{1}", TreeViewUtility.TreeItemTypeToString(item.Type), item.ID);
-                var result = new HtmlImage();
-                result.Src = imageUrl;
+                var result = new HtmlImage() { Src = imageUrl };
                 result.Attributes.Add("onerror", "handleMissingImage(this);");
                 result.Alt = "icon";
                 return result;
@@ -315,36 +284,36 @@ namespace LNF.Web.Scheduler.Controls
             int procTechId = 0;
             int resourceId = 0;
 
-            if (SelectedPath.IsEmpty())
+            if (SelectedPathFromViewState.IsEmpty())
             {
-                buildingId = CacheManager.Current.GetClientSetting().GetBuildingOrDeafult().BuildingID;
-                labId = CacheManager.Current.GetClientSetting().GetLabOrDefault().LabID;
+                buildingId = ContextBase.GetClientSetting().GetBuildingOrDeafult().BuildingID;
+                labId = ContextBase.GetClientSetting().GetLabOrDefault().LabID;
             }
             else
             {
-                buildingId = SelectedPath.BuildingID;
-                labId = SelectedPath.LabID;
-                procTechId = SelectedPath.ProcessTechID;
-                resourceId = SelectedPath.ResourceID;
+                buildingId = SelectedPathFromViewState.BuildingID;
+                labId = SelectedPathFromViewState.LabID;
+                procTechId = SelectedPathFromViewState.ProcessTechID;
+                resourceId = SelectedPathFromViewState.ResourceID;
             }
 
             switch (item.Type)
             {
                 case NodeType.Building:
                     expanded = buildingId == item.ID;
-                    selected = SelectedPath.ToString() == item.Value;
+                    selected = SelectedPathFromViewState.ToString() == item.Value;
                     break;
                 case NodeType.Lab:
                     expanded = labId == item.ID;
-                    selected = SelectedPath.ToString() == item.Value;
+                    selected = SelectedPathFromViewState.ToString() == item.Value;
                     break;
                 case NodeType.ProcessTech:
                     expanded = procTechId == item.ID;
-                    selected = SelectedPath.ToString() == item.Value;
+                    selected = SelectedPathFromViewState.ToString() == item.Value;
                     break;
                 case NodeType.Resource:
                     expanded = resourceId == item.ID;
-                    selected = SelectedPath.ToString() == item.Value;
+                    selected = SelectedPathFromViewState.ToString() == item.Value;
                     break;
             }
 
@@ -356,15 +325,15 @@ namespace LNF.Web.Scheduler.Controls
             switch (item.Type)
             {
                 case NodeType.Building:
-                    return VirtualPathUtility.ToAbsolute(string.Format("~/Building.aspx?Path={0}&Date={1:yyyy-MM-dd}", HttpUtility.UrlEncode(item.Value), Page.Request.SelectedDate()));
+                    return VirtualPathUtility.ToAbsolute(string.Format("~/Building.aspx?Path={0}&Date={1:yyyy-MM-dd}", HttpUtility.UrlEncode(item.Value), ContextBase.Request.SelectedDate()));
                 case NodeType.Lab:
-                    return VirtualPathUtility.ToAbsolute(string.Format("~/Lab.aspx?Path={0}&Date={1:yyyy-MM-dd}", HttpUtility.UrlEncode(item.Value), Page.Request.SelectedDate()));
+                    return VirtualPathUtility.ToAbsolute(string.Format("~/Lab.aspx?Path={0}&Date={1:yyyy-MM-dd}", HttpUtility.UrlEncode(item.Value), ContextBase.Request.SelectedDate()));
                 case NodeType.ProcessTech:
-                    return VirtualPathUtility.ToAbsolute(string.Format("~/ProcessTech.aspx?Path={0}&Date={1:yyyy-MM-dd}", HttpUtility.UrlEncode(item.Value), Page.Request.SelectedDate()));
+                    return VirtualPathUtility.ToAbsolute(string.Format("~/ProcessTech.aspx?Path={0}&Date={1:yyyy-MM-dd}", HttpUtility.UrlEncode(item.Value), ContextBase.Request.SelectedDate()));
                 case NodeType.Resource:
-                    return VirtualPathUtility.ToAbsolute(string.Format("~/ResourceDayWeek.aspx?Path={0}&Date={1:yyyy-MM-dd}", HttpUtility.UrlEncode(item.Value), Page.Request.SelectedDate()));
+                    return VirtualPathUtility.ToAbsolute(string.Format("~/ResourceDayWeek.aspx?Path={0}&Date={1:yyyy-MM-dd}", HttpUtility.UrlEncode(item.Value), ContextBase.Request.SelectedDate()));
                 default:
-                    return VirtualPathUtility.ToAbsolute(string.Format("~/?Date={0:yyyy-MM-dd}", Page.Request.SelectedDate()));
+                    return VirtualPathUtility.ToAbsolute(string.Format("~/?Date={0:yyyy-MM-dd}", ContextBase.Request.SelectedDate()));
             }
         }
     }

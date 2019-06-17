@@ -1,6 +1,4 @@
-﻿Imports LNF.Cache
-Imports LNF.Models.Scheduler
-Imports LNF.Scheduler
+﻿Imports LNF.Models.Scheduler
 Imports LNF.Web.Scheduler
 Imports LNF.Web.Scheduler.Content
 
@@ -9,10 +7,10 @@ Namespace Pages
         Inherits SchedulerPage
 
         Protected Sub Page_Load(sender As Object, e As EventArgs) Handles Me.Load
-            Dim pt As ProcessTechItem = Request.SelectedPath().GetProcessTech()
+            Dim pt As ProcessTechItem = ContextBase.GetCurrentProcessTech()
 
             If Not Page.IsPostBack Then
-                lblDate.Text = Request.SelectedDate().ToLongDateString()
+                lblDate.Text = ContextBase.Request.SelectedDate().ToLongDateString()
                 LoadProcessTech(pt)
                 LoadReservationView(pt)
             Else

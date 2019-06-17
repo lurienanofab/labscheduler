@@ -123,12 +123,21 @@ Namespace UserControls
         Protected WithEvents btnConfirmCancel As Global.System.Web.UI.WebControls.Button
         
         '''<summary>
-        '''lblNoData control.
+        '''phNoData control.
         '''</summary>
         '''<remarks>
         '''Auto-generated field.
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
-        Protected WithEvents lblNoData As Global.System.Web.UI.WebControls.Label
+        Protected WithEvents phNoData As Global.System.Web.UI.WebControls.PlaceHolder
+        
+        '''<summary>
+        '''litNoData control.
+        '''</summary>
+        '''<remarks>
+        '''Auto-generated field.
+        '''To modify move field declaration from designer file to code-behind file.
+        '''</remarks>
+        Protected WithEvents litNoData As Global.System.Web.UI.WebControls.Literal
     End Class
 End Namespace

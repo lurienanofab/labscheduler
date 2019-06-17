@@ -1,5 +1,4 @@
-﻿using LNF.Cache;
-using LNF.Scheduler;
+﻿using LNF.Scheduler;
 using Newtonsoft.Json;
 using System;
 using System.Web;
@@ -11,17 +10,19 @@ namespace LNF.Web.Scheduler.Handlers
     {
         public void ProcessRequest(HttpContext context)
         {
-            context.Response.ContentType = "application/json";
+            var ctx = new HttpContextWrapper(context);
+
+            ctx.Response.ContentType = "application/json";
 
             try
             {
-                HandleCommand(context);
-                context.Response.Write(JsonConvert.SerializeObject(new { Success = true }));
+                HandleCommand(ctx);
+                ctx.Response.Write(JsonConvert.SerializeObject(new { Success = true }));
             }
             catch (Exception ex)
             {
-                context.Response.StatusCode = 500;
-                context.Response.Write(ServiceProvider.Current.Serialization.Json.SerializeObject(new { Success = false, ErrorMessage = ex.Message, StackTrace = ex.StackTrace }));
+                ctx.Response.StatusCode = 500;
+                ctx.Response.Write(JsonConvert.SerializeObject(new { Success = false, ErrorMessage = ex.Message, StackTrace = ex.StackTrace }));
             }
         }
 
@@ -30,7 +31,7 @@ namespace LNF.Web.Scheduler.Handlers
             get { return false; }
         }
 
-        private void HandleCommand(HttpContext context)
+        private void HandleCommand(HttpContextBase context)
         {
             string command = context.Request["command"];
             switch (command)
@@ -43,7 +44,7 @@ namespace LNF.Web.Scheduler.Handlers
             }
         }
 
-        private void SendHardwareTicketEmails(HttpContext context)
+        private void SendHardwareTicketEmails(HttpContextBase context)
         {
             string subject = context.Request["subject"];
             string message = context.Request["message"];
@@ -51,9 +52,9 @@ namespace LNF.Web.Scheduler.Handlers
             if (!int.TryParse(context.Request["resourceId"], out int resourceId))
                 throw new Exception("Invalid parameter: resourceId");
 
-            var res = CacheManager.Current.ResourceTree().GetResource(resourceId).GetResourceItem();
+            var res = context.ResourceTree().GetResource(resourceId);
 
-            HelpdeskUtility.SendHardwareIssueEmail(res, CacheManager.Current.CurrentUser.ClientID, subject, message);
+            HelpdeskUtility.SendHardwareIssueEmail(res, context.CurrentUser().ClientID, subject, message);
         }
     }
 }

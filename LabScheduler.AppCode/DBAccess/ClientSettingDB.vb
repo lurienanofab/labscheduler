@@ -22,7 +22,7 @@ Namespace DBAccess
 
         ' Returns the preferences for the specified client
         Public Sub New(ByVal ClientID As Integer) ' non-standard name needed to avoid name clash
-            Using reader As IDataReader = DA.Command().Param(New With {ClientID}).ExecuteReader("sselScheduler.dbo.procClientSettingSelect")
+            Using reader As ExecuteReaderResult = DA.Command().Param(New With {ClientID}).ExecuteReader("sselScheduler.dbo.procClientSettingSelect")
                 If reader.Read() Then
                     IsValid = True
                     Me.ClientID = Convert.ToInt32(reader("ClientID"))

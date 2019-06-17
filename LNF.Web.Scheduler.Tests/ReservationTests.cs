@@ -1,5 +1,6 @@
 ﻿using LNF.Impl.DependencyInjection.Default;
 using LNF.Models.Data;
+using LNF.Models.Scheduler;
 using LNF.Repository;
 using LNF.Repository.Data;
 using LNF.Repository.Scheduler;
@@ -53,12 +54,12 @@ namespace LNF.Web.Scheduler.Tests
             DateTime ed = DateTime.Parse("2017-01-17 08:30:00");
             TimeSpan duration = ed - sd;
 
-            var rsv = new Reservation()
+            var rsv = new ReservationItem()
             {
-                Resource = DA.Current.Single<Resource>(41010),
-                Client = DA.Current.Single<Client>(1301),
-                Account = DA.Current.Single<Account>(67),
-                Activity = DA.Current.Single<Activity>(6),
+                ResourceID = 41010,
+                ClientID = 1301,
+                AccountID = 67,
+                ActivityID = 6,
                 BeginDateTime = sd,
                 EndDateTime = ed,
                 ApplyLateChargePenalty = true,
@@ -105,13 +106,13 @@ namespace LNF.Web.Scheduler.Tests
         [TestMethod]
         public void CanModify()
         {
-            var rsv1 = DA.Current.Single<Reservation>(835041);
+            var rsv1 = DA.Current.Single<ReservationInfo>(835041).Model<ReservationItem>();
 
             var data = GetReservationData(
-                resourceId: rsv1.Resource.ResourceID,
-                clientId: rsv1.Client.ClientID,
-                accountId: rsv1.Account.AccountID,
-                activityId: rsv1.Activity.ActivityID,
+                resourceId: rsv1.ResourceID,
+                clientId: rsv1.ClientID,
+                accountId: rsv1.AccountID,
+                activityId: rsv1.ActivityID,
                 autoEnd: rsv1.AutoEnd,
                 keepAlive: rsv1.KeepAlive,
                 notes: rsv1.Notes,
@@ -120,7 +121,7 @@ namespace LNF.Web.Scheduler.Tests
                 startTimeMinute: 0,
                 duration: 5);
 
-            var rsv2 = SchedulerUtility.ModifyExistingReservation(rsv1, data);
+            var rsv2 = ReservationUtility.Modify(rsv1, data);
 
             Assert.AreNotEqual(rsv1.ReservationID, rsv2.ReservationID);
             Assert.AreEqual(DateTime.Parse("2018-08-02 10:00:00"), rsv2.BeginDateTime);
@@ -131,12 +132,12 @@ namespace LNF.Web.Scheduler.Tests
             Console.WriteLine("Deleted: {0}", deleted);
         }
 
-        private SchedulerUtility.ReservationData GetReservationData(int resourceId, int clientId, int accountId, int activityId, bool autoEnd, bool keepAlive, string notes, DateTime selectedDate, int startTimeHour, int startTimeMinute, int duration)
+        private ReservationData GetReservationData(int resourceId, int clientId, int accountId, int activityId, bool autoEnd, bool keepAlive, string notes, DateTime selectedDate, int startTimeHour, int startTimeMinute, int duration)
         {
             var beginDateTime = selectedDate.AddHours(startTimeHour).AddMinutes(startTimeMinute);
             var rd = ReservationDuration.FromMinutes(beginDateTime, duration);
 
-            var result = new SchedulerUtility.ReservationData()
+            var result = new ReservationData()
             {
                 ResourceID = resourceId,
                 ClientID = clientId,

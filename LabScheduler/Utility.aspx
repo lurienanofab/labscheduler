@@ -10,6 +10,7 @@
 <%@ Import Namespace="LNF.PhysicalAccess" %>
 <%@ Import Namespace="LNF.Scheduler" %>
 <%@ Import Namespace="LNF.Models.Data" %>
+<%@ Import Namespace="LNF.Models.Billing" %>
 <%@ Import Namespace="LNF.Models.Billing.Process" %>
 <%@ Import Namespace="LNF.Models.Scheduler" %>
 <%@ Import Namespace="LNF.Repository" %>
@@ -24,7 +25,13 @@
 <script runat="server">
     //note: this page does not have a separate CodeBehind file so that server side code can be edited in production
 
-    public IReservationManager ReservationManager { get { return ServiceProvider.Current.Use<IReservationManager>(); } }
+    public IReservationManager ReservationManager { get { return ServiceProvider.Current.Scheduler.Reservation; } }
+
+    private HttpContextBase _contextBase;
+
+    public HttpContextBase ContextBase { get { return _contextBase; } }
+
+    public IClient CurrentUser { get { return ContextBase.CurrentUser(); } }
 
     public enum AlertType
     {
@@ -48,7 +55,7 @@
         return result;
     }
 
-    private ClientItem GetLogInAsOriginalUser()
+    private IClient GetLogInAsOriginalUser()
     {
         if (Session["LogInAsOriginalUser"] != null)
         {
@@ -61,13 +68,12 @@
 
     private bool HasAccess()
     {
-        ClientItem currentUser = Context.CurrentUser();
-        ClientItem logInAsOriginalUser = GetLogInAsOriginalUser();
+        IClient logInAsOriginalUser = GetLogInAsOriginalUser();
 
-        if (currentUser == null)
+        if (CurrentUser == null)
             return false;
 
-        if (currentUser.HasPriv(ClientPrivilege.Developer))
+        if (CurrentUser.HasPriv(ClientPrivilege.Developer))
             return true;
 
         if (logInAsOriginalUser == null)
@@ -81,6 +87,8 @@
 
     public void Page_Load(object sender, EventArgs e)
     {
+        _contextBase = new HttpContextWrapper(Context);
+
         if (!HasAccess())
         {
             phNoAccess.Visible = true;
@@ -116,7 +124,7 @@
                 {
                     var clientId = GetClientID();
 
-                    var client = clientId == 0 ? Context.CurrentUser() : CacheManager.Current.GetClient(clientId);
+                    var client = clientId == 0 ? CurrentUser : CacheManager.Current.GetClient(clientId);
 
                     if (client == null)
                         throw new Exception(string.Format("Cannot find a Client with ClientID = {0}", clientId));
@@ -157,11 +165,11 @@
         return new ReservationProcessInfoItem() { ReservationProcessInfo = rpi, ProcessInfoLine = pil, ProcessInfo = pi };
     }
 
-    private bool SwitchUser(ClientItem client)
+    private bool SwitchUser(IClient client)
     {
         if (Request.QueryString["login"] == "true")
         {
-            if (Context.CurrentUser().ClientID == client.ClientID)
+            if (CurrentUser.ClientID == client.ClientID)
             {
                 // same user is logging in as themself?
                 return false;
@@ -177,7 +185,7 @@
             else
             {
                 if (Session["LogInAsOriginalUser"] == null)
-                    Session["LogInAsOriginalUser"] = Context.CurrentUser().UserName;
+                    Session["LogInAsOriginalUser"] = CurrentUser.UserName;
             }
 
             FormsAuthentication.SignOut();
@@ -197,17 +205,16 @@
         return false;
     }
 
-    private void LoadUserReport(ClientItem client)
+    private void LoadUserReport(IClient client)
     {
         if (client == null)
             throw new ArgumentNullException("client");
 
         if (SwitchUser(client)) return;
 
-        var currentUser = Context.CurrentUser();
         var originalUser = GetLogInAsOriginalUser();
 
-        litCurrentUser.Text = string.Format("{0} [{1}]", currentUser.DisplayName, currentUser.ClientID);
+        litCurrentUser.Text = string.Format("{0} [{1}]", CurrentUser.DisplayName, CurrentUser.ClientID);
 
         if (originalUser != null)
         {
@@ -223,10 +230,11 @@
         if (listItem != null) listItem.Selected = true;
 
         var ipaddr = Request.UserHostAddress;
+        var paUtil = new PhysicalAccessUtility(ipaddr);
         var isKiosk = KioskUtility.IsKiosk(ipaddr);
         var onKiosk = KioskUtility.IsOnKiosk(ipaddr);
-        var isInLab = PhysicalAccessUtility.IsInLab(client.ClientID);
-        var clientInLab = PhysicalAccessUtility.ClientInLab(client.ClientID, Request.UserHostAddress);
+        var isInLab = paUtil.IsInLab(client.ClientID);
+        var clientInLab = paUtil.ClientInLab(client.ClientID);
 
         var dataSource = new[] { new
         {
@@ -253,7 +261,7 @@
 
     private void LoadInLabReport()
     {
-        var inlab = Context.CurrentlyInLab();
+        var inlab = ContextBase.CurrentlyInLab();
 
         rptInLabReport.DataSource = inlab.Select(x => new
         {
@@ -286,13 +294,13 @@
 
         txtReservationID.Text = reservationId.ToString();
 
-        Reservation rsv = DA.Current.Single<Reservation>(reservationId);
+        ReservationItem rsv = DA.Current.Single<ReservationInfo>(reservationId).CreateModel<ReservationItem>();
 
         if (rsv != null)
         {
             if (command == "history")
             {
-                var history = DA.Current.Query<ReservationHistory>().Where(x => x.Reservation == rsv).ToList();
+                var history = DA.Current.Query<ReservationHistory>().Where(x => x.Reservation.ReservationID == rsv.ReservationID).ToList();
 
                 if (history.Count > 0)
                 {
@@ -307,9 +315,9 @@
             }
             else if (command == "invitees")
             {
-                IList<ReservationInvitee> invitees = DA.Current.Query<ReservationInvitee>().Where(x => x.Reservation == rsv).ToList();
+                var invitees = DA.Current.Query<ReservationInviteeInfo>().Where(x => x.ReservationID == rsv.ReservationID).CreateModels<IReservationInvitee>();
 
-                if (invitees.Count > 0)
+                if (invitees.Count() > 0)
                 {
                     rptReservationInvitees.Visible = true;
                     rptReservationInvitees.DataSource = invitees;
@@ -340,12 +348,12 @@
                 if (command == "cancel")
                 {
                     // same method called in ReservationView.ascx.vb when the red X is clicked on the calendar
-                    ReservationManager.DeleteReservation(reservationId);
+                    ReservationManager.CancelReservation(rsv.ReservationID, CurrentUser.ClientID);
                 }
                 else if (command == "delete")
                 {
                     // do a full purge, use at your own risk!
-                    IList<ReservationHistory> history = DA.Current.Query<ReservationHistory>().Where(x => x.Reservation == rsv).ToList();
+                    IList<ReservationHistory> history = DA.Current.Query<ReservationHistory>().Where(x => x.Reservation.ReservationID == rsv.ReservationID).ToList();
 
                     DA.Command(CommandType.Text).Batch(x =>
                     {
@@ -496,8 +504,8 @@
 
         if (command == "update")
         {
-            string response = ReservationHistoryUtility.SendUpdateBillingRequest(period, clientId, new[] { "tool", "room" });
-            litBillingOutput.Text = response;
+            IEnumerable<string> response = ServiceProvider.Current.Billing.Process.UpdateBilling(new UpdateBillingArgs { StartDate = period, EndDate = period.AddMonths(1), ClientID = clientId, BillingCategory = BillingCategory.Tool | BillingCategory.Room });
+            litBillingOutput.Text = string.Join("<br>", response);
 
             //var result = await ReservationHistoryUtility.UpdateBilling(sd, ed, clientId);
             //litBillingOutput.Text = "<hr><ul class=\"list-group\">";

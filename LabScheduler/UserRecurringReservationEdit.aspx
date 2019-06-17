@@ -11,7 +11,7 @@
         <em class="text-muted" style="margin-top: 20px; display: block;">Note: Modifing these settings will not alter existing reservations. You can edit existing reservations by clicking the ID link in the list below.</em>
 
         <div style="margin-top: 20px;">
-            <asp:Repeater runat="server" ID="rptRecurrence" OnItemDataBound="rptRecurrence_ItemDataBound">
+            <asp:Repeater runat="server" ID="rptRecurrence" OnItemDataBound="RptRecurrence_ItemDataBound">
                 <ItemTemplate>
                     <div class="lnf panel panel-default" style="margin-top: 20px;">
                         <div class="panel-heading">
@@ -66,6 +66,12 @@
                                                 Automatically end the reservation after the end time
                                             </label>
                                         </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="control-label col-lg-2">Notes</label>
+                                    <div class="col-lg-2">
+                                        <asp:TextBox runat="server" ID="txtNotes" CssClass="form-control" TextMode="MultiLine"></asp:TextBox>
                                     </div>
                                 </div>
                             </div>
@@ -175,7 +181,8 @@
 
             <asp:Literal runat="server" ID="litMessage"></asp:Literal>
 
-            <asp:Button runat="server" ID="btnSave" Text="Save" CssClass="lnf btn btn-default" OnClick="btnSave_Click" />
+            <asp:Button runat="server" ID="btnSave" Text="Save" CssClass="lnf btn btn-default" OnClick="BtnSave_Click" />
+
             <asp:HyperLink runat="server" ID="hypCancel" CssClass="lnf btn btn-default">Cancel</asp:HyperLink>
         </div>
 
@@ -195,6 +202,8 @@
                                         <th>EndDateTime</th>
                                         <th>ActualBeginDateTime</th>
                                         <th>ActualEndDateTime</th>
+                                        <th class="text-center">Cancelled</th>
+                                        <th>&nbsp;</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -206,6 +215,8 @@
                                 <td><%#Eval("EndDateTime", "{0:MM/dd/yyyy h:mm:ss tt}")%></td>
                                 <td><%#Eval("ActualBeginDateTime", "{0:MM/dd/yyyy h:mm:ss tt}")%></td>
                                 <td><%#Eval("ActualEndDateTime", "{0:MM/dd/yyyy h:mm:ss tt}")%></td>
+                                <td class="text-center"><%#GetIsCancelled(Container.DataItem)%></td>
+                                <td><asp:LinkButton runat="server" ID="btnCancelReservation" OnCommand="BtnCancelReservation_Command" CommandArgument='<%#Eval("ReservationID")%>' Visible='<%#GetCancelReservationLinkVisible(Container.DataItem)%>'>Cancel</asp:LinkButton></td>
                             </tr>
                         </ItemTemplate>
                         <FooterTemplate>

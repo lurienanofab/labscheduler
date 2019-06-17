@@ -1,7 +1,5 @@
-﻿using LNF.Cache;
-using LNF.CommonTools;
+﻿using LNF.CommonTools;
 using LNF.Control;
-using LNF.Data;
 using LNF.Helpdesk;
 using LNF.Models.Data;
 using LNF.Models.Scheduler;
@@ -19,17 +17,16 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Net.Mail;
-using System.Threading.Tasks;
 using System.Web;
 
 namespace LNF.Web.Scheduler
 {
     public static class AjaxUtility
     {
-        public static IClientManager ClientManager => ServiceProvider.Current.Use<IClientManager>();
-
         public static object HandleRequest(HttpContext context)
         {
+            var ctx = new HttpContextWrapper(context);
+
             string action = context.Request["Action"].ToString();
 
             int resourceId = Utility.ConvertTo(context.Request["ResourceID"], 0);
@@ -41,7 +38,7 @@ namespace LNF.Web.Scheduler
 
             object result = null;
             GenericResult gr;
-            var model = CacheManager.Current.ResourceTree().GetResource(resourceId).GetResourceItem();
+            var model = ctx.ResourceTree().GetResource(resourceId);
 
             switch (action)
             {
@@ -88,17 +85,17 @@ namespace LNF.Web.Scheduler
                     result = HelpdeskListTickets(DA.Current.Single<Resource>(resourceId));
                     break;
                 case "helpdesk-detail":
-                    result = HelpdeskDetail(ticketId);
+                    result = HelpdeskDetail(ticketId, ctx.CurrentUser());
                     break;
                 case "helpdesk-post-message":
                     message = Utility.ConvertTo(ServiceProvider.Current.Context.GetRequestValue("Message"), string.Empty);
-                    message = $"Posted from scheduler by: {CacheManager.Current.CurrentUser.DisplayName} ({CacheManager.Current.CurrentUser.Email})\n----------------------------------------\n{message}";
-                    result = HelpdeskPostMessage(ticketId, message);
+                    message = $"Posted from scheduler by: {ctx.CurrentUser().DisplayName} ({ctx.CurrentUser().Email})\n----------------------------------------\n{message}";
+                    result = HelpdeskPostMessage(ticketId, message, ctx.CurrentUser());
                     break;
                 case "send-hardware-issue-email":
                     message = Utility.ConvertTo(ServiceProvider.Current.Context.GetRequestValue("message"), string.Empty);
                     string subject = Utility.ConvertTo(ServiceProvider.Current.Context.GetRequestValue("subject"), string.Empty);
-                    HelpdeskUtility.SendHardwareIssueEmail(CacheManager.Current.ResourceTree().GetResource(resourceId).GetResourceItem(), CacheManager.Current.CurrentUser.ClientID, subject, message);
+                    HelpdeskUtility.SendHardwareIssueEmail(ctx.ResourceTree().GetResource(resourceId), ctx.CurrentUser().ClientID, subject, message);
                     break;
                 case "interlock":
                     bool state = Utility.ConvertTo(context.Request["State"], false);
@@ -107,7 +104,7 @@ namespace LNF.Web.Scheduler
                     result = HandleInterlockRequest(command, resourceId, state, d);
                     break;
                 case "test":
-                    result = new GenericResult() { Success = true, Message = $"current client: {CacheManager.Current.CurrentUser.ClientID}", Data = null, Log = null };
+                    result = new GenericResult() { Success = true, Message = $"current client: {ctx.CurrentUser().ClientID}", Data = null, Log = null };
                     break;
                 default:
                     result = new GenericResult
@@ -191,25 +188,25 @@ namespace LNF.Web.Scheduler
             return result;
         }
 
-        private static GenericResult HelpdeskDetail(int ticketId)
+        private static GenericResult HelpdeskDetail(int ticketId, IClient currentUser)
         {
             var result = new GenericResult();
             var svc = new Helpdesk.Service(ConfigurationManager.AppSettings["HelpdeskUrl"], ConfigurationManager.AppSettings["HelpdeskApiKey"]);
             TicketDetailResponse response = svc.SelectTicketDetail(ticketId);
             result.Success = !response.Error;
             result.Message = response.Message;
-            result.Data = new { response.Detail, CacheManager.Current.CurrentUser.DisplayName, CacheManager.Current.CurrentUser.Email };
+            result.Data = new { response.Detail, currentUser.DisplayName, currentUser.Email };
             return result;
         }
 
-        private static GenericResult HelpdeskPostMessage(int ticketId, string message)
+        private static GenericResult HelpdeskPostMessage(int ticketId, string message, IClient currentUser)
         {
             var result = new GenericResult();
             var svc = new Helpdesk.Service(ConfigurationManager.AppSettings["HelpdeskUrl"], ConfigurationManager.AppSettings["HelpdeskApiKey"]);
             TicketDetailResponse response = svc.PostMessage(ticketId, message);
             result.Success = !response.Error;
             result.Message = response.Message;
-            result.Data = new { response.Detail, CacheManager.Current.CurrentUser.DisplayName, CacheManager.Current.CurrentUser.Email };
+            result.Data = new { response.Detail, currentUser.DisplayName, currentUser.Email };
             return result;
         }
 
@@ -403,7 +400,7 @@ namespace LNF.Web.Scheduler
             return result;
         }
 
-        private static void GetToolEngineers(ResourceItem res, GenericResult result)
+        private static void GetToolEngineers(IResource res, GenericResult result)
         {
             object data = null;
 
@@ -411,7 +408,7 @@ namespace LNF.Web.Scheduler
             {
                 IList<ResourceClientInfo> toolEng = ResourceClientInfoUtility.GetToolEngineers(res.ResourceID).ToList();
                 int[] existingToolEngClientIDs = toolEng.Select(x => x.ClientID).ToArray();
-                IList<Client> staff = ClientManager.FindByPrivilege(ClientPrivilege.Staff, true).Where(x => !existingToolEngClientIDs.Contains(x.ClientID)).ToList();
+                IList<IClient> staff = ServiceProvider.Current.Data.Client.FindByPrivilege(ClientPrivilege.Staff, true).Where(x => !existingToolEngClientIDs.Contains(x.ClientID)).ToList();
 
                 data = new
                 {
@@ -422,7 +419,7 @@ namespace LNF.Web.Scheduler
             }
         }
 
-        private static void AddToolEngineer(ResourceItem res, Client c, GenericResult result)
+        private static void AddToolEngineer(IResource res, Client c, GenericResult result)
         {
             if (Validate(res, c, result))
             {
@@ -440,7 +437,7 @@ namespace LNF.Web.Scheduler
             }
         }
 
-        private static void DeleteToolEngineer(ResourceItem res, Client c, GenericResult result)
+        private static void DeleteToolEngineer(IResource res, Client c, GenericResult result)
         {
             if (Validate(res, c, result))
             {
@@ -625,7 +622,7 @@ namespace LNF.Web.Scheduler
             return true;
         }
 
-        private static bool Validate(ResourceItem res, GenericResult result)
+        private static bool Validate(IResource res, GenericResult result)
         {
             if (res == null)
             {
@@ -649,7 +646,7 @@ namespace LNF.Web.Scheduler
             return true;
         }
 
-        private static bool Validate(ResourceItem res, Client c, GenericResult result)
+        private static bool Validate(IResource res, Client c, GenericResult result)
         {
             if (!Validate(res, result)) return false;
             if (!Validate(c, result)) return false;

@@ -12,14 +12,14 @@ Namespace Pages
         End Sub
 
         Private Sub LoadBuilding()
-            Dim bldg As BuildingItem = Request.SelectedPath().GetBuilding()
+            Dim bldg As BuildingItem = ContextBase.GetCurrentBuilding()
             If bldg IsNot Nothing Then
                 litBuildingName.Text = bldg.BuildingName
                 lblDescription.Text = bldg.BuildingDescription
                 UploadFileUtility.DisplayImage(imgPicture, "Building", bldg.BuildingID.ToString())
             End If
 
-            rptResources.DataSource = ResourceTableItem.List(bldg.BuildingID)
+            rptResources.DataSource = ContextBase.GetResourceTableItemList(bldg.BuildingID)
             rptResources.DataBind()
         End Sub
 

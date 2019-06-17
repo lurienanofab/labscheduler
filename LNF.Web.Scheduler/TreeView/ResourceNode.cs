@@ -8,8 +8,6 @@ namespace LNF.Web.Scheduler.TreeView
 {
     public class ResourceNode : TreeViewNode<ResourceTreeItem>
     {
-        protected IReservationManager ReservationManager => ServiceProvider.Current.Use<IReservationManager>();
-
         public bool IsSchedulable { get; private set; }
         public ResourceState State { get; private set; }
         public string StateNotes { get; private set; }
@@ -39,7 +37,7 @@ namespace LNF.Web.Scheduler.TreeView
 
             if (State == ResourceState.Online && !IsSchedulable)
             {
-                ReservationInProgress repair = ReservationManager.GetRepairReservationInProgress(item.ResourceID);
+                ReservationInProgress repair = ReservationUtility.GetRepairReservationInProgress(item);
                 if (repair != null)
                 {
                     RepairEndDateTime = repair.EndDateTime;

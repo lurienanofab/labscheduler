@@ -1,25 +1,38 @@
 ﻿Imports System.Text
+Imports System.Web
 Imports LNF
-Imports LNF.Cache
 Imports LNF.Models.Data
 Imports LNF.Models.Mail
 Imports LNF.Repository
 Imports LNF.Repository.Data
+Imports LNF.Web
 
 Public Class ErrorUtility
 
-    Private Shared appName As String = "Scheduler"
-    Private Shared fromAddr As String = "system@lnf.umich.edu"
-    Private Shared toAddr As String() = {"lnf-it@umich.edu"}
+    Private appName As String = "Scheduler"
+    Private fromAddr As String = "system@lnf.umich.edu"
+    Private toAddr As String() = {"lnf-it@umich.edu"}
 
-    Public Shared Function GetErrorData(ex As Exception) As ErrorLog()
+    Public ReadOnly Property ContextBase As HttpContextBase
+
+    Public ReadOnly Property CurrentUser As IClient
+        Get
+            Return ContextBase.CurrentUser()
+        End Get
+    End Property
+
+    Public Sub New(context As HttpContextBase)
+        ContextBase = context
+    End Sub
+
+    Public Function GetErrorData(ex As Exception) As ErrorLog()
         Dim list As New List(Of ErrorLog)
 
         Dim clientId As Integer
-        Dim c As ClientItem = Nothing
+        Dim c As IClient = Nothing
 
         Try
-            c = CacheManager.Current.CurrentUser
+            c = CurrentUser
             clientId = c.ClientID
         Catch
             clientId = 0
@@ -31,7 +44,7 @@ Public Class ErrorUtility
             .StackTrace = ex.StackTrace,
             .ErrorDateTime = Date.Now,
             .ClientID = clientId,
-            .PageUrl = ServiceProvider.Current.Context.GetRequestUrl().ToString()
+            .PageUrl = ContextBase.Request.Url.ToString()
         }
 
         list.Add(result)
@@ -45,7 +58,7 @@ Public Class ErrorUtility
                 .StackTrace = ex2.StackTrace,
                 .ErrorDateTime = Date.Now,
                 .ClientID = clientId,
-                .PageUrl = ServiceProvider.Current.Context.GetRequestUrl().ToString()
+                .PageUrl = ContextBase.Request.Url.ToString()
             })
         End Try
 
@@ -54,7 +67,7 @@ Public Class ErrorUtility
         Return list.ToArray()
     End Function
 
-    Private Shared Sub SendEmail(errors As List(Of ErrorLog), c As ClientItem)
+    Private Sub SendEmail(errors As List(Of ErrorLog), c As IClient)
         Dim clientId As Integer = 0
         Dim displayName As String = "unknown"
 
@@ -92,7 +105,7 @@ Public Class ErrorUtility
                 .StackTrace = ex.StackTrace,
                 .ErrorDateTime = Date.Now,
                 .ClientID = clientId,
-                .PageUrl = ServiceProvider.Current.Context.GetRequestUrl().ToString()
+                .PageUrl = ContextBase.Request.Url.ToString()
             })
         End Try
     End Sub

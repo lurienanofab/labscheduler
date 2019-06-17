@@ -38,7 +38,7 @@ namespace LNF.Web.Scheduler.Pages
 
             if (!string.IsNullOrEmpty(Request.QueryString["refresh"]))
             {
-                CacheManager.Current.RemoveMemoryCacheValue(Request.QueryString["refresh"]);
+                CacheManager.Current.RemoveValue(Request.QueryString["refresh"]);
                 Response.Redirect("~/CacheUtility.aspx");
             }
 
@@ -52,7 +52,7 @@ namespace LNF.Web.Scheduler.Pages
             lblSchedulerPropertyCount.Text = CacheManager.Current.SchedulerProperties().Count().ToString();
 
             // assuming the approximate size is returned in bytes...
-            var sizeBytes = (double)CacheManager.Current.GetMemoryCacheGetApproximateSize();
+            var sizeBytes = (double)CacheManager.Current.GetApproximateSize();
             if (sizeBytes >= 0)
             {
                 var sizeKilobytes = sizeBytes / 1024;
@@ -71,7 +71,7 @@ namespace LNF.Web.Scheduler.Pages
 
             if (e.CommandName == "clear")
             {
-                CacheManager.Current.ClearMemoryCache();
+                CacheManager.Current.ClearCache();
             }
             else if (!string.IsNullOrEmpty(txtKey.Text))
             {
@@ -79,10 +79,10 @@ namespace LNF.Web.Scheduler.Pages
                     LoadKeyValue(txtKey.Text);
 
                 if (e.CommandName == "set")
-                    CacheManager.Current.SetMemoryCacheValue(txtKey.Text, txtValue.Text, GetAbsoluteExpiration());
+                    CacheManager.Current.SetValue(txtKey.Text, txtValue.Text, GetAbsoluteExpiration());
 
                 if (e.CommandName == "delete")
-                    CacheManager.Current.RemoveMemoryCacheValue(txtKey.Text);
+                    CacheManager.Current.RemoveValue(txtKey.Text);
             }
 
             lblKeyMessage.Text = "OK";
@@ -105,7 +105,7 @@ namespace LNF.Web.Scheduler.Pages
         {
             txtValue.Text = string.Empty;
 
-            var value = CacheManager.Current.GetMemoryCacheValue(key);
+            var value = CacheManager.Current.GetValue(key);
 
             if (value != null)
             {
@@ -143,7 +143,7 @@ namespace LNF.Web.Scheduler.Pages
                         throw new Exception("Invalid parameter: key");
                     }
 
-                    Response.Write(JsonConvert.SerializeObject(new { command, key, value = CacheManager.Current.GetMemoryCacheValue(key) }));
+                    Response.Write(JsonConvert.SerializeObject(new { command, key, value = CacheManager.Current.GetValue(key) }));
                 }
                 else if (command == "set")
                 {
@@ -164,7 +164,7 @@ namespace LNF.Web.Scheduler.Pages
                     if (!string.IsNullOrEmpty(expire) && double.TryParse(expire, out double e))
                         absoluteExpiration = DateTimeOffset.Now.AddSeconds(e);
 
-                    CacheManager.Current.SetMemoryCacheValue(key, value, absoluteExpiration);
+                    CacheManager.Current.SetValue(key, value, absoluteExpiration);
 
                     Response.Write(JsonConvert.SerializeObject(new { command, key, value, absoluteExpiration }));
                 }
@@ -176,7 +176,7 @@ namespace LNF.Web.Scheduler.Pages
                         throw new Exception("Invalid parameter: key");
                     }
 
-                    Response.Write(JsonConvert.SerializeObject(new { command, key, value = CacheManager.Current.RemoveMemoryCacheValue(key) }));
+                    Response.Write(JsonConvert.SerializeObject(new { command, key, value = CacheManager.Current.RemoveValue(key) }));
                 }
                 else if (command == "refresh")
                 {
@@ -189,15 +189,15 @@ namespace LNF.Web.Scheduler.Pages
                     switch (key)
                     {
                         case "Clients":
-                            CacheManager.Current.RemoveMemoryCacheValue("Clients");
+                            CacheManager.Current.RemoveValue("Clients");
                             Response.Write(JsonConvert.SerializeObject(new { command, key, count = CacheManager.Current.Clients().Count() }));
                             break;
                         case "Orgs":
-                            CacheManager.Current.RemoveMemoryCacheValue("Orgs");
+                            CacheManager.Current.RemoveValue("Orgs");
                             Response.Write(JsonConvert.SerializeObject(new { command, key, count = CacheManager.Current.Orgs().Count() }));
                             break;
                         case "Accounts":
-                            CacheManager.Current.RemoveMemoryCacheValue("Accounts");
+                            CacheManager.Current.RemoveValue("Accounts");
                             Response.Write(JsonConvert.SerializeObject(new { command, key, count = CacheManager.Current.Accounts().Count() }));
                             break;
                         //case "ClientAccounts":
@@ -205,19 +205,19 @@ namespace LNF.Web.Scheduler.Pages
                         //    Response.Write(JsonConvert.SerializeObject(new { command, key, count = CacheManager.Current.ClientAccounts().Count() }));
                         //    break;
                         case "ClientOrgs":
-                            CacheManager.Current.RemoveMemoryCacheValue("ClientOrgs");
+                            CacheManager.Current.RemoveValue("ClientOrgs");
                             Response.Write(JsonConvert.SerializeObject(new { command, key, count = CacheManager.Current.ClientOrgs().Count() }));
                             break;
                         case "Rooms":
-                            CacheManager.Current.RemoveMemoryCacheValue("Rooms");
+                            CacheManager.Current.RemoveValue("Rooms");
                             Response.Write(JsonConvert.SerializeObject(new { command, key, count = CacheManager.Current.Rooms().Count() }));
                             break;
                         case "Activities":
-                            CacheManager.Current.RemoveMemoryCacheValue("Activities");
+                            CacheManager.Current.RemoveValue("Activities");
                             Response.Write(JsonConvert.SerializeObject(new { command, key, count = CacheManager.Current.Activities().Count() }));
                             break;
                         case "SchedulerProperties":
-                            CacheManager.Current.RemoveMemoryCacheValue("SchedulerProperties");
+                            CacheManager.Current.RemoveValue("SchedulerProperties");
                             Response.Write(JsonConvert.SerializeObject(new { command, key, count = CacheManager.Current.SchedulerProperties().Count() }));
                             break;
                         default:
@@ -227,12 +227,12 @@ namespace LNF.Web.Scheduler.Pages
                 }
                 else if (command == "clear-all")
                 {
-                    CacheManager.Current.ClearMemoryCache();
+                    CacheManager.Current.ClearCache();
                     Response.Write(JsonConvert.SerializeObject(new { command }));
                 }
                 else if (command == "get-size")
                 {
-                    Response.Write(JsonConvert.SerializeObject(new { command, size = CacheManager.Current.GetMemoryCacheGetApproximateSize() }));
+                    Response.Write(JsonConvert.SerializeObject(new { command, size = CacheManager.Current.GetApproximateSize() }));
                 }
                 else
                 {

@@ -35,7 +35,7 @@ Namespace UserControls
         End Property
 
         Public Function GetResourceID() As Integer
-            Return Request.SelectedPath().ResourceID
+            Return ContextBase.Request.SelectedPath().ResourceID
         End Function
 
         Public Function GetReservationID() As Integer
@@ -82,18 +82,8 @@ Namespace UserControls
         End Function
 
         Private Function GetEmailFromReservation(rsv As Scheduler.Reservation) As String
-            Dim result As String = Page.ClientOrgManager.AccountEmail(rsv.Client, rsv.Account.AccountID)
-
-            If String.IsNullOrEmpty(result) Then
-                ' this happens with remote reservations because the user is not associated with the account
-                result = Page.ClientManager.PrimaryEmail(rsv.Client)
-            End If
-
-            If String.IsNullOrEmpty(result) Then
-                Throw New Exception(String.Format("Cannot find an email for {0} [{1}]", rsv.Client.DisplayName, rsv.Client.ClientID))
-            End If
-
-            Return result
+            Dim r As IReservation = rsv.CreateModel(Of IReservation)
+            Return r.Email
         End Function
 
         Protected Sub Page_Load(sender As Object, e As EventArgs) Handles Me.Load
@@ -110,7 +100,7 @@ Namespace UserControls
                         SetSendTo("Administrator")
                         showCancel = False
                     ElseIf clientId > 0 Then
-                        Dim client As ClientItem = DA.Current.Single(Of ClientInfo)(clientId).CreateClientItem()
+                        Dim client As IClient = DA.Current.Single(Of ClientInfo)(clientId).CreateModel(Of IClient)()
                         If client IsNot Nothing Then
                             SetSendTo(client.DisplayName, client.Email)
                         Else
@@ -192,7 +182,7 @@ Namespace UserControls
 
         Private Function GetRecentReservations(resourceId As Integer) As IList(Of Scheduler.Reservation)
             If resourceId = 0 Then
-                Return DA.SchedulerRepository.SelectRecentReservations(Request.SelectedPath().ResourceID).ToList()
+                Return DA.SchedulerRepository.SelectRecentReservations(ContextBase.Request.SelectedPath().ResourceID).ToList()
             Else
                 Return DA.SchedulerRepository.SelectRecentReservations(resourceId).ToList()
             End If
@@ -224,7 +214,7 @@ Namespace UserControls
                 Dim clients As IList(Of Scheduler.ResourceClientInfo) = ResourceClientUtility.SelectByResource(resourceId, authLevel).ToList()
                 receiverAddr = String.Join(",", clients.Select(Function(x) x.Email))
             ElseIf clientId > 0 Then
-                Dim client As ClientItem = DA.Current.Single(Of ClientInfo)(clientId).CreateClientItem()
+                Dim client As IClient = DA.Current.Single(Of ClientInfo)(clientId).CreateModel(Of IClient)()
                 If client IsNot Nothing Then
                     receiverAddr = client.Email
                 Else
@@ -243,7 +233,7 @@ Namespace UserControls
                 If ddlSendTo.SelectedValue = "Administrator" Then
                     receiverAddr = Properties.Current.SchedulerEmail
                 ElseIf ddlSendTo.SelectedValue = "Tool Engineers" Then
-                    Dim res As ResourceItem = Request.SelectedPath().GetResource()
+                    Dim res As IResource = ContextBase.GetCurrentResource()
                     If res IsNot Nothing Then
                         Dim toolEng As IList(Of ResourceClientItem) = CacheManager.Current.ToolEngineers(res.ResourceID).ToList()
                         If toolEng.Count > 0 Then
@@ -262,7 +252,7 @@ Namespace UserControls
             Return receiverAddr
         End Function
 
-        Protected Sub btnSend_Click(sender As Object, e As EventArgs)
+        Protected Sub BtnSend_Click(sender As Object, e As EventArgs)
             phErrorMessage.Visible = False
             litErrorMessage.Text = String.Empty
 
@@ -282,7 +272,7 @@ Namespace UserControls
                 Dim body As String = String.Empty
                 Dim sb As New StringBuilder()
 
-                Dim res As ResourceItem = Request.SelectedPath().GetResource()
+                Dim res As IResource = ContextBase.GetCurrentResource()
 
                 If res IsNot Nothing Then
                     sb.AppendLine("Resource: " + res.ResourceName)
@@ -313,7 +303,7 @@ Namespace UserControls
 
                 ' Send Email
                 Dim args As New SendMessageArgs With {
-                    .Caller = "LabScheduler.UserControls.Contact.btnSend_Click(object sender, EventArgs e)",
+                    .Caller = "LabScheduler.UserControls.Contact.BtnSend_Click",
                     .ClientID = Page.CurrentUser.ClientID,
                     .Subject = txtSubject.Text,
                     .Body = body,

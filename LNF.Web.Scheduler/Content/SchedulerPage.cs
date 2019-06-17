@@ -1,14 +1,8 @@
-﻿using LNF.Cache;
-using LNF.Models.Data;
+﻿using LNF.Models.Data;
 using LNF.Models.Scheduler;
 using LNF.Scheduler;
 using LNF.Web.Content;
-using LNF.Data;
-using LNF.Repository;
-using LNF.Models.PhysicalAccess;
-using OnlineServices.Api;
-using System.Collections.Generic;
-using OnlineServices.Api.PhysicalAccess;
+using System;
 
 namespace LNF.Web.Scheduler.Content
 {
@@ -19,23 +13,14 @@ namespace LNF.Web.Scheduler.Content
             get { return (SchedulerMasterPage)Page.Master; }
         }
 
-        public IClientManager ClientManager => ServiceProvider.Current.Use<IClientManager>();
-        public IClientOrgManager ClientOrgManager => ServiceProvider.Current.Use<IClientOrgManager>();
-        public IAccountManager AccountManager => ServiceProvider.Current.Use<IAccountManager>();
-        public IReservationManager ReservationManager => ServiceProvider.Current.Use<IReservationManager>();
-        public IReservationInviteeManager ReservationInviteeManager => ServiceProvider.Current.Use<IReservationInviteeManager>();
-        public IResourceManager ResourceManager => ServiceProvider.Current.Use<IResourceManager>();
-        public IEmailManager EmailManager => ServiceProvider.Current.Use<IEmailManager>();
-        public IProcessInfoManager ProcessInfoManager => ServiceProvider.Current.Use<IProcessInfoManager>();
-
         public override ClientPrivilege AuthTypes
         {
             get { return PageSecurity.DefaultAuthTypes; }
         }
 
-        public virtual ResourceItem GetCurrentResource()
+        public virtual IResource GetCurrentResource()
         {
-            return Request.SelectedPath().GetResource();
+            return ContextBase.GetCurrentResourceTreeItem();
         }
 
         /// <summary>
@@ -43,7 +28,7 @@ namespace LNF.Web.Scheduler.Content
         /// </summary>
         public ViewType GetCurrentView()
         {
-            return CacheManager.Current.CurrentViewType();
+            return ContextBase.GetCurrentViewType();
         }
 
         /// <summary>
@@ -51,7 +36,41 @@ namespace LNF.Web.Scheduler.Content
         /// </summary>
         public void SetCurrentView(ViewType value)
         {
-            CacheManager.Current.CurrentViewType(value);
+            ContextBase.SetCurrentViewType(value);
+        }
+
+        /// <summary>
+        /// Redirects to page adding Path and Date querystring parameters.
+        /// </summary>
+        /// <param name="page">The page to redirect to including. For example "ResourceDayWeek.aspx"</param>
+        protected void Redirect(string page)
+        {
+            Response.Redirect(string.Format("~/{0}?Path={1}&Date={2:yyyy-MM-dd}", page, ContextBase.Request.SelectedPath().UrlEncode(), ContextBase.Request.SelectedDate()));
+        }
+
+        /// <summary>
+        /// Redirects to page adding Path and Date querystring parameters.
+        /// </summary>
+        /// <param name="page">The page to redirect to including. For example "ResourceDayWeek.aspx"</param>
+        /// <param name="endResponse">Indicates whether execution of the current page should terminate.</param>
+        protected void Redirect(string page, bool endResponse)
+        {
+            Response.Redirect(string.Format("~/{0}?Path={1}&Date={2:yyyy-MM-dd}", page, ContextBase.Request.SelectedPath().UrlEncode(), ContextBase.Request.SelectedDate()), endResponse);
+        }
+
+        /// <summary>
+        /// Redirects to page adding Date and ResevationID querystring parameters.
+        /// </summary>
+        /// <param name="page">The page to redirect to including. For example "Reservation.aspx"</param>
+        /// <param name="reservationId">The ReservationID to add to the querystring.</param>
+        protected void Redirect(string page, int reservationId)
+        {
+            Response.Redirect(string.Format("~/{0}?Date={1:yyyy-MM-dd}&ReservationID={2}", page, ContextBase.Request.SelectedDate(), reservationId));
+        }
+
+        public ReservationUtility GetReservationUtility(DateTime now)
+        {
+            return new ReservationUtility(now, Provider);
         }
     }
 }

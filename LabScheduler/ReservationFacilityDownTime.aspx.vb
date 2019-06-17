@@ -1,10 +1,8 @@
 ﻿Imports LabScheduler.AppCode.DBAccess
-Imports LNF.Repository
-Imports LNF.Repository.Data
+Imports LNF.Models.Scheduler
 Imports LNF.Scheduler
 Imports LNF.Web.Scheduler
 Imports LNF.Web.Scheduler.Content
-Imports repo = LNF.Repository.Scheduler
 
 Namespace Pages
     Public Class ReservationFacilityDownTime
@@ -20,7 +18,7 @@ Namespace Pages
         End Sub
 
         'Set default time, which is now
-        Protected Sub ddlAMPM_DataBound(sender As Object, e As EventArgs)
+        Protected Sub DdlAMPM_DataBound(sender As Object, e As EventArgs)
             Dim tmp As Integer = 11
 
             Dim ddl As DropDownList = CType(sender, DropDownList)
@@ -40,7 +38,7 @@ Namespace Pages
             End If
         End Sub
 
-        Protected Sub ddlHour_DataBound(sender As Object, e As EventArgs)
+        Protected Sub DdlHour_DataBound(sender As Object, e As EventArgs)
             Dim ddl As DropDownList = CType(sender, DropDownList)
 
             Dim tempTime As Date
@@ -66,7 +64,7 @@ Namespace Pages
             Next
         End Sub
 
-        Protected Sub ddlMin_DataBound(sender As Object, e As EventArgs)
+        Protected Sub DdlMin_DataBound(sender As Object, e As EventArgs)
             Dim ddl As DropDownList = CType(sender, DropDownList)
 
             Dim tempTime As Date
@@ -86,7 +84,7 @@ Namespace Pages
             Next
         End Sub
 
-        Protected Sub btnReserve_Click(sender As Object, e As EventArgs)
+        Protected Sub BtnReserve_Click(sender As Object, e As EventArgs)
             ClearAlert()
 
             'Calculate the correct time format (AM/PM)
@@ -116,42 +114,27 @@ Namespace Pages
             Dim clientId As Integer = CType(Session("ClientID"), Integer)
             Dim groupId As Integer = FacilityDownTimeDB.CreateNew(clientId, beginDateTime, endDateTime)
 
+            ' If we ever want to allow notes for FDT reservations, do it here.
+            Dim notes As String = String.Empty
+
             'Loop through each selected tool and make reservation and delete other people's reservation
             For Each resourceId As Integer In toolIdList
-                Dim rsv As repo.Reservation = New repo.Reservation With {
-                    .Resource = DA.Current.Single(Of repo.Resource)(resourceId),
-                    .RecurrenceID = -1, 'always -1 for non-recurring reservation
-                    .GroupID = groupId,
-                    .Client = DA.Current.Single(Of Client)(clientId),
-                    .BeginDateTime = beginDateTime,
-                    .EndDateTime = endDateTime,
-                    .ActualBeginDateTime = beginDateTime, 'is this correct?
-                    .ActualEndDateTime = endDateTime, 'is this correct?
-                    .LastModifiedOn = Date.Now,
-                    .Account = DA.Current.Single(Of Account)(Properties.Current.LabAccount.AccountID),
-                    .Activity = DA.Current.Single(Of Scheduler.Activity)(Properties.Current.Activities.FacilityDownTime),
-                    .Duration = (beginDateTime - endDateTime).Duration.TotalMinutes,
-                    .Notes = txtNotes.Text,
-                    .AutoEnd = False,
-                    .HasProcessInfo = False,
-                    .HasInvitees = False,
-                    .CreatedOn = Date.Now
-                }
-
                 ' Find and Remove any un-started reservations made during time of repair
-                Dim query As IList(Of repo.Reservation) = ReservationManager.SelectByResource(resourceId, beginDateTime, endDateTime, False)
-                For Each existing As repo.Reservation In query
+                Dim query As IEnumerable(Of IReservation) = Provider.Scheduler.Reservation.SelectByResource(resourceId, beginDateTime, endDateTime, False)
+
+                For Each existing As IReservation In query
                     ' Only if the reservation has not begun
                     If existing.ActualBeginDateTime Is Nothing Then
-                        ReservationManager.Delete(existing, CurrentUser.ClientID)
-                        EmailManager.EmailOnCanceledByRepair(existing, True, "LNF Facility Down", "Facility is down, thus we have to disable the tool.", endDateTime)
+                        Provider.Scheduler.Reservation.CancelAndForgive(existing.ReservationID, CurrentUser.ClientID)
+                        Provider.EmailManager.EmailOnCanceledByRepair(existing, True, "LNF Facility Down", "Facility is down, thus we have to disable the tool.", endDateTime, CurrentUser.ClientID)
                     Else
                         'We have to disable all those reservations that have been activated by setting isActive to 0.  
                         'The catch here is that we must compare the "Actual" usage time with the repair time because if the user ends the reservation before the repair starts, we still 
                         'have to charge the user for that reservation
                     End If
                 Next
-                ReservationManager.InsertFacilityDownTime(rsv, CurrentUser.ClientID)
+
+                Provider.Scheduler.Reservation.InsertFacilityDownTime(resourceId, clientId, groupId, beginDateTime, endDateTime, notes, CurrentUser.ClientID)
             Next
 
             GridDataBind()
@@ -161,7 +144,7 @@ Namespace Pages
             ShowAlert("success", String.Format("You've created Facility Down Time reservation from {0} to {1} on {2} tools. User's reservations have been deleted as well.", beginDateTime, endDateTime, toolIdList.Count))
         End Sub
 
-        Protected Sub btnBack_Click(sender As Object, e As EventArgs)
+        Protected Sub BtnBack_Click(sender As Object, e As EventArgs)
             Response.Redirect("~")
         End Sub
 
@@ -174,7 +157,7 @@ Namespace Pages
 
                 hidGroupID.Value = groupId.ToString()
 
-                lboxModify.DataSource = ReservationManager.SelectByGroup(groupId).Select(Function(x) New With {.ResourceID = x.Resource.ResourceID, .ResourceName = x.Resource.ResourceName}).ToList()
+                lboxModify.DataSource = Provider.Scheduler.Reservation.SelectByGroup(groupId).Select(Function(x) New With {x.ResourceID, x.ResourceName}).ToList()
                 lboxModify.DataBind()
 
                 resFacilityDownTime = FacilityDownTimeDB.GetFacilityDownTimeByGroupID(groupId)
@@ -239,7 +222,7 @@ Namespace Pages
                 FacilityDownTimeDB.DeleteGroupReservations(groupId)
 
                 'delete all the future reservations and keep the old ones
-                ReservationManager.DeleteByGroup(groupId, CurrentUser.ClientID)
+                Provider.Scheduler.Reservation.CancelByGroup(groupId, CurrentUser.ClientID)
 
                 GridDataBind()
 
@@ -286,7 +269,7 @@ Namespace Pages
             rptFDT.DataBind()
         End Sub
 
-        Protected Sub rptFDT_ItemDataBound(sender As Object, e As RepeaterItemEventArgs)
+        Protected Sub RptFDT_ItemDataBound(sender As Object, e As RepeaterItemEventArgs)
             If e.Item.ItemType = ListItemType.Item OrElse e.Item.ItemType = ListItemType.AlternatingItem Then
                 Dim dataItem As Object = e.Item.DataItem
                 Dim drv As DataRowView = CType(dataItem, DataRowView)
@@ -298,7 +281,7 @@ Namespace Pages
             End If
         End Sub
 
-        Protected Sub btnUpdateModify_Click(sender As Object, e As EventArgs)
+        Protected Sub BtnUpdateModify_Click(sender As Object, e As EventArgs)
             ClearAlert()
 
             'Calculate the correct time format (AM/PM)
@@ -314,17 +297,17 @@ Namespace Pages
             FacilityDownTimeDB.UpdateByGroupID(CType(hidGroupID.Value, Integer), beginDateTime, endDateTime)
 
             'Update the individual reservations
-            ReservationManager.UpdateByGroup(CType(hidGroupID.Value, Integer), beginDateTime, endDateTime, txtNotesModify.Text, CurrentUser.ClientID)
+            Provider.Scheduler.Reservation.UpdateByGroup(CType(hidGroupID.Value, Integer), beginDateTime, endDateTime, txtNotesModify.Text, CurrentUser.ClientID)
 
             'Delete all the reservations in this period
             For Each res As ListItem In lboxModify.Items
                 ' Find and Remove any un-started reservations made during time of repair
-                Dim query As IList(Of repo.Reservation) = ReservationManager.SelectByResource(Convert.ToInt32(res.Value), beginDateTime, endDateTime, False)
-                For Each existing As repo.Reservation In query
+                Dim query As IEnumerable(Of IReservation) = Provider.Scheduler.Reservation.SelectByResource(Convert.ToInt32(res.Value), beginDateTime, endDateTime, False)
+                For Each existing As IReservation In query
                     ' Only if the reservation has not begun
                     If existing.ActualBeginDateTime Is Nothing Then
-                        ReservationManager.Delete(existing, CurrentUser.ClientID)
-                        EmailManager.EmailOnCanceledByRepair(existing, True, "LNF Facility Down", "Facility is down, thus we have to disable the tool. Notes:", endDateTime)
+                        Provider.Scheduler.Reservation.CancelReservation(existing.ReservationID, CurrentUser.ClientID)
+                        Provider.EmailManager.EmailOnCanceledByRepair(existing, True, "LNF Facility Down", "Facility is down, thus we have to disable the tool. Notes:", endDateTime, CurrentUser.ClientID)
                     Else
                         'We have to disable all those reservations that have been activated by setting isActive to 0.  
                         'The catch here is that we must compare the "Actual" usage time with the repair time because if the user ends the reservation before the repair starts, we still 
@@ -338,7 +321,7 @@ Namespace Pages
             CancelModify()
         End Sub
 
-        Protected Sub btnBackModify_Click(sender As Object, e As EventArgs)
+        Protected Sub BtnBackModify_Click(sender As Object, e As EventArgs)
             CancelModify()
         End Sub
 

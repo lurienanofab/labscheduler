@@ -1,5 +1,4 @@
-﻿Imports LNF.Web
-Imports LNF.Web.Scheduler
+﻿Imports LNF.Web.Scheduler
 Imports LNF.Web.Scheduler.Content
 
 Namespace Pages
@@ -15,11 +14,11 @@ Namespace Pages
                 End If
 
                 ' If client logged in from a Kiosk (or is in a lab), then display My Reservations page
-                If Context.ClientInLab() AndAlso Not Request.QueryString.ToString().Contains("Home") Then
+                If ContextBase.ClientInLab() AndAlso Not Request.QueryString.ToString().Contains("Home") Then
                     Response.Redirect("~/UserReservations.aspx", True)
                 End If
 
-                litDisplayName.Text = Context.CurrentUser().DisplayName
+                litDisplayName.Text = CurrentUser.DisplayName
             End If
         End Sub
     End Class

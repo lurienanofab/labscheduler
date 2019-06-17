@@ -17,16 +17,16 @@ Namespace UserControls
             Dim startTime As Date = Date.Now
 
             If Not Page.IsPostBack Then
-                If Request.SelectedPath().ResourceID = 0 Then
+                If ContextBase.Request.SelectedPath().ResourceID = 0 Then
                     Visible = False
                     Return
                 End If
 
                 ' Resource Engineers
-                Dim res As ResourceItem = Nothing
+                Dim res As IResource = Nothing
 
                 Try
-                    res = Request.SelectedPath().GetResource()
+                    res = ContextBase.GetCurrentResource()
                     If res Is Nothing Then
                         Return
                     End If
@@ -38,21 +38,22 @@ Namespace UserControls
                 '    .Where(Function(x) x.Resource.ResourceID = res.ResourceID).ToArray() _
                 '    .Where(Function(x) x.HasAuth(ClientAuthLevel.ToolEngineer)).ToArray()
 
-                Dim item As New ResourceInfoItem()
-                item.ResourceID = res.ResourceID
-                item.ResourceName = String.Format("{0}: {1}", res.ResourceID, res.ResourceName)
-                item.ReservationFence = Convert.ToInt32(res.ReservFence.TotalHours)
-                item.MinReservationTime = Convert.ToInt32(res.MinReservTime.TotalMinutes)
-                item.MaxReservationTime = Convert.ToInt32(res.MaxReservTime.TotalHours)
-                item.MaxAlloc = Convert.ToInt32(res.MaxAlloc.TotalHours)
-                item.MinCancelTime = Convert.ToInt32(res.MinCancelTime.TotalMinutes)
-                item.GracePeriod = Convert.ToInt32(res.GracePeriod.TotalMinutes)
-                item.AutoEnd = Convert.ToInt32(res.AutoEnd.TotalMinutes)
+                Dim item As New ResourceInfoItem() With {
+                    .ResourceID = res.ResourceID,
+                    .ResourceName = String.Format("{0}: {1}", res.ResourceID, res.ResourceName),
+                    .ReservationFence = Convert.ToInt32(TimeSpan.FromMinutes(res.ReservFence).TotalHours),
+                    .MinReservationTime = Convert.ToInt32(res.MinReservTime),
+                    .MaxReservationTime = Convert.ToInt32(TimeSpan.FromMinutes(res.MaxReservTime).TotalHours),
+                    .MaxAlloc = Convert.ToInt32(TimeSpan.FromMinutes(res.MaxAlloc).TotalHours),
+                    .MinCancelTime = Convert.ToInt32(res.MinCancelTime),
+                    .GracePeriod = Convert.ToInt32(res.GracePeriod),
+                    .AutoEnd = Convert.ToInt32(res.ResourceAutoEnd)
+                }
 
                 Dim perUseCost As Decimal = 0
                 Dim perHourCost As Decimal = 0
 
-                Dim cost As ResourceCost = CacheManager.Current.GetResourceCost(res.ResourceID)
+                Dim cost As IResourceCost = CacheManager.Current.GetResourceCost(res.ResourceID, CurrentUser.MaxChargeTypeID)
 
                 If cost IsNot Nothing Then
                     perUseCost = cost.PerUseRate()
@@ -72,7 +73,7 @@ Namespace UserControls
 
         Private Function GetToolEngineers() As List(Of ToolEngineerItem)
             Dim result As List(Of ToolEngineerItem) = New List(Of ToolEngineerItem)()
-            Dim toolEngineers As IList(Of ResourceClientItem) = CacheManager.Current.ToolEngineers(Request.SelectedPath().ResourceID).ToList()
+            Dim toolEngineers As IList(Of ResourceClientItem) = CacheManager.Current.ToolEngineers(ContextBase.Request.SelectedPath().ResourceID).ToList()
 
             If String.IsNullOrEmpty(hidResourceID.Value) OrElse toolEngineers Is Nothing OrElse toolEngineers.Count = 0 Then
                 'tdEngineers.InnerText = "Unknown"
@@ -81,7 +82,7 @@ Namespace UserControls
                 'Resources Administration tab. This means we should always select the engineers for
                 'the current resource.
                 For Each te As ResourceClientItem In toolEngineers
-                    Dim item As New ToolEngineerItem With {
+                    Dim item As New ToolEngineerItem(ContextBase) With {
                         .ClientID = te.ClientID,
                         .DisplayName = te.DisplayName,
                         .Email = te.Email
@@ -93,7 +94,7 @@ Namespace UserControls
             Return result
         End Function
 
-        Protected Sub rptResourceInfo_ItemDataBound(sender As Object, e As RepeaterItemEventArgs)
+        Protected Sub RptResourceInfo_ItemDataBound(sender As Object, e As RepeaterItemEventArgs)
             If e.Item.ItemType = ListItemType.Item OrElse e.Item.ItemType = ListItemType.AlternatingItem Then
                 Dim rptToolEngineers As Repeater = CType(e.Item.FindControl("rptToolEngineers"), Repeater)
                 rptToolEngineers.DataSource = GetToolEngineers()
@@ -116,13 +117,19 @@ Namespace UserControls
     End Class
 
     Public Class ToolEngineerItem
+        Private _context As HttpContextBase
+
         Public Property ClientID As Integer
         Public Property DisplayName As String
         Public Property Email As String
 
+        Public Sub New(context As HttpContextBase)
+            _context = context
+        End Sub
+
         Public ReadOnly Property Url As String
             Get
-                Return VirtualPathUtility.ToAbsolute(String.Format("~/Contact.aspx?ClientID={0}&Path={1}&Date={2:yyyy-MM-dd}", ClientID, HttpContext.Current.Request.SelectedPath(), HttpContext.Current.Request.SelectedDate()))
+                Return VirtualPathUtility.ToAbsolute(String.Format("~/Contact.aspx?ClientID={0}&Path={1}&Date={2:yyyy-MM-dd}", ClientID, _context.Request.SelectedPath(), _context.Request.SelectedDate()))
             End Get
         End Property
     End Class

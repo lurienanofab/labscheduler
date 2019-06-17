@@ -125,7 +125,7 @@
 
         <input type="hidden" runat="server" id="hidSelectedDate" class="selected-date" />
 
-        <asp:Repeater runat="server" ID="rptMenu" OnItemDataBound="rptMenu_ItemDataBound">
+        <asp:Repeater runat="server" ID="rptMenu" OnItemDataBound="RptMenu_ItemDataBound">
             <HeaderTemplate>
                 <nav class="lnf navbar navbar-default navbar-fixed-top">
                     <div class="container-fluid">

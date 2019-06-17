@@ -57,7 +57,7 @@ Namespace Pages
             If ResourceID = 0 Then
                 LoadEditForm(Nothing)
             Else
-                Dim res As IResource = CacheManager.Current.ResourceTree().GetResource(ResourceID)
+                Dim res As IResource = ContextBase.ResourceTree().GetResource(ResourceID)
                 If res IsNot Nothing Then
                     LoadEditForm(res)
                 Else
@@ -109,7 +109,7 @@ Namespace Pages
 
         Private Sub LoadResources()
             Dim start As Date = Date.Now
-            Dim query As IEnumerable(Of ResourceTreeItem) = CacheManager.Current.ResourceTree().Resources()
+            Dim query As IEnumerable(Of ResourceTreeItem) = ContextBase.ResourceTree().Resources()
             Dim secondsTaken As Double = (Date.Now - start).TotalSeconds
             Dim items As IList(Of ResourceTableItem) = ResourceTableItem.CreateList(query)
             rptResources.DataSource = items
@@ -163,7 +163,7 @@ Namespace Pages
 
             Private Function GetToolEngineer() As String
                 Dim result As String = String.Empty
-                Dim toolEngineers As IList(Of ResourceClientInfo) = DA.Current.Query(Of ResourceClientInfo)().Where(Function(x) x.ResourceID = Resource.ResourceID).ToList().Where(Function(x) x.HasAuth(Convert.ToInt32(ClientAuthLevel.ToolEngineer))).ToList()
+                Dim toolEngineers As IList(Of ResourceClientInfo) = DA.Current.Query(Of ResourceClientInfo)().Where(Function(x) x.ResourceID = Resource.ResourceID).ToList().Where(Function(x) x.HasAuth(ClientAuthLevel.ToolEngineer)).ToList()
                 For Each te As ResourceClientInfo In toolEngineers
                     result += String.Format("<div>{0}</div>", te.DisplayName)
                 Next

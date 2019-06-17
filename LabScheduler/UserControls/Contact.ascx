@@ -68,7 +68,7 @@
             </div>
             <div class="form-group">
                 <div class="col-sm-offset-2 col-sm-10">
-                    <asp:Button runat="server" ID="btnSend" Text="Send Email Now!" CssClass="lnf btn btn-default" OnClick="btnSend_Click"></asp:Button>
+                    <asp:Button runat="server" ID="btnSend" Text="Send Email Now!" CssClass="lnf btn btn-default" OnClick="BtnSend_Click"></asp:Button>
                     <asp:HyperLink runat="server" ID="hypCancel" CssClass="lnf btn btn-default">Cancel</asp:HyperLink>
                 </div>
             </div>

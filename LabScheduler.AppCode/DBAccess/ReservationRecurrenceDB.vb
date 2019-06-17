@@ -7,7 +7,7 @@ Namespace DBAccess
         Public Shared Function SelectRecurringByID(ByVal RecurrenceID As Integer) As ReservationRecurrence
             Dim cmd As DataCommandBase = DA.Command().Param("Action", "ByRecurrenceID").Param("RecurrenceID", RecurrenceID)
 
-            Using dr As IDataReader = cmd.ExecuteReader("sselScheduler.dbo.procReservationRecurrenceSelect")
+            Using dr As ExecuteReaderResult = cmd.ExecuteReader("sselScheduler.dbo.procReservationRecurrenceSelect")
                 Dim rr As New ReservationRecurrence()
                 Dim act As New Activity()
                 Dim res As New Resource()

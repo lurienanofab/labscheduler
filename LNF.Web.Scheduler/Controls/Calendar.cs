@@ -7,12 +7,9 @@ using System.Web.UI.WebControls;
 
 namespace LNF.Web.Scheduler.Controls
 {
-    public class Calendar : WebControl
+    public class Calendar : SchedulerWebControl
     {
-        public DateTime GetSelectedMonth()
-        {
-            return GetFirstOfMonth(Page.Request.SelectedDate());
-        }
+        public DateTime GetSelectedMonth() => GetFirstOfMonth(ContextBase.Request.SelectedDate());
 
         public string[] ColumnHeaders { get; set; }
 
@@ -22,10 +19,10 @@ namespace LNF.Web.Scheduler.Controls
 
         public override void RenderBeginTag(HtmlTextWriter writer)
         {
-            writer.AddAttribute("data-date", Page.Request.SelectedDate().ToString("yyyy-MM-dd"));
+            writer.AddAttribute("data-date", ContextBase.Request.SelectedDate().ToString("yyyy-MM-dd"));
             writer.AddAttribute("data-month", GetSelectedMonth().ToString("yyyy-MM-dd"));
             //writer.AddAttribute("data-returnto", ReturnTo);
-            writer.AddAttribute("data-pathinfo", Page.Request.SelectedPath().ToString());
+            writer.AddAttribute("data-pathinfo", SelectedPathFromViewState.ToString());
             writer.AddAttribute("data-headers", string.Join(",", ColumnHeaders));
             base.RenderBeginTag(writer);
         }
@@ -86,13 +83,17 @@ namespace LNF.Web.Scheduler.Controls
 
         private Table CreateTable()
         {
-            Table table = new Table();
-            table.CssClass = "calendar-table";
+            Table table = new Table()
+            {
+                CssClass = "calendar-table"
+            };
 
             TableRow row;
 
-            row = new TableRow();
-            row.TableSection = TableRowSection.TableHeader;
+            row = new TableRow()
+            {
+                TableSection = TableRowSection.TableHeader
+            };
 
             foreach (string s in ColumnHeaders)
                 row.Cells.Add(new TableHeaderCell() { Text = s });
@@ -101,8 +102,11 @@ namespace LNF.Web.Scheduler.Controls
 
             foreach (CalendarWeek cw in Weeks)
             {
-                row = new TableRow();
-                row.TableSection = TableRowSection.TableBody;
+                row = new TableRow()
+                {
+                    TableSection = TableRowSection.TableBody
+                };
+
                 row.Cells.Add(CreateDayCell(cw.Sunday));
                 row.Cells.Add(CreateDayCell(cw.Monday));
                 row.Cells.Add(CreateDayCell(cw.Tuesday));
@@ -130,7 +134,7 @@ namespace LNF.Web.Scheduler.Controls
             if (d == DateTime.Now.Date)
                 cell.CssClass = "date-today";
 
-            if (d == Page.Request.SelectedDate().Date)
+            if (d == ContextBase.Request.SelectedDate().Date)
                 cell.CssClass = "date-selected";
 
             HyperLink link = new HyperLink();
@@ -157,14 +161,17 @@ namespace LNF.Web.Scheduler.Controls
 
         private CalendarWeek CreateCalendarWeek(DateTime date)
         {
-            CalendarWeek cw = new CalendarWeek();
-            cw.Sunday = date;
-            cw.Monday = date.AddDays(1);
-            cw.Tuesday = date.AddDays(2);
-            cw.Wednesday = date.AddDays(3);
-            cw.Thursday = date.AddDays(4);
-            cw.Friday = date.AddDays(5);
-            cw.Saturday = date.AddDays(6);
+            CalendarWeek cw = new CalendarWeek()
+            {
+                Sunday = date,
+                Monday = date.AddDays(1),
+                Tuesday = date.AddDays(2),
+                Wednesday = date.AddDays(3),
+                Thursday = date.AddDays(4),
+                Friday = date.AddDays(5),
+                Saturday = date.AddDays(6)
+            };
+
             return cw;
         }
 

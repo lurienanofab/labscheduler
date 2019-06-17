@@ -4,24 +4,22 @@ Imports LNF.CommonTools
 Imports LNF.Data
 Imports LNF.Models.Data
 Imports LNF.Models.Scheduler
-Imports LNF.Repository
 Imports LNF.Scheduler.Data
 Imports LNF.Web.Scheduler
 Imports LNF.Web.Scheduler.Content
 Imports Data = LNF.Repository.Data
-Imports Scheduler = LNF.Repository.Scheduler
 
 Namespace Pages
     Public Class ReservationHistory
         Inherits SchedulerPage
 
-        Private _EditReservation As ReservationItem
+        Private _EditReservation As IReservation
 
-        Private _holidays As IEnumerable(Of Data.Holiday)
+        Private _holidays As IEnumerable(Of IHoliday)
         Private _maxForgivenDay As Integer = Integer.Parse(Utility.GetRequiredAppSetting("MaxForgivenDay"))
 
-        Private Function GetClient() As ClientItem
-            Dim c As ClientItem = Nothing
+        Private Function GetClient() As IClient
+            Dim c As IClient = Nothing
             Dim cid As Integer = 0
             Dim trUserVisible = True 'trUser.Visible
             If trUserVisible Then
@@ -46,11 +44,11 @@ Namespace Pages
         End Property
 
 
-        Public ReadOnly Property EditReservation As ReservationItem
+        Public ReadOnly Property EditReservation As IReservation
             Get
                 If _EditReservation Is Nothing OrElse _EditReservation.ReservationID <> EditReservationID Then
                     If EditReservationID > 0 Then
-                        _EditReservation = ServiceProvider.Current.Scheduler.GetReservation(EditReservationID)
+                        _EditReservation = Provider.Scheduler.Reservation.GetReservation(EditReservationID)
                     Else
                         _EditReservation = Nothing
                     End If
@@ -145,7 +143,7 @@ Namespace Pages
             Dim sd As Date = ReservationHistoryUtility.GetStartDate(txtStartDate.Text)
             Dim ed As Date = ReservationHistoryUtility.GetEndDate(txtEndDate.Text)
 
-            Dim client As ClientItem = GetClient()
+            Dim client As IClient = GetClient()
 
             Session("SelectedClientID") = client.ClientID
             Session("SelectedRange") = Integer.Parse(ddlRange.SelectedValue)
@@ -195,13 +193,13 @@ Namespace Pages
         End Sub
 
         Private Sub LoadEditForm()
-            Dim holidays As IEnumerable(Of Data.Holiday) = GetHolidays()
-            Dim canForgive As Boolean = ReservationHistoryUtility.ReservationCanBeForgiven(CurrentUser, EditReservation, DateTime.Now, _maxForgivenDay, holidays)
-            Dim canChangeAcct As Boolean = ReservationHistoryUtility.ReservationAccountCanBeChanged(CurrentUser, EditReservation, DateTime.Now, holidays)
+            Dim holidays As IEnumerable(Of IHoliday) = GetHolidays()
+            Dim canForgive As Boolean = ReservationHistoryUtility.ReservationCanBeForgiven(CurrentUser, EditReservation, Date.Now, _maxForgivenDay, holidays)
+            Dim canChangeAcct As Boolean = ReservationHistoryUtility.ReservationAccountCanBeChanged(CurrentUser, EditReservation, Date.Now, holidays)
             Dim canChangeNotes As Boolean = ReservationHistoryUtility.ReservationNotesCanBeChanged(CurrentUser, EditReservation)
 
             litReservationID.Text = EditReservation.ReservationID.ToString()
-            litResourceName.Text = EditReservation.GetResourceDisplayName()
+            litResourceName.Text = EditReservation.ResourceDisplayName
             litActivityName.Text = EditReservation.ActivityName
             litIsStarted.Text = If(EditReservation.IsStarted, "Yes", "No")
             litIsCanceled.Text = If(IsCanceled(EditReservation.IsActive), "Yes", "No")
@@ -211,7 +209,7 @@ Namespace Pages
 
             '2012-10-23 It's possible that there are no available accounts. For example
             'a remote processing run where no one was ever invited.
-            Dim availAccts As List(Of ClientAccountItem) = ReservationManager.AvailableAccounts(EditReservation).ToList()
+            Dim availAccts As List(Of IClientAccount) = Provider.Scheduler.Reservation.AvailableAccounts(EditReservation).ToList()
             Dim accts As IEnumerable(Of IAccount) = Nothing
 
             If availAccts IsNot Nothing Then
@@ -219,7 +217,7 @@ Namespace Pages
             End If
 
             If accts IsNot Nothing Then
-                ddlEditReservationAccount.DataSource = AccountManager.ConvertToAccountTable(accts.ToList())
+                ddlEditReservationAccount.DataSource = Provider.Data.Account.ConvertToAccountTable(accts.ToList())
                 ddlEditReservationAccount.DataBind()
             Else
                 ddlEditReservationAccount.Visible = False
@@ -235,13 +233,13 @@ Namespace Pages
             ddlEditReservationAccount.Enabled = canChangeAcct
             litReservedBeginDateTime.Text = EditReservation.BeginDateTime.ToString("MM/dd/yyyy hh:mm:ss tt")
             litReservedEndDateTime.Text = EditReservation.EndDateTime.ToString("MM/dd/yyyy hh:mm:ss tt")
-            litReservedRegularDuration.Text = EditReservation.ReservedDuration().ToString("#0.0")
+            litReservedRegularDuration.Text = EditReservation.GetReservedDuration().TotalMinutes.ToString("#0.0")
 
             If (EditReservation.IsStarted) Then
                 litActualBeginDateTime.Text = If(EditReservation.ActualBeginDateTime Is Nothing, "--", EditReservation.ActualBeginDateTime.Value.ToString("MM/dd/yyyy hh:mm:ss tt"))
                 litActualEndDateTime.Text = If(EditReservation.ActualEndDateTime Is Nothing, "--", EditReservation.ActualEndDateTime.Value.ToString("MM/dd/yyyy hh:mm:ss tt"))
-                litActualRegularDuration.Text = EditReservation.ActualDuration().ToString("#0.0")
-                litActualOvertimeDuration.Text = EditReservation.Overtime().ToString("#0.0")
+                litActualRegularDuration.Text = EditReservation.GetActualDuration().TotalMinutes.ToString("#0.0")
+                litActualOvertimeDuration.Text = EditReservation.GetOvertimeDuration().TotalMinutes.ToString("#0.0")
             Else
                 litActualBeginDateTime.Text = "--"
                 litActualEndDateTime.Text = "--"
@@ -249,10 +247,10 @@ Namespace Pages
                 litActualOvertimeDuration.Text = "--"
             End If
 
-            litChargeableBeginDateTime.Text = EditReservation.ChargeBeginDateTime().ToString("MM/dd/yyyy hh:mm:ss tt")
-            litChargeableEndDateTime.Text = EditReservation.ChargeEndDateTime().ToString("MM/dd/yyyy hh:mm:ss tt")
-            litChargeableRegularDuration.Text = EditReservation.ChargeDuration().ToString("#0.0")
-            litChargeableOvertimeDuration.Text = If(EditReservation.IsStarted, EditReservation.Overtime().ToString("#0.0"), "0.0")
+            litChargeableBeginDateTime.Text = EditReservation.ChargeBeginDateTime.ToString("MM/dd/yyyy hh:mm:ss tt")
+            litChargeableEndDateTime.Text = EditReservation.ChargeEndDateTime.ToString("MM/dd/yyyy hh:mm:ss tt")
+            litChargeableRegularDuration.Text = EditReservation.GetChargeDuration().TotalMinutes.ToString("#0.0")
+            litChargeableOvertimeDuration.Text = If(EditReservation.IsStarted, EditReservation.GetOvertimeDuration().TotalMinutes.ToString("#0.0"), "0.0")
             litForgiveAmount.Text = (1 - EditReservation.ChargeMultiplier).ToString("#0.0%")
             trForgiveForm.Visible = canForgive
             txtForgiveAmount.Text = String.Empty
@@ -274,14 +272,14 @@ Namespace Pages
 
         Private Function InviteeListHTML() As String
             Dim sb As New StringBuilder()
-            For Each item As Scheduler.ReservationInvitee In ReservationManager.GetInvitees(EditReservationID)
-                sb.AppendLine(String.Format("<div>{0}</div>", item.Invitee.DisplayName))
+            For Each item As IReservationInvitee In Provider.Scheduler.Reservation.GetInvitees(EditReservationID)
+                sb.AppendLine($"<div>{item.DisplayName}</div>")
             Next
             Return sb.ToString()
         End Function
 
         ' this overload is called from the aspx page
-        Protected Overloads Function IsBeforeForgiveCutoff(item As ReservationHistoryItem) As Boolean
+        Protected Overloads Function IsBeforeForgiveCutoff(item As Web.Scheduler.ReservationHistoryItem) As Boolean
             Return ReservationHistoryUtility.IsBeforeForgiveCutoff(item, Date.Now, _maxForgivenDay, GetHolidays())
         End Function
 
@@ -315,7 +313,7 @@ Namespace Pages
                 Dim period As DateTime = EditReservation.ChargeBeginDateTime.FirstOfMonth()
                 Dim clientId As Integer = EditReservation.ClientID
 
-                Dim result = ReservationManager.SaveReservationHistory(EditReservation, accountId, forgivenPct, txtNotes.Text, chkEmailClient.Checked)
+                Dim result = Provider.Scheduler.Reservation.SaveReservationHistory(EditReservation, accountId, forgivenPct, txtNotes.Text, chkEmailClient.Checked)
 
                 If result.ReservationUpdated Then
                     alertText += "<div>&bull; Reservation updated OK!</div>"
@@ -347,7 +345,7 @@ Namespace Pages
             End If
         End Function
 
-        Protected Function GetRowCssClass(item As ReservationHistoryItem) As String
+        Protected Function GetRowCssClass(item As Web.Scheduler.ReservationHistoryItem) As String
             If item.IsCanceledForModification Then
                 Return "canceled-for-modification"
             Else
@@ -355,8 +353,8 @@ Namespace Pages
             End If
         End Function
 
-        Protected Function GetEditUrl(item As ReservationHistoryItem) As String
-            Return String.Format("~/ReservationHistory.aspx?Date={0:yyyy-MM-dd}&ReservationID={1}", Request.SelectedDate(), item.ReservationID)
+        Protected Function GetEditUrl(item As Web.Scheduler.ReservationHistoryItem) As String
+            Return String.Format("~/ReservationHistory.aspx?Date={0:yyyy-MM-dd}&ReservationID={1}", ContextBase.Request.SelectedDate(), item.ReservationID)
         End Function
 
         Private Sub ShowSaveAlert(text As String, Optional type As String = "danger")
@@ -383,10 +381,10 @@ Namespace Pages
             Return 0
         End Function
 
-        Private Function GetHolidays() As IEnumerable(Of Data.Holiday)
+        Private Function GetHolidays() As IEnumerable(Of IHoliday)
             If _holidays Is Nothing Then
-                Dim sd As DateTime
-                Dim ed As DateTime
+                Dim sd As Date
+                Dim ed As Date
 
                 If EditReservation Is Nothing Then
                     sd = ReservationHistoryUtility.GetStartDate(txtStartDate.Text)

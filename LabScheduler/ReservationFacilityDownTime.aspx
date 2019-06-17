@@ -89,11 +89,11 @@
                         <label class="col-sm-1 control-label">Time</label>
                         <div class="col-sm-8">
                             <div class="form-inline">
-                                <asp:DropDownList ID="ddlHour" runat="server" DataTextField="HID" DataValueField="HID" CssClass="form-control time-select" Width="60" OnDataBound="ddlHour_DataBound">
+                                <asp:DropDownList ID="ddlHour" runat="server" DataTextField="HID" DataValueField="HID" CssClass="form-control time-select" Width="60" OnDataBound="DdlHour_DataBound">
                                 </asp:DropDownList>
-                                <asp:DropDownList ID="ddlMin" runat="server" DataTextField="MinID" DataValueField="MinID" CssClass="form-control time-select" Width="60" OnDataBound="ddlMin_DataBound">
+                                <asp:DropDownList ID="ddlMin" runat="server" DataTextField="MinID" DataValueField="MinID" CssClass="form-control time-select" Width="60" OnDataBound="DdlMin_DataBound">
                                 </asp:DropDownList>
-                                <asp:DropDownList ID="ddlAMPM" runat="server" DataTextField="Name" DataValueField="Name" CssClass="form-control time-select" Width="60" OnDataBound="ddlAMPM_DataBound">
+                                <asp:DropDownList ID="ddlAMPM" runat="server" DataTextField="Name" DataValueField="Name" CssClass="form-control time-select" Width="60" OnDataBound="DdlAMPM_DataBound">
                                 </asp:DropDownList>
                             </div>
                         </div>
@@ -127,13 +127,13 @@
                         </div>
                     </div>
                 </div>
-                <asp:Button runat="server" ID="btnReserve" CssClass="lnf btn btn-default" Text="Make Reservation" OnClick="btnReserve_Click" />
-                <asp:Button runat="server" ID="btnBack" CssClass="lnf btn btn-default" Text="Back" OnClick="btnBack_Click" />
+                <asp:Button runat="server" ID="btnReserve" CssClass="lnf btn btn-default" Text="Make Reservation" OnClick="BtnReserve_Click" />
+                <asp:Button runat="server" ID="btnBack" CssClass="lnf btn btn-default" Text="Back" OnClick="BtnBack_Click" />
             </div>
             <div role="tabpanel" class="tab-pane" id="manage-reservations">
                 <asp:PlaceHolder runat="server" ID="phGrid">
                     <em class="text-muted" style="margin-top: 10px; margin-bottom: 10px; display: block;">Sorted in reverse chronological order.</em>
-                    <asp:Repeater runat="server" ID="rptFDT" OnItemDataBound="rptFDT_ItemDataBound">
+                    <asp:Repeater runat="server" ID="rptFDT" OnItemDataBound="RptFDT_ItemDataBound">
                         <HeaderTemplate>
                             <table class="table table-hover">
                                 <thead>
@@ -265,8 +265,8 @@
                             </div>
                         </div>
                     </div>
-                    <asp:Button runat="server" ID="btnUpdateModify" CssClass="lnf btn btn-default update-modify-button" Text="Update" OnClick="btnUpdateModify_Click" />
-                    <asp:Button runat="server" ID="btnBackModify" CssClass="lnf btn btn-default" Text="Back" OnClick="btnBackModify_Click" />
+                    <asp:Button runat="server" ID="btnUpdateModify" CssClass="lnf btn btn-default update-modify-button" Text="Update" OnClick="BtnUpdateModify_Click" />
+                    <asp:Button runat="server" ID="btnBackModify" CssClass="lnf btn btn-default" Text="Back" OnClick="BtnBackModify_Click" />
                 </asp:PlaceHolder>
             </div>
         </div>

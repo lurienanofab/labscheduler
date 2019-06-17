@@ -118,6 +118,8 @@
     <Import Include="System.Web.UI.HtmlControls" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="404.aspx" />
+    <Content Include="500.aspx" />
     <Content Include="AdminActivities.aspx" />
     <Content Include="AdminBuildings.aspx" />
     <Content Include="AdminLabs.aspx" />
@@ -448,6 +450,20 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="404.aspx.designer.vb">
+      <DependentUpon>404.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="404.aspx.vb">
+      <DependentUpon>404.aspx</DependentUpon>
+      <SubType>ASPXCodebehind</SubType>
+    </Compile>
+    <Compile Include="500.aspx.designer.vb">
+      <DependentUpon>500.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="500.aspx.vb">
+      <DependentUpon>500.aspx</DependentUpon>
+      <SubType>ASPXCodebehind</SubType>
+    </Compile>
     <Compile Include="AdminActivities.aspx.designer.vb">
       <DependentUpon>AdminActivities.aspx</DependentUpon>
     </Compile>

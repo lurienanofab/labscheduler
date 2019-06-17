@@ -1,6 +1,5 @@
-﻿using Newtonsoft.Json;
-using OnlineServices.Api.Authorization;
-using OnlineServices.Api.Authorization.Credentials;
+﻿using LNF.Models.Authorization;
+using Newtonsoft.Json;
 using System;
 using System.Web;
 
@@ -25,10 +24,9 @@ namespace LNF.Web.Scheduler.Handlers
             }
         }
 
-        private AuthorizationAccess Authorize(HttpContext context)
+        private IAuthorizationAccess Authorize(HttpContext context)
         {
-            var authClient = new AuthorizationClient();
-            var auth = authClient.Authorize(new ClientCredentials());
+            var auth = ServiceProvider.Current.Authorization.Authorize(new LNF.Models.Authorization.Credentials.ClientCredentials());
 
             var cookie = new HttpCookie("lnf_api_token")
             {

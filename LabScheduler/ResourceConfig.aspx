@@ -243,7 +243,7 @@
                             <asp:ImageButton ID="ibtnExpand" ImageUrl="~/images/expand.gif" CommandName="Expand" CommandArgument="Expand" runat="server"></asp:ImageButton>
                             <asp:ImageButton ID="ibtnUp" ImageUrl="~/images/MoveUp.gif" CommandName="MoveUp" runat="server"></asp:ImageButton>
                             <asp:ImageButton ID="ibtnDown" ImageUrl="~/images/MoveDown.gif" CommandName="MoveDown" runat="server"></asp:ImageButton>
-                            <asp:DataGrid ID="dgProcessInfoLine" AutoGenerateColumns="False" runat="server" BorderColor="#4682B4" ShowFooter="True" CellPadding="3" DataKeyField="ProcessInfoLineID" OnItemDataBound="dgProcessInfoLine_ItemDataBound" OnItemCommand="dgProcessInfoLine_ItemCommand">
+                            <asp:DataGrid ID="dgProcessInfoLine" AutoGenerateColumns="False" runat="server" BorderColor="#4682B4" ShowFooter="True" CellPadding="3" DataKeyField="ProcessInfoLineID" OnItemDataBound="DgProcessInfoLine_ItemDataBound" OnItemCommand="DgProcessInfoLine_ItemCommand">
                                 <HeaderStyle Font-Bold="True" HorizontalAlign="Center" ForeColor="White" BackColor="#336699"></HeaderStyle>
                                 <FooterStyle HorizontalAlign="Center" BackColor="MistyRose"></FooterStyle>
                                 <AlternatingItemStyle BackColor="AliceBlue"></AlternatingItemStyle>

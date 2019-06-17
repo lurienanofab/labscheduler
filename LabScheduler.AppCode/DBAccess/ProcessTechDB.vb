@@ -33,7 +33,7 @@ Namespace DBAccess
         End Sub
 
         ' Returns ProcessTechs belonging to specified Lab
-        Public Function SelectDataReaderByLab(ByVal LabID As Integer) As IDataReader
+        Public Function SelectDataReaderByLab(ByVal LabID As Integer) As ExecuteReaderResult
             Return DA.Command().Param(New With {.Action = "SelectByLab", LabID}).ExecuteReader("sselScheduler.dbo.procProcessTechSelect")
         End Function
 
@@ -42,7 +42,7 @@ Namespace DBAccess
         End Function
 
         ' Returns ProcessTechs not belonging to the specified Lab
-        Public Function SelectProcessTechNotInLab(ByVal LabID As Integer) As IDataReader
+        Public Function SelectProcessTechNotInLab(ByVal LabID As Integer) As ExecuteReaderResult
             Return DA.Command().Param(New With {.Action = "SelectProcessTechNotInLab", LabID}).ExecuteReader("sselScheduler.dbo.procProcessTechSelect")
         End Function
 
@@ -52,7 +52,7 @@ Namespace DBAccess
         End Function
 
         Public Function HasResources(ByVal ProcessTechID As Integer) As Boolean
-            Dim count As Integer = DA.Command().Param(New With {.Action = "HasLabs", BuildingID}).ExecuteScalar(Of Integer)("sselScheduler.dbo.procProcessTechSelect")
+            Dim count As Integer = DA.Command().Param(New With {.Action = "HasLabs", BuildingID}).ExecuteScalar(Of Integer)("sselScheduler.dbo.procProcessTechSelect").Value
             Return count > 0
         End Function
 

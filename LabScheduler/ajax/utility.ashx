@@ -6,6 +6,7 @@ using Newtonsoft.Json;
 using System;
 using System.Web;
 using System.Web.SessionState;
+using LNF.Web;
 
 namespace LabScheduler.Api
 {
@@ -13,23 +14,25 @@ namespace LabScheduler.Api
     {
         public void ProcessRequest(HttpContext context)
         {
-            context.Response.ContentType = "application/json";
+            var ctx = new HttpContextWrapper(context);
 
-            string command = context.Request.QueryString["command"];
+            ctx.Response.ContentType = "application/json";
+
+            string command = ctx.Request.QueryString["command"];
 
             switch (command)
             {
                 case "IsStaff":
-                    context.Response.Write(JsonConvert.SerializeObject(new { isStaff = IsStaff() }));
+                    ctx.Response.Write(JsonConvert.SerializeObject(new { isStaff = IsStaff(ctx) }));
                     break;
                 default:
                     throw new NotImplementedException();
             }
         }
 
-        private bool IsStaff()
+        private bool IsStaff(HttpContextBase context)
         {
-            return CacheManager.Current.CurrentUser.HasPriv(ClientPrivilege.Staff | ClientPrivilege.Administrator | ClientPrivilege.Developer);
+            return  context.CurrentUser().HasPriv(ClientPrivilege.Staff | ClientPrivilege.Administrator | ClientPrivilege.Developer);
         }
 
         public bool IsReusable

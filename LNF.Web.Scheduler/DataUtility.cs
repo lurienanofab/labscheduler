@@ -1,4 +1,6 @@
 ﻿using LNF.CommonTools;
+using LNF.Models.Data;
+using LNF.Models.Scheduler;
 using LNF.Repository.Scheduler;
 using System;
 using System.Collections.Generic;
@@ -25,7 +27,7 @@ namespace LNF.Web.Scheduler
             return dt;
         }
 
-        public static DataTable ConvertToReservationTable(IEnumerable<Reservation> collection)
+        public static DataTable ConvertToReservationTable(IEnumerable<IReservation> collection)
         {
             DataTable dt = new DataTable();
             dt.Columns.Add("ReservationID", typeof(int));
@@ -65,14 +67,14 @@ namespace LNF.Web.Scheduler
             dt.Columns.Add("Editable", typeof(bool));
             dt.Columns.Add("DisplayName", typeof(string));
 
-            foreach (LNF.Repository.Scheduler.Reservation rsv in collection)
+            foreach (ReservationItem rsv in collection)
             {
                 DataRow nr = dt.NewRow();
                 nr["ReservationID"] = rsv.ReservationID;
-                nr["ResourceID"] = rsv.Resource.ResourceID;
-                nr["ClientID"] = rsv.Client.ClientID;
-                nr["AccountID"] = rsv.Account.AccountID;
-                nr["ActivityID"] = rsv.Activity.ActivityID;
+                nr["ResourceID"] = rsv.ResourceID;
+                nr["ClientID"] = rsv.ClientID;
+                nr["AccountID"] = rsv.AccountID;
+                nr["ActivityID"] = rsv.ActivityID;
                 nr["BeginDateTime"] = rsv.BeginDateTime;
                 nr["EndDateTime"] = rsv.EndDateTime;
                 nr["ActualBeginDateTime"] = Utility.DBNullIf(rsv.ActualBeginDateTime);
@@ -99,11 +101,11 @@ namespace LNF.Web.Scheduler
                 nr["OriginalBeginDateTime"] = Utility.DBNullIf(rsv.OriginalBeginDateTime);
                 nr["OriginalEndDateTime"] = Utility.DBNullIf(rsv.OriginalEndDateTime);
                 nr["OriginalModifiedOn"] = Utility.DBNullIf(rsv.OriginalModifiedOn);
-                nr["ResourceName"] = rsv.Resource.ResourceName;
-                nr["Granularity"] = rsv.Resource.Granularity;
-                nr["IsSchedulable"] = rsv.Resource.IsSchedulable;
-                nr["Editable"] = rsv.Activity.Editable;
-                nr["DisplayName"] = rsv.Client.DisplayName;
+                nr["ResourceName"] = rsv.ResourceName;
+                nr["Granularity"] = rsv.Granularity;
+                nr["IsSchedulable"] = rsv.IsSchedulable;
+                nr["Editable"] = rsv.Editable;
+                nr["DisplayName"] = ClientItem.GetDisplayName(rsv.LName, rsv.FName);
                 dt.Rows.Add(nr);
             }
 

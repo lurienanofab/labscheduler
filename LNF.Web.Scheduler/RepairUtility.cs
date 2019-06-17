@@ -1,34 +1,31 @@
-﻿using LNF.Cache;
-using LNF.CommonTools;
+﻿using LNF.CommonTools;
 using LNF.Models.Data;
 using LNF.Models.Scheduler;
 using LNF.Models.Worker;
-using LNF.Repository;
-using LNF.Repository.Scheduler;
 using LNF.Scheduler;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace LNF.Web.Scheduler
 {
-    public static class RepairUtility
+    public class RepairUtility
     {
-        public static IContext Context => ServiceProvider.Current.Context;
-
-        public static IResourceManager ResourceManager => ServiceProvider.Current.Use<IResourceManager>();
-
-        public static IReservationManager ReservationManager => ServiceProvider.Current.Use<IReservationManager>();
-
-        public static IEmailManager EmailManager => ServiceProvider.Current.Use<IEmailManager>();
-
-        public static ClientItem CurrentUser => CacheManager.Current.CurrentUser;
-
-        public static Reservation StartRepair(ResourceItem res, ResourceState resourceState, DateTime actualBeginDateTime, DateTime actualEndDateTime, string notes)
+        public RepairUtility(ResourceTreeItem res, IClient currentUser, IProvider provider)
         {
-            Reservation repair = null;
+            Resource = res;
+            CurrentUser = currentUser;
+            Provider = provider;
+        }
 
-            if (res.HasState(ResourceState.Online))
+        public ResourceTreeItem Resource { get; }
+        public IClient CurrentUser { get; }
+        public IProvider Provider { get; }
+
+        public IReservation StartRepair(ResourceState resourceState, DateTime actualBeginDateTime, DateTime actualEndDateTime, string notes)
+        {
+            IReservation repair = null;
+
+            if (Resource.HasState(ResourceState.Online))
             {
                 // Create new offline reservation or new limited mode status
                 //ResourceState resourceState = rdoStatusOffline.Checked ? ResourceState.Offline : ResourceState.Limited;
@@ -40,18 +37,18 @@ namespace LNF.Web.Scheduler
                     // Determine BeginDateTime for repair reservation
                     DateTime beginDateTime, endDateTime;
 
-                    beginDateTime = ResourceManager.GetNextGranularity(res, actualBeginDateTime, GranularityDirection.Previous);
-                    endDateTime = ResourceManager.GetNextGranularity(res, actualEndDateTime, GranularityDirection.Next);
+                    beginDateTime = ResourceUtility.GetNextGranularity(Resource, actualBeginDateTime, GranularityDirection.Previous);
+                    endDateTime = ResourceUtility.GetNextGranularity(Resource, actualEndDateTime, GranularityDirection.Next);
 
                     // Insert the new repair reservation
-                    repair = ReservationManager.InsertRepair(res.ResourceID, CurrentUser.ClientID, beginDateTime, endDateTime, actualBeginDateTime, notes, CurrentUser.ClientID);
+                    repair = Provider.Scheduler.Reservation.InsertRepair(Resource.ResourceID, CurrentUser.ClientID, beginDateTime, endDateTime, actualBeginDateTime, notes, CurrentUser.ClientID);
 
                     // Remove invitees and process info that might be in the session
-                    Context.RemoveSessionValue("ReservationInvitees");
-                    Context.RemoveSessionValue("ReservationProcessInfos");
+                    Provider.Context.RemoveSessionValue("ReservationInvitees");
+                    Provider.Context.RemoveSessionValue("ReservationProcessInfos");
 
                     // Set the state into resource table and session object
-                    ResourceUtility.UpdateState(res.ResourceID, ResourceState.Offline, string.Empty);
+                    ResourceUtility.UpdateState(Resource.ResourceID, ResourceState.Offline, string.Empty);
 
                     UpdateAffectedReservations(repair);
                 }
@@ -59,36 +56,34 @@ namespace LNF.Web.Scheduler
                 {
                     // User sets the tool into limited mode
                     // Set Resource State, txtNotes.Text is saved with Resource table only in limited mode, since limited mode has no reservation record
-                    ResourceUtility.UpdateState(res.ResourceID, ResourceState.Limited, notes);
+                    ResourceUtility.UpdateState(Resource.ResourceID, ResourceState.Limited, notes);
                 }
             }
 
             return repair;
         }
 
-        public static Reservation UpdateRepair(ResourceItem res, DateTime actualBeginDateTime, DateTime actualEndDateTime, string notes)
+        public IReservation UpdateRepair(DateTime actualBeginDateTime, DateTime actualEndDateTime, string notes)
         {
-            Reservation repair = null;
+            IReservation repair = null;
 
-            if (res.HasState(ResourceState.Offline))
+            if (Resource.HasState(ResourceState.Offline))
             {
                 // Determine BeginDateTime for repair reservation
                 DateTime endDateTime;
 
-                var rip = ReservationManager.GetRepairReservationInProgress(res.ResourceID);
+                var rip = ReservationUtility.GetRepairReservationInProgress(Resource);
 
                 if (rip != null)
                 {
-                    repair = DA.Current.Single<Reservation>(rip.ReservationID);
+                    repair = Provider.Scheduler.Reservation.GetReservation(rip.ReservationID);
 
                     if (repair != null)
                     {
-                        endDateTime = ResourceManager.GetNextGranularity(res, actualEndDateTime, GranularityDirection.Next);
+                        endDateTime = ResourceUtility.GetNextGranularity(Resource, actualEndDateTime, GranularityDirection.Next);
 
                         // Modify existing repair reservation
-                        repair.EndDateTime = endDateTime;
-                        repair.Notes = notes;
-                        ReservationManager.Update(repair, CurrentUser.ClientID);
+                        Provider.Scheduler.Reservation.UpdateRepair(repair.ReservationID, endDateTime, notes, CurrentUser.ClientID);
 
                         UpdateAffectedReservations(repair);
                     }
@@ -97,34 +92,36 @@ namespace LNF.Web.Scheduler
             else
             {
                 // modifying limited mode, only StateNotes is modifiable in this case
-                ResourceUtility.UpdateState(res.ResourceID, ResourceState.Limited, notes);
+                ResourceUtility.UpdateState(Resource.ResourceID, ResourceState.Limited, notes);
             }
 
             return repair;
         }
 
-        public static Reservation EndRepair(ResourceItem res)
+        public IReservation EndRepair(DateTime now)
         {
-            Reservation repair = null;
+            IReservation repair = null;
 
-            if (res.HasState(ResourceState.Offline))
+            if (Resource.HasState(ResourceState.Offline))
             {
-                var rip = ReservationManager.GetRepairReservationInProgress(res.ResourceID);
+                var rip = ReservationUtility.GetRepairReservationInProgress(Resource);
 
                 if (rip != null)
                 {
-                    repair = DA.Current.Single<Reservation>(rip.ReservationID);
+                    repair = Provider.Scheduler.Reservation.GetReservation(rip.ReservationID);
 
                     if (repair != null)
                     {
-                        if (res.IsSchedulable)
+                        if (Resource.IsSchedulable)
                         {
-                            // Set Scheduled EndDateTime = next grain boundary in future
-                            repair.EndDateTime = ResourceManager.GetNextGranularity(res, DateTime.Now, GranularityDirection.Next);
-                            ReservationManager.Update(repair, CurrentUser.ClientID);
+                            // Set Scheduled EndDateTime = next gran boundary in future
+                            var endDateTime = ResourceUtility.GetNextGranularity(Resource, DateTime.Now, GranularityDirection.Next);
+
+                            Provider.Scheduler.Reservation.UpdateRepair(repair.ReservationID, endDateTime, repair.Notes, CurrentUser.ClientID);
 
                             // End the repair reservation now
-                            ReservationManager.End(repair, CurrentUser.ClientID, CurrentUser.ClientID);
+                            var util = new ReservationUtility(now, Provider);
+                            util.End(repair, CurrentUser.ClientID, CurrentUser.ClientID);
 
                             UpdateAffectedReservations(repair);
                         }
@@ -133,7 +130,7 @@ namespace LNF.Web.Scheduler
             }
 
             // Set Resource State
-            ResourceUtility.UpdateState(res.ResourceID, ResourceState.Online, string.Empty);
+            ResourceUtility.UpdateState(Resource.ResourceID, ResourceState.Online, string.Empty);
 
             return repair;
         }
@@ -142,23 +139,23 @@ namespace LNF.Web.Scheduler
         /// Checks for all reservations affected by the repair and either cancels or deletes them (depending of if they are started or not), and then forgives them.
         /// </summary>
         /// <param name="repair">The repair reservation.</param>
-        private static bool UpdateAffectedReservations(Reservation repair)
+        private bool UpdateAffectedReservations(IReservation repair)
         {
             // Might be null when resource state is Limited
             if (repair == null) return false;
 
             // Find and end reservations that are in progress (Endable) for this resource
-            IList<Reservation> endableReservations = ReservationManager.SelectEndableReservations(repair.Resource.ResourceID);
-            foreach (Reservation endable in endableReservations.Where(x => x.ReservationID != repair.ReservationID))
+            var endableReservations = Provider.Scheduler.Reservation.SelectEndableReservations(repair.ResourceID);
+            foreach (var endable in endableReservations.Where(x => x.ReservationID != repair.ReservationID))
             {
-                ReservationManager.EndForRepair(endable, CurrentUser.ClientID, CurrentUser.ClientID);
-                EmailManager.EmailOnCanceledByRepair(endable, false, "Offline", repair.Notes, repair.EndDateTime);
-                EmailManager.EmailOnForgiveCharge(endable, 100, true, CurrentUser.ClientID);
+                Provider.Scheduler.Reservation.EndForRepair(endable.ReservationID, CurrentUser.ClientID, CurrentUser.ClientID);
+                Provider.EmailManager.EmailOnCanceledByRepair(endable, false, "Offline", repair.Notes, repair.EndDateTime, CurrentUser.ClientID);
+                Provider.EmailManager.EmailOnForgiveCharge(endable, 100, true, CurrentUser.ClientID);
             }
 
             // Find and remove any unstarted reservations made during time of repair
-            IList<Reservation> unstartedReservations = ReservationManager.SelectByResource(repair.Resource.ResourceID, repair.BeginDateTime, repair.EndDateTime, false);
-            foreach (Reservation unstarted in unstartedReservations)
+            var unstartedReservations = Provider.Scheduler.Reservation.SelectByResource(repair.ResourceID, repair.BeginDateTime, repair.EndDateTime, false);
+            foreach (var unstarted in unstartedReservations)
             {
                 // Do nothing if already canceled
                 if (unstarted.IsActive)
@@ -166,9 +163,9 @@ namespace LNF.Web.Scheduler
                     // If the reservation has not begun
                     if (!unstarted.ActualBeginDateTime.HasValue)
                     {
-                        ReservationManager.Delete(unstarted, CurrentUser.ClientID);
-                        EmailManager.EmailOnCanceledByRepair(unstarted, true, "Offline", repair.Notes, repair.EndDateTime);
-                        EmailManager.EmailOnForgiveCharge(unstarted, 100, true, CurrentUser.ClientID);
+                        Provider.Scheduler.Reservation.CancelReservation(unstarted.ReservationID, CurrentUser.ClientID);
+                        Provider.EmailManager.EmailOnCanceledByRepair(unstarted, true, "Offline", repair.Notes, repair.EndDateTime, CurrentUser.ClientID);
+                        Provider.EmailManager.EmailOnForgiveCharge(unstarted, 100, true, CurrentUser.ClientID);
                     }
                 }
             }
@@ -188,20 +185,20 @@ namespace LNF.Web.Scheduler
             //      Overlapping reservations (started and unstarted) are forgiven above and an email is sent. This will catch
             //      unstarted overlapping reservations where IsActive == true and ActualBeginDateTime.HasValue == true, or
             //      IsActive == false since these are skipped above.
-            IList<Reservation> query = ReservationManager.SelectHistoryToForgiveForRepair(repair.Resource.ResourceID, repair.BeginDateTime, repair.EndDateTime);
+            var query = Provider.Scheduler.Reservation.SelectHistoryToForgiveForRepair(repair.ResourceID, repair.BeginDateTime, repair.EndDateTime);
 
             var result = false;
 
-            foreach (Reservation rsv in query)
+            foreach (var rsv in query)
             {
                 // Avoid resending the email if the reservation was already forgiven
                 if (rsv.ChargeMultiplier > 0)
                 {
                     // Set charge multiplier to zero
-                    ReservationManager.UpdateCharges(rsv, 0, true, CurrentUser.ClientID);
+                    Provider.Scheduler.Reservation.UpdateCharges(rsv.ReservationID, 0, true, CurrentUser.ClientID);
 
                     // Email User after everything is done.
-                    EmailManager.EmailOnForgiveCharge(rsv, 100, true, CurrentUser.ClientID);
+                    Provider.EmailManager.EmailOnForgiveCharge(rsv, 100, true, CurrentUser.ClientID);
 
                     // The session variable is set now and then checked for on the next page load.
                     result = true;
@@ -211,7 +208,7 @@ namespace LNF.Web.Scheduler
             // Update forgiven charge on FinOps. Enqueue an UpdateBilling request. This will
             // return immediately and the update will process in the background using OnlineServicesWorker.
             DateTime sd = repair.BeginDateTime.FirstOfMonth();
-            ServiceProvider.Current.Worker.Execute(new UpdateBillingWorkerRequest(sd, 0, new[] { "tool", "room" }));
+            Provider.Worker.Execute(new UpdateBillingWorkerRequest(sd, 0, new[] { "tool", "room" }));
 
             return result;
         }

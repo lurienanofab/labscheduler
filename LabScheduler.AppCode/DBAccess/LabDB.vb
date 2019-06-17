@@ -15,7 +15,7 @@ Namespace DBAccess
 
         ' Returns specified Lab
         Public Sub New(ByVal LabID As Integer)
-            Using reader As IDataReader = DA.Command().Param(New With {.Action = "Select", LabID}).ExecuteReader("sselScheduler.dbo.procLabSelect")
+            Using reader As ExecuteReaderResult = DA.Command().Param(New With {.Action = "Select", LabID}).ExecuteReader("sselScheduler.dbo.procLabSelect")
                 If reader.Read() Then
                     IsValid = True
                     BuildingID = Convert.ToInt32(reader("BuildingID"))
@@ -29,7 +29,7 @@ Namespace DBAccess
         End Sub
 
         ' Returns labs belonging to specified building
-        Public Function SelectByBuilding(ByVal BuildingID As Integer) As IDataReader
+        Public Function SelectByBuilding(ByVal BuildingID As Integer) As ExecuteReaderResult
             Return DA.Command().Param(New With {.Action = "SelectByBuilding", BuildingID}).ExecuteReader("sselScheduler.dbo.procLabSelect")
         End Function
 
@@ -45,12 +45,12 @@ Namespace DBAccess
         End Function
 
         ' Returns all rooms
-        Public Function SelectRooms() As IDataReader
+        Public Function SelectRooms() As ExecuteReaderResult
             Return DA.Command().Param(New With {.Action = "All"}).ExecuteReader("dbo.Room_Select")
         End Function
 
         Public Function HasProcessTechs(ByVal LabID As Integer) As Boolean
-            Dim count As Integer = DA.Command().Param(New With {.Action = "HasProcessTechs", LabID}).ExecuteScalar(Of Integer)("sselScheduler.dbo.procLabSelect")
+            Dim count As Integer = DA.Command().Param(New With {.Action = "HasProcessTechs", LabID}).ExecuteScalar(Of Integer)("sselScheduler.dbo.procLabSelect").Value
             Return count > 0
         End Function
 

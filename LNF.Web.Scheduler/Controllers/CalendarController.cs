@@ -1,6 +1,4 @@
-﻿using LNF.Cache;
-using LNF.Scheduler;
-using System;
+﻿using System;
 using System.Web;
 using System.Web.SessionState;
 
@@ -12,35 +10,37 @@ namespace LNF.Web.Scheduler.Controllers
 
         public void ProcessRequest(HttpContext context)
         {
-            context.Response.ContentType = "text/plain";
+            HttpContextBase ctx = new HttpContextWrapper(context);
 
-            string command = context.Request.QueryString["Command"];
+            ctx.Response.ContentType = "text/plain";
+
+            string command = ctx.Request.QueryString["Command"];
 
             switch (command)
             {
                 case "ChangeDate":
                     // ReturnTo should contain an absolute path and all querystring parameters (including Path when appropriate)
-                    string returnTo = context.Request.QueryString["ReturnTo"];
+                    string returnTo = ctx.Request.QueryString["ReturnTo"];
 
                     if (string.IsNullOrEmpty(returnTo))
                         throw new InvalidOperationException("ReturnTo cannot be empty.");
 
-                    DateTime date = DateTime.Parse(context.Request.QueryString["Date"]);
+                    DateTime date = DateTime.Parse(ctx.Request.QueryString["Date"]);
 
                     string redirectUrl = string.Format("{0}?Date={1:yyyy-MM-dd}", returnTo, date);
 
-                    if (!context.Request.SelectedPath().IsEmpty())
-                        redirectUrl += string.Format("&Path={0}", context.Request.SelectedPath().UrlEncode());
+                    if (!ctx.Request.SelectedPath().IsEmpty())
+                        redirectUrl += string.Format("&Path={0}", ctx.Request.SelectedPath().UrlEncode());
 
-                    foreach (var key in context.Request.QueryString.AllKeys)
+                    foreach (var key in ctx.Request.QueryString.AllKeys)
                     {
                         if (key != "Date" && key != "Path" && key != "Command" && key != "ReturnTo")
                         {
-                            redirectUrl += string.Format("&{0}={1}", key, context.Request.QueryString[key]);
+                            redirectUrl += string.Format("&{0}={1}", key, ctx.Request.QueryString[key]);
                         }
                     }
 
-                    context.Response.Redirect(redirectUrl);
+                    ctx.Response.Redirect(redirectUrl);
                     break;
                 default:
                     throw new Exception("unknown command");
