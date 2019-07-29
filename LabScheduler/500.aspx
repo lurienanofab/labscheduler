@@ -19,7 +19,7 @@
                 <small class="text-muted">An email has been sent to LNF staff.</small>
             </h3>
             <div class="mb-3">
-                [<asp:HyperLink runat="server" NavigateUrl="~/">LNF Scheduler Home</asp:HyperLink>] [<a href="/login">Logout</a>]
+                [<asp:HyperLink runat="server" NavigateUrl="~/">Home</asp:HyperLink>] [<a href="/login">Logout</a>]
             </div>
             <asp:Repeater runat="server" ID="rptErrors">
                 <ItemTemplate>

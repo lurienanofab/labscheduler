@@ -155,7 +155,7 @@ Namespace Pages
 
         Private Sub SetHeader()
             litHeader.Text = If(ReservationID = 0, "Create", "Modify") + " Reservation for"
-            litResourceName.Text = Resource.ToString()
+            litResourceName.Text = ResourceItem.GetResourceDisplayName(Resource.ResourceName, Resource.ResourceID)
         End Sub
 
         Private Sub SetStartDate()
@@ -744,12 +744,14 @@ Namespace Pages
             End If
         End Sub
 
-        Private Sub StoreReservationProcessInfo()
+        Private Function StoreReservationProcessInfo() As Boolean
             For i As Integer = 0 To rptProcessInfo.Items.Count - 1
                 ' ProcessInfoLine
                 Dim ddlParam As DropDownList = CType(rptProcessInfo.Items(i).FindControl("ddlParam"), DropDownList)
+
                 If String.IsNullOrEmpty(ddlParam.SelectedValue) Then
-                    Throw New Exception("You must select a Process Info Line.")
+                    ShowReservationAlert("You must select a Process Info Line.")
+                    Return False
                 End If
 
                 ' ProcessInfo
@@ -764,32 +766,43 @@ Namespace Pages
                         valueText = CType(rptProcessInfo.Items(i).FindControl("txtValue"), TextBox).Text
                     End If
 
-                    Dim pil As IProcessInfoLine = GetProcessInfoLines().First(Function(x) x.ProcessInfoLineID = processInfoLineId)
-                    Dim pi As IProcessInfo = GetProcessInfos().First(Function(x) x.ProcessInfoID = pil.ProcessInfoID)
+                    Dim value As Integer
+                    If Integer.TryParse(valueText, value) Then
+                        Dim pil As IProcessInfoLine = GetProcessInfoLines().First(Function(x) x.ProcessInfoLineID = processInfoLineId)
+                        Dim pi As IProcessInfo = GetProcessInfos().First(Function(x) x.ProcessInfoID = pil.ProcessInfoID)
 
-                    special = CType(rptProcessInfo.Items(i).FindControl("chkSpecial"), CheckBox).Checked
+                        special = CType(rptProcessInfo.Items(i).FindControl("chkSpecial"), CheckBox).Checked
 
-                    GetReservationProcessInfos().Add(New Models.Scheduler.ReservationProcessInfoItem() With
-                                                     {
-                                                        .ReservationID = ReservationID,
-                                                        .ProcessInfoLineID = processInfoLineId,
-                                                        .Value = Convert.ToInt32(valueText),
-                                                        .Special = special,
-                                                        .Active = True,
-                                                        .ChargeMultiplier = 1,
-                                                        .Param = pil.Param,
-                                                        .ParameterName = pil.ParameterName,
-                                                        .ProcessInfoLineParamID = pil.ProcessInfoLineParamID,
-                                                        .ProcessInfoID = pi.ProcessInfoID,
-                                                        .ProcessInfoName = pi.ProcessInfoName,
-                                                        .RunNumber = 0
-                                                     })
+                        GetReservationProcessInfos().Add(CreateReservationProcessInfoItem(processInfoLineId, value, special, pil, pi))
+                    Else
+                        ShowReservationAlert($"Invalid value for process info: {valueText}")
+                        Return False
+                    End If
                 Else
                     Dim rpi As IReservationProcessInfo = GetReservationProcessInfos().FirstOrDefault(Function(x) x.ProcessInfoID = processInfoId)
                     GetReservationProcessInfos().Remove(rpi)
                 End If
             Next
-        End Sub
+
+            Return True
+        End Function
+
+        Private Function CreateReservationProcessInfoItem(processInfoLineId As Integer, value As Integer, special As Boolean, pil As IProcessInfoLine, pi As IProcessInfo) As Models.Scheduler.ReservationProcessInfoItem
+            Return New Models.Scheduler.ReservationProcessInfoItem With {
+                .ReservationID = ReservationID,
+                .ProcessInfoLineID = processInfoLineId,
+                .Value = value,
+                .Special = special,
+                .Active = True,
+                .ChargeMultiplier = 1,
+                .Param = pil.Param,
+                .ParameterName = pil.ParameterName,
+                .ProcessInfoLineParamID = pil.ProcessInfoLineParamID,
+                .ProcessInfoID = pi.ProcessInfoID,
+                .ProcessInfoName = pi.ProcessInfoName,
+                .RunNumber = 0
+            }
+        End Function
 
         Private Sub InviteeModification(action As String, ddlInvitees As DropDownList, lblInviteeID As Label, lblInviteeName As Label)
             Dim invitees As List(Of IReservationInvitee) = GetReservationInvitees()
@@ -1084,7 +1097,9 @@ Namespace Pages
             ShowReservationAlert(Nothing) ' clears it
 
             ' Store Reservation Process Info
-            StoreReservationProcessInfo()
+            If Not StoreReservationProcessInfo() Then
+                Return
+            End If
 
             ' Validate Reservation
             Dim rd As ReservationDuration = GetReservationDuration()

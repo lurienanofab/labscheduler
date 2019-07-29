@@ -19,7 +19,7 @@
                 404 page not found...
             </h3>
             <div class="mb-3">
-                [<asp:HyperLink runat="server" NavigateUrl="~/">LNF Scheduler Home</asp:HyperLink>] [<a href="/login">Logout</a>]
+                [<asp:HyperLink runat="server" NavigateUrl="~/">Home</asp:HyperLink>] [<a href="/login">Logout</a>]
             </div>
             <div class="alert alert-danger" role="alert">
                 <asp:Literal runat="server" ID="litMessage"></asp:Literal>

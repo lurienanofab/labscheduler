@@ -155,9 +155,9 @@ Namespace Pages
             Dim resultIdList As New List(Of String)
             Dim resultNamesList As New List(Of String)
 
-            For Each acct As Account In orderedAccounts
+            For Each acct As IAccount In orderedAccounts
                 resultIdList.Add(acct.AccountID.ToString())
-                resultNamesList.Add(acct.Name)
+                resultNamesList.Add(acct.AccountName)
             Next
 
             lblAccounts.Text = String.Join(",", resultIdList)
