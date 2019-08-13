@@ -348,7 +348,7 @@ Namespace UserControls
                 ' If the cell date is not in the past and before the reservation fence
                 ' Or if the user is the tool engineer and cell date is not in the past
                 SetReservableCell(cell, res)
-            ElseIf cell.CellDate > DateTime.Now.AddMinutes(Resource.ReservFence) AndAlso authLevel < ClientAuthLevel.SuperUser Then
+            ElseIf cell.CellDate > DateTime.Now.AddMinutes(res.ReservFence) AndAlso authLevel < ClientAuthLevel.SuperUser Then
                 ' If the cell date is after the reservation fence and user is not a tool engineer
                 SetPastFenceCell(cell)
             End If

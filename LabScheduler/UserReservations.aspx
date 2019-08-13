@@ -21,7 +21,7 @@
 
     <div style="margin: 10px 0 10px 0; padding-bottom: 0;">
         <div style="margin-top: 5px;">
-            <strong>Date:</strong>
+            <strong>Selected Date:</strong>
             <asp:Literal runat="server" ID="litDate"></asp:Literal>
         </div>
 
