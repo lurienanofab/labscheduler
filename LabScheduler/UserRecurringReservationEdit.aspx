@@ -32,11 +32,11 @@
                                     <div class="col-lg-10">
                                         <div class="form-inline">
                                             <div class="form-group">
-                                                <asp:DropDownList ID="ddlStartTimeHour" runat="server" AutoPostBack="True" CssClass="form-control">
+                                                <asp:DropDownList ID="ddlStartTimeHour" runat="server" AutoPostBack="false" CssClass="form-control">
                                                 </asp:DropDownList>
                                             </div>
                                             <div class="form-group">
-                                                <asp:DropDownList ID="ddlStartTimeMin" runat="server" AutoPostBack="True" CssClass="form-control">
+                                                <asp:DropDownList ID="ddlStartTimeMin" runat="server" AutoPostBack="false" CssClass="form-control">
                                                 </asp:DropDownList>
                                             </div>
                                         </div>

@@ -425,7 +425,7 @@ Namespace UserControls
                 Case ViewType.DayView, ViewType.WeekView
                     recurringRes = Provider.Scheduler.Reservation.GetReservationRecurrencesByResource(Resource.ResourceID).Where(Function(x) x.IsActive).OrderBy(Function(x) x.ResourceID)
                 Case ViewType.ProcessTechView
-                    recurringRes = Provider.Scheduler.Reservation.GetReservationRecurrencesByProcessTech(Resource.ProcessTechID).Where(Function(x) x.IsActive).OrderBy(Function(x) x.ResourceID)
+                    recurringRes = Provider.Scheduler.Reservation.GetReservationRecurrencesByProcessTech(ContextBase.Request.SelectedPath().ProcessTechID).Where(Function(x) x.IsActive).OrderBy(Function(x) x.ResourceID)
                 Case ViewType.UserView
                     recurringRes = Provider.Scheduler.Reservation.GetReservationRecurrencesByClient(CurrentUser.ClientID).Where(Function(x) x.IsActive).OrderBy(Function(x) x.ResourceID)
                     ' iter = 1 means today there is no reservation on any this tool at this time

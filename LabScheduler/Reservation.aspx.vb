@@ -190,9 +190,9 @@ Namespace Pages
 
         Private Sub SetAutoEnd()
             If ReservationID = 0 Then
-                chkKeepAlive.Checked = False
+                chkAutoEnd.Checked = False
             Else
-                chkKeepAlive.Checked = Reservation.AutoEnd
+                chkAutoEnd.Checked = Reservation.AutoEnd
             End If
         End Sub
 
@@ -367,11 +367,13 @@ Namespace Pages
 
             If 0 = Resource.Granularity Then
                 ShowPastSelectedDateError("Granularity is zero for this resource.")
+                Return
             End If
 
             ' Check if selectedDate is in the past
             If ContextBase.Request.SelectedDate() < Date.Now.Date Then
                 ShowPastSelectedDateError("The selected date cannot be in the past.")
+                Return
             End If
 
             minTime = GetMinimumStartTime()

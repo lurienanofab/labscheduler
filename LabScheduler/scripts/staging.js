@@ -51,7 +51,11 @@
                 };
 
                 staging.prepend($("<span/>").css({ "font-size": "10pt", "float": "left", "margin-top": "3px" }).append("[").append(toggle).append("]"));
-                staging.append($("<span/>").css({ "font-size": "10pt", "float": "right", "margin-right": "20px", "margin-top": "3px" }).html('[<a href="http://ssel-sched.eecs.umich.edu/sselonline?view=/sselscheduler">switch to production</a> | <a href="//ssel-apps.eecs.umich.edu/login">log out</a>]'));
+
+                if (window.self === window.top)
+                    staging.append($("<span/>").css({ "font-size": "10pt", "float": "right", "margin-right": "20px", "margin-top": "3px" }).html('[<a href="http://ssel-sched.eecs.umich.edu/sselscheduler/">switch to production</a> | <a href="//ssel-apps.eecs.umich.edu/login">log out</a>]'));
+                else
+                    staging.append($("<span/>").css({ "font-size": "10pt", "float": "right", "margin-right": "20px", "margin-top": "3px" }).html('[<a href="http://ssel-sched.eecs.umich.edu/sselonline/?view=/sselscheduler" target="_top">switch to production</a> | <a href="//ssel-apps.eecs.umich.edu/login">log out</a>]'));
 
                 staging.on("click", ".toggle-glimpse", function (e) {
                     e.preventDefault();

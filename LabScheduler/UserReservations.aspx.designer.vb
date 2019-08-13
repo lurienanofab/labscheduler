@@ -60,6 +60,15 @@ Namespace Pages
         Protected WithEvents litComputer As Global.System.Web.UI.WebControls.Literal
         
         '''<summary>
+        '''phMobileLink control.
+        '''</summary>
+        '''<remarks>
+        '''Auto-generated field.
+        '''To modify move field declaration from designer file to code-behind file.
+        '''</remarks>
+        Protected WithEvents phMobileLink As Global.System.Web.UI.WebControls.PlaceHolder
+        
+        '''<summary>
         '''rvReserv control.
         '''</summary>
         '''<remarks>

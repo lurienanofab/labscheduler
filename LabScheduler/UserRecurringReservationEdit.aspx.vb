@@ -288,7 +288,7 @@ Namespace Pages
             ddlStartTimeMin.Items.Clear()
 
             For i As Integer = 0 To 59 Step res.Granularity
-                ddlStartTimeMin.Items.Add(New ListItem(i.ToString(), i.ToString()))
+                ddlStartTimeMin.Items.Add(New ListItem(i.ToString("00"), i.ToString()))
             Next
 
             ' Select Preselected Time
@@ -298,7 +298,7 @@ Namespace Pages
                 item.Selected = True
             End If
 
-            item = ddlStartTimeMin.Items.FindByValue(rr.EndTime.Minute.ToString())
+            item = ddlStartTimeMin.Items.FindByValue(rr.BeginTime.Minute.ToString())
             If item IsNot Nothing Then
                 item.Selected = True
             End If

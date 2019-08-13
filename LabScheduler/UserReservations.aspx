@@ -40,6 +40,11 @@
             <asp:Literal runat="server" ID="litComputer"></asp:Literal>
         </div>
 
+        <asp:PlaceHolder runat="server" ID="phMobileLink" Visible='<%#Not LNF.Scheduler.KioskUtility.IsKiosk(Request.Url.ToString())%>'>
+            <div style="margin-top: 10px;">
+                <a href="." target="_top" class="mobile-link">Reload for mobile browsers (no menu)</a>
+            </div>
+        </asp:PlaceHolder>
     </div>
 
     <uc:ReservationView runat="server" ID="rvReserv" View="UserView"></uc:ReservationView>
@@ -66,4 +71,10 @@
 </asp:Content>
 
 <asp:Content ID="Content3" ContentPlaceHolderID="scripts" runat="server">
+    <script>
+        if (window.top == window.self)
+            $(".mobile-link").hide();
+        else
+            $(".mobile-link").prop("href", window.location.href);
+    </script>
 </asp:Content>

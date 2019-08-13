@@ -186,6 +186,9 @@ namespace LNF.Web.Scheduler
             var isReserver = rsv.ClientID == client.ClientID;
             var isInvited = invitees.Any(x => x.InviteeID == client.ClientID);
 
+            var physicalAccessUtil = GetPhysicalAccessUtility(context);
+            var inLab = physicalAccessUtil.ClientInLab(client.ClientID, rsv.LabID);
+
             var result = new ReservationClient
             {
                 ClientID = client.ClientID,
@@ -193,7 +196,7 @@ namespace LNF.Web.Scheduler
                 ResourceID = rsv.ResourceID,
                 IsReserver = isReserver,
                 IsInvited = isInvited,
-                InLab = context.ClientInLab(rsv.LabID),
+                InLab = inLab,
                 UserAuth = userAuth
             };
 

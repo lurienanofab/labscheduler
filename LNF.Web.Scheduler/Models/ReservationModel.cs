@@ -20,7 +20,7 @@ namespace LNF.Web.Scheduler.Models
         public IProvider Provider { get; }
         public IClient CurrentUser => _context.CurrentUser();
         public IReservation Reservation { get; }
-        public IResource Resource => _context.GetCurrentResource();
+        public IResource Resource { get; }
 
         public int ActivityID { get; set; }
         public int AccountID { get; set; }
@@ -39,6 +39,24 @@ namespace LNF.Web.Scheduler.Models
             _context = context;
             Provider = provider;
             Now = now;
+
+            if (!string.IsNullOrEmpty(context.Request.QueryString["ReservationID"]))
+            {
+                if (int.TryParse(context.Request.QueryString["ReservationID"], out int reservationId))
+                {
+                    Reservation = provider.Scheduler.Reservation.GetReservation(reservationId);
+                    ActivityID = Reservation.ActivityID;
+                    AccountID = Reservation.AccountID;
+                    RecurrenceID = Reservation.RecurrenceID;
+                    Notes = Reservation.Notes;
+                    AutoEnd = Reservation.AutoEnd;
+                    KeepAlive = Reservation.KeepAlive;
+                    Resource = provider.Scheduler.Resource.GetResource(Reservation.ResourceID);
+                }
+            }
+
+            if (Resource == null)
+                Resource = provider.Scheduler.Resource.GetResource(context.Request.SelectedPath().ResourceID);                
         }
 
         public IReservation CreateOrModifyReservation()
