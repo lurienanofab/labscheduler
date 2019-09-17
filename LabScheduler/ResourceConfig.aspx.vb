@@ -6,7 +6,6 @@ Imports LNF.Repository
 Imports LNF.Scheduler
 Imports LNF.Scheduler.Data
 Imports LNF.Web
-Imports LNF.Web.Scheduler
 Imports LNF.Web.Scheduler.Content
 Imports Scheduler = LNF.Repository.Scheduler
 
@@ -74,7 +73,7 @@ Namespace Pages
             Return DA.Current.Query(Of Scheduler.ResourceActivityAuth)().FirstOrDefault(Function(x) x.Resource.ResourceID = resourceId AndAlso x.Activity.ActivityID = activityId)
         End Function
 
-        Private Sub InitCreateActivity(res As IResource, act As ActivityItem)
+        Private Sub InitCreateActivity(res As IResource, act As IActivity)
             Dim rauth As Scheduler.ResourceActivityAuth = GetResourceActivityAuth(res.ResourceID, act.ActivityID)
             If rauth Is Nothing Then
                 rauth = New Scheduler.ResourceActivityAuth() With {
@@ -93,7 +92,7 @@ Namespace Pages
         Private Sub InitReseourceAuth(res As IResource)
             ' fetch the reseource details from the ResourceActivityAuth table.
             'Dim act As Activity = Activity.DataAccess.Single(20)
-            Dim allActivities As IEnumerable(Of ActivityItem) = CacheManager.Current.Activities()
+            Dim allActivities As IEnumerable(Of IActivity) = CacheManager.Current.Activities()
             Dim table As Table = New Table()
             Dim columnIndex As Integer = 1
             Dim trow As TableRow = Nothing
@@ -143,7 +142,7 @@ Namespace Pages
 
         End Sub
 
-        Private Sub UpdateResourceUIFromDB(cbl As CheckBoxList, res As IResource, act As ActivityItem)
+        Private Sub UpdateResourceUIFromDB(cbl As CheckBoxList, res As IResource, act As IActivity)
             Dim rauth As Scheduler.ResourceActivityAuth = GetResourceActivityAuth(res.ResourceID, act.ActivityID)
             For i = 0 To cbl.Items.Count - 1
                 'txtboxtest.Text = txtboxtest.Text + "   ,  " + cbl.Items(i).Text + ":" + cblInviteeAuths.Items(i).Value

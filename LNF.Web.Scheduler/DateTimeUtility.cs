@@ -7,10 +7,11 @@ namespace LNF.Web.Scheduler
         public static DataTable GetAllHours()
         {
             DataTable dt = new DataTable();
-            dt.Columns.Add("HID", typeof(int));
+            dt.Columns.Add("HourValue", typeof(int));
+            dt.Columns.Add("HourText", typeof(string));
 
             for (int i = 1; i <= 12; i++)
-                dt.Rows.Add(i);
+                dt.Rows.Add(i, i.ToString());
 
             return dt;
         }
@@ -18,10 +19,11 @@ namespace LNF.Web.Scheduler
         public static DataTable GetAllMinutes()
         {
             DataTable dt = new DataTable();
-            dt.Columns.Add("MinID", typeof(int));
+            dt.Columns.Add("MinValue", typeof(int));
+            dt.Columns.Add("MinText", typeof(string));
 
             for (int i = 0; i <= 59; i++)
-                dt.Rows.Add(i);
+                dt.Rows.Add(i, i.ToString("00"));
 
             return dt;
         }

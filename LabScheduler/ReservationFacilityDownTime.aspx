@@ -52,16 +52,19 @@
                     <div class="col-sm-4">
                         <div class="form-group" style="margin-top: 20px;">
                             <label>Filter by Lab:</label>
-                            <asp:DropDownList ID="ddlLabs" AppendDataBoundItems="true" runat="server" DataSourceID="odsLabs" DataValueField="LabID" DataTextField="LabName" AutoPostBack="true" CssClass="form-control">
+                            <asp:DropDownList ID="ddlLabs" AppendDataBoundItems="true" runat="server" DataSourceID="odsLabs" DataValueField="LabID" DataTextField="LabDisplayName" AutoPostBack="true" CssClass="form-control">
                                 <asp:ListItem Text="All" Value="0">All</asp:ListItem>
-                                <asp:ListItem Text="All" Value="-1">Clean Room & Wet Chemistry</asp:ListItem>
+                                <asp:ListItem Text="All" Value="-1">Clean Room & ROBIN</asp:ListItem>
                             </asp:DropDownList>
                             <asp:ObjectDataSource ID="odsLabs" runat="server" TypeName="LabScheduler.AppCode.DBAccess.LabDB" SelectMethod="SelectAll"></asp:ObjectDataSource>
+                        </div>
+                        <div class="form-group" style="margin-top: 0;">
+                            <input type="text" class="form-control search" placeholder="Search" />
                         </div>
                         <div class="form-group">
                             <label style="color: #ff0000;">Hold the "Ctrl" key to select multiple tools</label>
                             <asp:ListBox runat="server" ID="lboxTools" SelectionMode="Multiple" DataSourceID="odsTool" DataValueField="ResourceID" DataTextField="ResourceName" CssClass="form-control tools" Height="300"></asp:ListBox>
-                            <asp:ObjectDataSource ID="odsTool" runat="server" TypeName="LabScheduler.AppCode.DBAccess.ResourceDB" SelectMethod="SelectByLab">
+                            <asp:ObjectDataSource ID="odsTool" runat="server" TypeName="LabScheduler.AppCode.DBAccess.ResourceDB" SelectMethod="SelectResourceListItemsByLab">
                                 <SelectParameters>
                                     <asp:ControlParameter Type="Int32" ControlID="ddlLabs" DefaultValue="0" PropertyName="SelectedValue" Name="labId" />
                                 </SelectParameters>
@@ -70,7 +73,7 @@
                         <div class="checkbox">
                             <label>
                                 <input type="checkbox" class="check-all" onclick="toggleCheckAll();">
-                                Select all tools in the box
+                                Select all tools
                             </label>
                         </div>
                     </div>
@@ -89,9 +92,9 @@
                         <label class="col-sm-1 control-label">Time</label>
                         <div class="col-sm-8">
                             <div class="form-inline">
-                                <asp:DropDownList ID="ddlHour" runat="server" DataTextField="HID" DataValueField="HID" CssClass="form-control time-select" Width="60" OnDataBound="DdlHour_DataBound">
+                                <asp:DropDownList ID="ddlHour" runat="server" DataTextField="HourText" DataValueField="HourValue" CssClass="form-control time-select" Width="60" OnDataBound="DdlHour_DataBound">
                                 </asp:DropDownList>
-                                <asp:DropDownList ID="ddlMin" runat="server" DataTextField="MinID" DataValueField="MinID" CssClass="form-control time-select" Width="60" OnDataBound="DdlMin_DataBound">
+                                <asp:DropDownList ID="ddlMin" runat="server" DataTextField="MinText" DataValueField="MinValue" CssClass="form-control time-select" Width="60" OnDataBound="DdlMin_DataBound">
                                 </asp:DropDownList>
                                 <asp:DropDownList ID="ddlAMPM" runat="server" DataTextField="Name" DataValueField="Name" CssClass="form-control time-select" Width="60" OnDataBound="DdlAMPM_DataBound">
                                 </asp:DropDownList>
@@ -111,9 +114,9 @@
                         <label class="col-sm-1 control-label">Time</label>
                         <div class="col-sm-8">
                             <div class="form-inline">
-                                <asp:DropDownList ID="ddlHourEnd" runat="server" DataTextField="HID" DataValueField="HID" CssClass="form-control time-select" Width="60" OnDataBound="ddlHour_DataBound">
+                                <asp:DropDownList ID="ddlHourEnd" runat="server" DataTextField="HourText" DataValueField="HourValue" CssClass="form-control time-select" Width="60" OnDataBound="ddlHour_DataBound">
                                 </asp:DropDownList>
-                                <asp:DropDownList ID="ddlMinEnd" runat="server" DataTextField="MinID" DataValueField="MinID" CssClass="form-control time-select" Width="60" OnDataBound="ddlMin_DataBound">
+                                <asp:DropDownList ID="ddlMinEnd" runat="server" DataTextField="MinText" DataValueField="MinValue" CssClass="form-control time-select" Width="60" OnDataBound="ddlMin_DataBound">
                                 </asp:DropDownList>
                                 <asp:DropDownList ID="ddlAMPMEnd" runat="server" DataTextField="Name" DataValueField="Name" CssClass="form-control time-select" Width="60" OnDataBound="ddlAMPM_DataBound">
                                 </asp:DropDownList>
@@ -227,9 +230,9 @@
                             <label class="col-sm-1 control-label">Time</label>
                             <div class="col-sm-8">
                                 <div class="form-inline">
-                                    <asp:DropDownList ID="ddlHourModify" runat="server" DataTextField="HID" DataValueField="HID" CssClass="form-control time-select" Width="60" OnDataBound="ddlHour_DataBound">
+                                    <asp:DropDownList ID="ddlHourModify" runat="server" DataTextField="HourText" DataValueField="HourValue" CssClass="form-control time-select" Width="60" OnDataBound="ddlHour_DataBound">
                                     </asp:DropDownList>
-                                    <asp:DropDownList ID="ddlMinModify" runat="server" DataTextField="MinID" DataValueField="MinID" CssClass="form-control time-select" Width="60" OnDataBound="ddlMin_DataBound">
+                                    <asp:DropDownList ID="ddlMinModify" runat="server" DataTextField="MinText" DataValueField="MinValue" CssClass="form-control time-select" Width="60" OnDataBound="ddlMin_DataBound">
                                     </asp:DropDownList>
                                     <asp:DropDownList ID="ddlAMPMModify" runat="server" DataTextField="Name" DataValueField="Name" CssClass="form-control time-select" Width="60" OnDataBound="ddlAMPM_DataBound">
                                     </asp:DropDownList>
@@ -249,9 +252,9 @@
                             <label class="col-sm-1 control-label">Time</label>
                             <div class="col-sm-8">
                                 <div class="form-inline">
-                                    <asp:DropDownList ID="ddlHourEndModify" runat="server" DataTextField="HID" DataValueField="HID" CssClass="form-control time-select" Width="60" OnDataBound="ddlHour_DataBound">
+                                    <asp:DropDownList ID="ddlHourEndModify" runat="server" DataTextField="HourText" DataValueField="HourValue" CssClass="form-control time-select" Width="60" OnDataBound="ddlHour_DataBound">
                                     </asp:DropDownList>
-                                    <asp:DropDownList ID="ddlMinEndModify" runat="server" DataTextField="MinID" DataValueField="MinID" CssClass="form-control time-select" Width="60" OnDataBound="ddlMin_DataBound">
+                                    <asp:DropDownList ID="ddlMinEndModify" runat="server" DataTextField="MinText" DataValueField="MinValue" CssClass="form-control time-select" Width="60" OnDataBound="ddlMin_DataBound">
                                     </asp:DropDownList>
                                     <asp:DropDownList ID="ddlAMPMEndModify" runat="server" DataTextField="Name" DataValueField="Name" CssClass="form-control time-select" Width="60" OnDataBound="ddlAMPM_DataBound">
                                     </asp:DropDownList>
@@ -299,7 +302,7 @@
 
         function toggleCheckAll() {
             var checked = $(".check-all").prop("checked") === true;
-            $('.tools option').prop("selected", checked);
+            $('.tools option:visible').prop("selected", checked);
         }
 
         $(".delete-confirmation-dialog").on("show.bs.modal", function (e) {
@@ -313,5 +316,21 @@
         var selectedTabIndex = parseInt($(".selected-tab-index").val());
         $("#tabs1 li").eq(selectedTabIndex).find("a").tab("show");
         $(".fdt").show();
+
+        $(".search").on("keyup", function (e) {
+            var $this = $(this);
+            var current = $this.val().toLowerCase();
+            if (current) {
+                $(".tools").find("option").each(function () {
+                    var $opt = $(this);
+                    if ($opt.text().toLowerCase().search(current) >= 0)
+                        $opt.show();
+                    else
+                        $opt.hide();
+                })
+            } else {
+                $(".tools").find("option").show();
+            }
+        });
     </script>
 </asp:Content>

@@ -253,7 +253,7 @@ namespace LNF.Web.Scheduler.Models
             return ReservationUtility.GetAuthLevel(resourceClients, CurrentUser);
         }
 
-        public ActivityItem GetCurrentActivity()
+        public IActivity GetCurrentActivity()
         {
             // always get from the select - even when modifying
             return CacheManager.Current.GetActivity(ActivityID);

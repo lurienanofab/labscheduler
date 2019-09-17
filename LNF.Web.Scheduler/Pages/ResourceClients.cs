@@ -119,6 +119,7 @@ namespace LNF.Web.Scheduler.Pages
             ToolEngineersRepeater.DataSource = items;
             ToolEngineersRepeater.DataBind();
             NoToolEngineersPlaceHolder.Visible = items.Count() == 0;
+            ToolEngineersRepeater.Visible = items.Count() > 0;
         }
 
         private void FillTrainers()
@@ -127,6 +128,7 @@ namespace LNF.Web.Scheduler.Pages
             TrainersRepeater.DataSource = items;
             TrainersRepeater.DataBind();
             NoTrainersPlaceHolder.Visible = items.Count() == 0;
+            TrainersRepeater.Visible = items.Count() > 0;
         }
 
         private void FillSuperUsers()
@@ -135,6 +137,7 @@ namespace LNF.Web.Scheduler.Pages
             SuperUsersRepeater.DataSource = items;
             SuperUsersRepeater.DataBind();
             NoSuperUsersPlaceHolder.Visible = items.Count() == 0;
+            SuperUsersRepeater.Visible = items.Count() > 0;
         }
 
         private void FillAuthorizedUsers()
@@ -143,6 +146,7 @@ namespace LNF.Web.Scheduler.Pages
             AuthorizedUsersRepeater.DataSource = items;
             AuthorizedUsersRepeater.DataBind();
             NoAuthorizedUsersPlaceHolder.Visible = items.Count() == 0;
+            AuthorizedUsersRepeater.Visible = items.Count() > 0;
         }
 
         private ClientAuthLevel GetSelectedAuthLevel()

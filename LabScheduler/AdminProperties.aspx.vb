@@ -150,7 +150,7 @@ Namespace Pages
 
             Properties.Current.LateChargePenaltyMultiplier = Convert.ToDouble(txtLateChargePenalty.Text)
             Properties.Current.AuthExpWarning = Convert.ToDouble(txtAuthExpWarning.Text)
-            Properties.Current.Admin = CacheManager.Current.GetClient(Integer.Parse(ddlAdmin.SelectedValue))
+            Properties.Current.Admin = Provider.Data.Client.GetClient(Integer.Parse(ddlAdmin.SelectedValue))
             Properties.Current.ResourceIPPrefix = txtResourceIPPrefix.Text
 
             ' Update Database

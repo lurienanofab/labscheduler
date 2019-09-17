@@ -111,7 +111,7 @@ Namespace Pages
             End If
 
             '2009-07-19 make a reservation group
-            Dim clientId As Integer = CType(Session("ClientID"), Integer)
+            Dim clientId As Integer = CurrentUser.ClientID
             Dim groupId As Integer = FacilityDownTimeDB.CreateNew(clientId, beginDateTime, endDateTime)
 
             ' If we ever want to allow notes for FDT reservations, do it here.
@@ -123,14 +123,29 @@ Namespace Pages
                 Dim query As IEnumerable(Of IReservation) = Provider.Scheduler.Reservation.SelectByResource(resourceId, beginDateTime, endDateTime, False)
 
                 For Each existing As IReservation In query
-                    ' Only if the reservation has not begun
                     If existing.ActualBeginDateTime Is Nothing Then
+                        ' handle unstarted reservations
                         Provider.Scheduler.Reservation.CancelAndForgive(existing.ReservationID, CurrentUser.ClientID)
                         Provider.EmailManager.EmailOnCanceledByRepair(existing, True, "LNF Facility Down", "Facility is down, thus we have to disable the tool.", endDateTime, CurrentUser.ClientID)
                     Else
-                        'We have to disable all those reservations that have been activated by setting isActive to 0.  
+                        ' handle started reservations
+
+                        ' [jg 2019-09-12] Original comment no longer accurate (see below).
+                        'We have to disable all those reservations that have been activated by setting IsActive to 0.  
                         'The catch here is that we must compare the "Actual" usage time with the repair time because if the user ends the reservation before the repair starts, we still 
                         'have to charge the user for that reservation
+
+                        ' [jg 2019-09-12] Started reservations should not be cancelled (IsActive = 0). Rather they should be ended and not forgiven
+                        ' (tool engineers can forgive manually if needed). Repairs should be ignored. A tool can be in repair and have a FDT at
+                        ' the same time (per Sandrine) becuase when the FDT is over the tool should still be in repair until the repair is ended.
+                        If Not existing.IsRepair Then
+                            ' Non repair reservations should be ended (not cancelled) and not forgiven.
+                            ' The user will have to request that the reservation be forgiven.
+                            ' We only need to deal with in-progress reservations.
+                            If existing.ActualEndDateTime Is Nothing Then
+                                Provider.Scheduler.Reservation.EndReservation(existing.ReservationID, CurrentUser.ClientID, CurrentUser.ClientID)
+                            End If
+                        End If
                     End If
                 Next
 
@@ -142,6 +157,14 @@ Namespace Pages
             hidSelectedTabIndex.Value = "0"
 
             ShowAlert("success", String.Format("You've created Facility Down Time reservation from {0} to {1} on {2} tools. User's reservations have been deleted as well.", beginDateTime, endDateTime, toolIdList.Count))
+        End Sub
+
+        Private Sub EndRepairForFacilityDownTime(repair As IReservation)
+            Dim ed As Date = repair.GetNextGranularity(Date.Now, GranularityDirection.Next)
+            Dim notes As String = (repair.Notes + $" Ended for Facility Down Time at {Date.Now:yyyy-MM-dd HH:mm:ss}.").Trim()
+            Provider.Scheduler.Reservation.UpdateRepair(repair.ReservationID, ed, notes, CurrentUser.ClientID)
+            Provider.Scheduler.Reservation.EndReservation(repair.ReservationID, CurrentUser.ClientID, CurrentUser.ClientID)
+
         End Sub
 
         Protected Sub BtnBack_Click(sender As Object, e As EventArgs)

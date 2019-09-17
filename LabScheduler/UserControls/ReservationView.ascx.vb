@@ -12,15 +12,28 @@ Namespace UserControls
     Public Class ReservationView
         Inherits SchedulerUserControl
 
+        Private _minGran As Integer
+
+        ' This is loaded in PopulateRecurringReservations(), unless View = ViewType.UserView, then it is loaded in LoadHeaders()
+        Private _reservations As ReservationCollection
+
         Public Property View As ViewType
         Public Property Resource As IResource
         Public Property LabID As Integer
         Public Property ProcessTechID As Integer
 
-        Private _minGran As Integer
+        ''' <summary>
+        ''' Holds all the reservations in the current view.
+        ''' </summary>
+        Public ReadOnly Property Reservations As ReservationCollection
+            Get
+                If _reservations Is Nothing Then
+                    Throw New Exception("Reservations have not been initialized.")
+                End If
 
-        ' This is loaded in PopulateRecurringReservations(), unless View = ViewType.UserView, then it is loaded in LoadHeaders()
-        Private _reservations As ReservationCollection
+                Return _reservations
+            End Get
+        End Property
 
         ' needs to be called everytime for event wiring
         Protected Sub Page_Load(sender As Object, e As EventArgs) Handles Me.Load
@@ -116,49 +129,38 @@ Namespace UserControls
             End If
         End Sub
 
-        ''' <summary>
-        ''' Holds all the reservations in the current view.
-        ''' </summary>
-        Public Function GetReservations() As ReservationCollection
-            If _reservations Is Nothing Then
-                _reservations = New ReservationCollection(Provider)
+        Private Sub InitReservations()
+            ' This is first called once in LoadScheduleTable
 
-                Dim sd, ed As Date
+            _reservations = New ReservationCollection(Provider)
 
-                Select Case View
-                    Case ViewType.WeekView
-                        Dim cols As Integer = tblSchedule.Rows(0).Cells.Count
+            Dim sd, ed As Date
 
-                        ' The start date is based on the header cell in the 2nd column (the first column is for times).
-                        Dim cell As CustomTableCell
-
-                        cell = CType(tblSchedule.Rows(0).Cells(1), CustomTableCell)
-                        sd = cell.CellDate
-
-                        cell = CType(tblSchedule.Rows(0).Cells(cols - 1), CustomTableCell)
-                        ed = cell.CellDate.AddDays(1)
-
-                        _reservations.SelectByResource(Resource.ResourceID, sd, ed)
-                    Case ViewType.DayView
-                        sd = ContextBase.Request.SelectedDate()
-                        ed = sd.AddDays(1)
-                        _reservations.SelectByResource(Resource.ResourceID, sd, ed)
-                    Case ViewType.ProcessTechView
-                        sd = ContextBase.Request.SelectedDate()
-                        ed = sd.AddDays(1)
-                        _reservations.SelectByProcessTech(ProcessTechID, sd, ed)
-                    Case ViewType.UserView
-                        sd = ContextBase.Request.SelectedDate()
-                        ed = sd.AddDays(1)
-                        _reservations.SelectByClient(CurrentUser.ClientID, sd, ed)
-                End Select
-            End If
-
-            Return _reservations
-        End Function
+            Select Case View
+                Case ViewType.WeekView
+                    sd = ContextBase.Request.SelectedDate()
+                    ed = sd.AddDays(7)
+                    _reservations.SelectByResource(Resource.ResourceID, sd, ed)
+                Case ViewType.DayView
+                    sd = ContextBase.Request.SelectedDate()
+                    ed = sd.AddDays(1)
+                    _reservations.SelectByResource(Resource.ResourceID, sd, ed)
+                Case ViewType.ProcessTechView
+                    sd = ContextBase.Request.SelectedDate()
+                    ed = sd.AddDays(1)
+                    _reservations.SelectByProcessTech(ProcessTechID, sd, ed)
+                Case ViewType.UserView
+                    sd = ContextBase.Request.SelectedDate()
+                    ed = sd.AddDays(1)
+                    ' We need all reservations, not just for current user, to check for conflicts
+                    ' when recurring reservations are created. Also any tool is possible.
+                    _reservations.SelectByDateRange(sd, ed)
+            End Select
+        End Sub
 
 #Region "Load Table"
         Public Sub LoadScheduleTable()
+            InitReservations()
             ClearTable()
             LoadHeaders()
             LoadEmptyCells()
@@ -206,10 +208,14 @@ Namespace UserControls
                 Case ViewType.UserView
                     HelpdeskInfo1.Resources = New List(Of Integer)()
 
-                    Dim query As IEnumerable(Of IReservation) = GetReservations().Find(ContextBase.Request.SelectedDate(), False)
+                    ' In this case Reservations returns all reservations for all tools and users in the date range. And Find() returns only the
+                    ' reservations for the current user. We need all reservations because 1. We don't know for sure which tools will be displayed yet,
+                    ' and 2. we must make sure any newly created recurring reservations do not conflict (the result of GetReservations() will be used
+                    ' when it comes time to look for conflicts).
+                    Dim activeReservationsForCurrentUser As IEnumerable(Of IReservation) = Reservations.Find(ContextBase.Request.SelectedDate(), CurrentUser.ClientID, False).ToList() 'False means no not include cancelled
                     Dim prevResourceId As Integer = -1
 
-                    For Each res As IReservation In query.OrderBy(Function(x) x.ResourceID)
+                    For Each res As IReservation In activeReservationsForCurrentUser.OrderBy(Function(x) x.ResourceID)
                         If res.ResourceID <> prevResourceId Then
                             prevResourceId = res.ResourceID
                             AddHeaderCell(res.ResourceID, res.ResourceName, ContextBase.Request.SelectedDate())
@@ -219,8 +225,8 @@ Namespace UserControls
 
                     Dim result As Integer = 0
 
-                    If query.Count > 0 Then
-                        result = query.Min(Function(x) x.Granularity)
+                    If activeReservationsForCurrentUser.Count > 0 Then
+                        result = activeReservationsForCurrentUser.Min(Function(x) x.Granularity)
                     End If
 
                     _minGran = If(result = 0, 60, result)
@@ -419,15 +425,15 @@ Namespace UserControls
             Dim iter As Integer = tblSchedule.Rows(0).Cells.Count
 
             'Read from ReservationRecurrence table 
-            Dim recurringRes As IEnumerable(Of IReservationRecurrence) = Nothing
+            Dim recurringRes As IList(Of IReservationRecurrence) = Nothing
 
             Select Case View
                 Case ViewType.DayView, ViewType.WeekView
-                    recurringRes = Provider.Scheduler.Reservation.GetReservationRecurrencesByResource(Resource.ResourceID).Where(Function(x) x.IsActive).OrderBy(Function(x) x.ResourceID)
+                    recurringRes = Provider.Scheduler.Reservation.GetReservationRecurrencesByResource(Resource.ResourceID).Where(Function(x) x.IsActive).OrderBy(Function(x) x.ResourceID).ToList()
                 Case ViewType.ProcessTechView
-                    recurringRes = Provider.Scheduler.Reservation.GetReservationRecurrencesByProcessTech(ContextBase.Request.SelectedPath().ProcessTechID).Where(Function(x) x.IsActive).OrderBy(Function(x) x.ResourceID)
+                    recurringRes = Provider.Scheduler.Reservation.GetReservationRecurrencesByProcessTech(ContextBase.Request.SelectedPath().ProcessTechID).Where(Function(x) x.IsActive).OrderBy(Function(x) x.ResourceID).ToList()
                 Case ViewType.UserView
-                    recurringRes = Provider.Scheduler.Reservation.GetReservationRecurrencesByClient(CurrentUser.ClientID).Where(Function(x) x.IsActive).OrderBy(Function(x) x.ResourceID)
+                    recurringRes = Provider.Scheduler.Reservation.GetReservationRecurrencesByClient(CurrentUser.ClientID).Where(Function(x) x.IsActive).OrderBy(Function(x) x.ResourceID).ToList()
                     ' iter = 1 means today there is no reservation on any this tool at this time
                     ' iter is the number of columns, so 1 means there is only one column (index 0) which is the time.
                     ' Therefore when the table was built there were no columns to add for each tool in the My Reservations view. 
@@ -438,8 +444,6 @@ Namespace UserControls
             Dim hasData As Boolean = recurringRes.Count() > 0
 
             If Not hasData Then Exit Sub
-
-            Dim reservations As ReservationCollection = GetReservations()
 
             'The first for loop is for process tech, week or day view.  If it's day view, it will just loop once.
             'If it's user view, then it won't come here at all
@@ -460,7 +464,7 @@ Namespace UserControls
                 'Populate the temporary regular reservation table from recurring reservation for this period of time
                 'Check if the recurrence res is already existing in reservation table
                 For Each rr As IReservationRecurrence In recurringRes
-                    hasNewData = RecurringReservationTransform.AddRegularFromRecurring(reservations, rr, startTime) OrElse hasNewData
+                    hasNewData = RecurringReservationTransform.AddRegularFromRecurring(Reservations, rr, startTime) OrElse hasNewData
                 Next
 
                 If View = ViewType.ProcessTechView Then
@@ -502,7 +506,7 @@ Namespace UserControls
                 ResourceUtility.GetTimeSlotBoundary(TimeSpan.FromMinutes(_minGran), TimeSpan.FromHours(offset), currentStartTime, currentEndTime, displayDefaultHours, beginHour, endHour)
 
                 ' Select Reservations for this resource for this day
-                listRsv = GetReservations().Find(currentStartTime, False)
+                listRsv = Reservations.Find(currentStartTime, False)
 
                 Dim mergeStartCell As Integer = 0
                 Dim lastReservationCount As Integer = 0
@@ -522,8 +526,10 @@ Namespace UserControls
                     Select Case View
                         Case ViewType.DayView, ViewType.WeekView
                             filteredRsv = listRsv.Where(Function(x) ReservationFilter(x, beginTime, endTime)).OrderBy(Function(x) x.BeginDateTime).ToList()
-                        Case ViewType.ProcessTechView, ViewType.UserView
+                        Case ViewType.ProcessTechView
                             filteredRsv = listRsv.Where(Function(x) x.ResourceID = rsvCell.ResourceID AndAlso ReservationFilter(x, beginTime, endTime)).OrderBy(Function(x) x.BeginDateTime).ToList()
+                        Case ViewType.UserView
+                            filteredRsv = listRsv.Where(Function(x) x.ResourceID = rsvCell.ResourceID AndAlso x.ClientID = CurrentUser.ClientID AndAlso ReservationFilter(x, beginTime, endTime)).OrderBy(Function(x) x.BeginDateTime).ToList()
                     End Select
 
                     Dim reservationCount As Integer = filteredRsv.Count
@@ -546,15 +552,17 @@ Namespace UserControls
                             lastReservationCount = reservationCount
                             mergeStartCell = j
 
-                            If reservationCount = 1 OrElse Not filteredRsv(reservationCount - 1).ActualEndDateTime.HasValue Then
+                            Dim singleReservationCell As Boolean = reservationCount = 1 OrElse (filteredRsv(reservationCount - 1).ActualEndDateTime.HasValue = False AndAlso filteredRsv(reservationCount - 1).IsRepair = False)
+
+                            If reservationCount = 1 OrElse IsUnendedReservation(filteredRsv(reservationCount - 1)) Then
                                 ' Display reservation
                                 Dim rsv As IReservation
 
                                 If reservationCount = 1 Then
                                     rsv = filteredRsv.First()
                                 Else
-                                    lastReservationCount = 1 ' so this can merge with next cell
-                                    lastResourceIds = filteredRsv(reservationCount - 1).ReservationID.ToString() + " "
+                                    'lastReservationCount = 1 ' so this can merge with next cell
+                                    'lastResourceIds = filteredRsv(reservationCount - 1).ReservationID.ToString() + " "
                                     mergeStartCell = j
                                     rsv = filteredRsv(reservationCount - 1)
                                 End If
@@ -597,6 +605,10 @@ Namespace UserControls
                 End If
             End If
         End Sub
+
+        Private Function IsUnendedReservation(rsv As IReservation) As Boolean
+            Return rsv.IsRepair = False AndAlso rsv.ActualEndDateTime.HasValue = False
+        End Function
 
         Private Sub ShowNoDataMessage(text As String)
             Dim showNoData = Not String.IsNullOrEmpty(text)

@@ -26,7 +26,7 @@ Namespace Pages
                 If Not Integer.TryParse(ddlClients.SelectedValue, cid) Then
                     c = CurrentUser
                 Else
-                    c = CacheManager.Current.GetClient(cid)
+                    c = Provider.Data.Client.GetClient(cid)
                 End If
             End If
             Return c

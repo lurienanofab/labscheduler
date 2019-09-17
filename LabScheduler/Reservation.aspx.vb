@@ -124,7 +124,7 @@ Namespace Pages
             Return result
         End Function
 
-        Private Function GetCurrentActivity() As ActivityItem
+        Private Function GetCurrentActivity() As IActivity
             ' always get from the select - even when modifying
             Dim activityId As Integer = Convert.ToInt32(ddlActivity.SelectedValue)
             Return CacheManager.Current.GetActivity(activityId)
@@ -219,11 +219,16 @@ Namespace Pages
 
             If ReservationID > 0 Then
                 TrySelectByValue(ddlActivity, Reservation.ActivityID)
+                phActivity.Visible = False
+                phActivityName.Visible = True
+                litActivityName.Text = Reservation.ActivityName
+                phActivityMessage.Visible = False
+                litActivityMessage.Text = String.Empty
             End If
         End Sub
 
         Private Sub LoadAccounts()
-            Dim act As ActivityItem
+            Dim act As IActivity
             Dim client As IClient
             Dim selectedAccountId As Integer
 
@@ -233,7 +238,7 @@ Namespace Pages
                 selectedAccountId = -1
             Else
                 act = CacheManager.Current.GetActivity(Reservation.ActivityID)
-                client = CacheManager.Current.GetClient(Reservation.ClientID)
+                client = Provider.Data.Client.GetClient(Reservation.ClientID)
                 selectedAccountId = Reservation.AccountID
             End If
 
@@ -256,7 +261,7 @@ Namespace Pages
                 ddlAccount.DataBind()
 
                 ' check for scheduled maintenance activity
-                If act.ActivityID = Properties.Current.Activities.ScheduledMaintenance.ActivityID Then
+                If IsGeneralLabActivity(act) Then
                     selectedAccountId = Properties.Current.LabAccount.AccountID
                     ddlAccount.Enabled = False
                 End If
@@ -264,6 +269,11 @@ Namespace Pages
                 TrySelectByValue(ddlAccount, selectedAccountId)
             End If
         End Sub
+
+        Private Function IsGeneralLabActivity(act As IActivity) As Boolean
+            Return act.ActivityID = Properties.Current.Activities.ScheduledMaintenance.ActivityID _
+                OrElse act.ActivityID = Properties.Current.Activities.FacilityDownTime.ActivityID
+        End Function
 
         Private Sub LoadRecurring()
             ' No matter what, only staff can see is Recurring option
@@ -406,27 +416,36 @@ Namespace Pages
                 End If
             Next
 
-            ' Load Minutes
-            LoadStartTimeMinutes()
+            Dim startTimeHour As Integer = 0
+            Dim startTimeMin As Integer = 0
 
             ' Select Preselected Time
             If ReservationID = 0 Then
                 ' new reservation
-                TrySelectByValue(ddlStartTimeHour, ContextBase.Request.SelectedDate().Add(SelectedTime).Hour)
-                TrySelectByValue(ddlStartTimeMin, ContextBase.Request.SelectedDate().Add(SelectedTime).Minute)
+                startTimeHour = ContextBase.Request.SelectedDate().Add(SelectedTime).Hour
+                startTimeMin = ContextBase.Request.SelectedDate().Add(SelectedTime).Minute
             Else
                 ' existing reservation
-                TrySelectByValue(ddlStartTimeHour, Reservation.BeginDateTime.Hour)
-                TrySelectByValue(ddlStartTimeMin, Reservation.BeginDateTime.Minute)
+                startTimeHour = Reservation.BeginDateTime.Hour
+                startTimeMin = Reservation.BeginDateTime.Minute
             End If
+
+            ' Must be called before LoadStartTimeMinutes because that method depends on ddlStartTimeHour.SelectedValue
+            TrySelectByValue(ddlStartTimeHour, startTimeHour)
+
+            ' Load Minutes
+            LoadStartTimeMinutes()
+
+            TrySelectByValue(ddlStartTimeMin, startTimeMin)
         End Sub
 
         Private Sub LoadStartTimeMinutes()
             ddlStartTimeMin.Items.Clear()
 
-            Dim start As Date = ContextBase.Request.SelectedDate().AddHours(Convert.ToInt32(ddlStartTimeHour.SelectedValue))
+            Dim hours As Integer = Convert.ToInt32(ddlStartTimeHour.SelectedValue)
+            Dim start As Date = ContextBase.Request.SelectedDate().AddHours(hours)
 
-            For i As Integer = 0 To 59 Step Convert.ToInt32(Resource.Granularity)
+            For i As Integer = 0 To 59 Step Resource.Granularity
                 If start.AddMinutes(i) >= Date.Now Then
                     ddlStartTimeMin.Items.Add(New ListItem(i.ToString("00"), i.ToString()))
                 End If
@@ -472,6 +491,8 @@ Namespace Pages
                 maxDuration = -1 * maxDuration
             End If
 
+            Dim selectedValue As Integer = GetSelectedDuration()
+
             ' Duration ranges from Min Reserv Time to Max Reserv Time
             ' or until the start of the next reservation
             ddlDuration.Items.Clear()
@@ -492,9 +513,11 @@ Namespace Pages
                 btnSubmit.Enabled = False
             Else
                 If ReservationID > 0 Then
-                    If Not TrySelectByValue(ddlDuration, Reservation.Duration) Then
-                        ddlDuration.SelectedIndex = -1
-                    End If
+                    selectedValue = Convert.ToInt32(Reservation.Duration)
+                End If
+
+                If Not TrySelectByValue(ddlDuration, selectedValue) Then
+                    ddlDuration.SelectedIndex = -1
                 End If
 
                 btnSubmit.Enabled = True
@@ -507,18 +530,20 @@ Namespace Pages
         End Sub
 
         Private Sub ShowDurationTextBox()
-            If ReservationID = 0 Then
-                txtDuration.Text = Resource.MinReservTime.ToString()
-            Else
-                txtDuration.Text = Reservation.Duration.ToString()
+            Dim selectedValue As Integer = GetSelectedDuration()
+
+            If ReservationID > 0 Then
+                selectedValue = Convert.ToInt32(Reservation.Duration)
             End If
+
+            txtDuration.Text = selectedValue.ToString()
 
             phDurationSelect.Visible = False
             phDurationText.Visible = True
         End Sub
 
         Private Function GetDurationInputType() As DurationInputType
-            Dim act As ActivityItem = GetCurrentActivity()
+            Dim act As IActivity = GetCurrentActivity()
             Dim authLevel As ClientAuthLevel = GetCurrentAuthLevel()
 
             'Right now, to have textbox, the authlevel must be included in NoMaxSchedAuth, and only only sched. maintenance and characterization
@@ -530,6 +555,36 @@ Namespace Pages
             Else
                 Return DurationInputType.DropDown
             End If
+        End Function
+
+        Private Function GetSelectedDuration() As Integer
+            Dim val As String = String.Empty
+            Dim mrt As Integer = 0
+            Dim result As Integer = 0
+
+            If phDurationText.Visible Then
+                val = txtDuration.Text
+            Else
+                val = ddlDuration.SelectedValue
+            End If
+
+            If Resource IsNot Nothing Then
+                mrt = Resource.MinReservTime
+            End If
+
+            If String.IsNullOrEmpty(val) Then
+                result = mrt
+            Else
+                If Not Integer.TryParse(val, result) Then
+                    result = mrt
+                End If
+            End If
+
+            If result = 0 Then
+                Throw New Exception("Selected Duration cannot be zero.")
+            End If
+
+            Return result
         End Function
 
         ''' <summary>
@@ -592,7 +647,7 @@ Namespace Pages
                     Dim names As New List(Of String)
                     For Each inv As IReservationInvitee In invitees
                         If GetInviteeReservations(inv.InviteeID, startDateTime, duration).Count() > 0 Then
-                            Dim inviteeClient = CacheManager.Current.GetClient(inv.InviteeID)
+                            Dim inviteeClient = Provider.Data.Client.GetClient(inv.InviteeID)
                             names.Add(inviteeClient.DisplayName)
                         End If
                     Next
@@ -1086,13 +1141,13 @@ Namespace Pages
 
         Protected Sub BtnSubmit_Click(sender As Object, e As EventArgs)
             Dim client As IClient
-            Dim activity As ActivityItem
+            Dim activity As IActivity
 
             If ReservationID = 0 Then
                 client = CurrentUser
                 activity = CacheManager.Current.GetActivity(Integer.Parse(ddlActivity.SelectedValue))
             Else
-                client = CacheManager.Current.GetClient(Reservation.ClientID)
+                client = Provider.Data.Client.GetClient(Reservation.ClientID)
                 activity = CacheManager.Current.GetActivity(Reservation.ActivityID) 'remember, the activity cannot be changed once a reservation is made
             End If
 

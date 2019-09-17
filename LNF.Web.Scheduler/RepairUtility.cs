@@ -37,8 +37,8 @@ namespace LNF.Web.Scheduler
                     // Determine BeginDateTime for repair reservation
                     DateTime beginDateTime, endDateTime;
 
-                    beginDateTime = ResourceUtility.GetNextGranularity(Resource, actualBeginDateTime, GranularityDirection.Previous);
-                    endDateTime = ResourceUtility.GetNextGranularity(Resource, actualEndDateTime, GranularityDirection.Next);
+                    beginDateTime = Resource.GetNextGranularity(actualBeginDateTime, GranularityDirection.Previous);
+                    endDateTime = Resource.GetNextGranularity(actualEndDateTime, GranularityDirection.Next);
 
                     // Insert the new repair reservation
                     repair = Provider.Scheduler.Reservation.InsertRepair(Resource.ResourceID, CurrentUser.ClientID, beginDateTime, endDateTime, actualBeginDateTime, notes, CurrentUser.ClientID);
@@ -80,7 +80,7 @@ namespace LNF.Web.Scheduler
 
                     if (repair != null)
                     {
-                        endDateTime = ResourceUtility.GetNextGranularity(Resource, actualEndDateTime, GranularityDirection.Next);
+                        endDateTime = Resource.GetNextGranularity(actualEndDateTime, GranularityDirection.Next);
 
                         // Modify existing repair reservation
                         Provider.Scheduler.Reservation.UpdateRepair(repair.ReservationID, endDateTime, notes, CurrentUser.ClientID);
@@ -115,7 +115,7 @@ namespace LNF.Web.Scheduler
                         if (Resource.IsSchedulable)
                         {
                             // Set Scheduled EndDateTime = next gran boundary in future
-                            var endDateTime = ResourceUtility.GetNextGranularity(Resource, DateTime.Now, GranularityDirection.Next);
+                            var endDateTime = Resource.GetNextGranularity(now, GranularityDirection.Next);
 
                             Provider.Scheduler.Reservation.UpdateRepair(repair.ReservationID, endDateTime, repair.Notes, CurrentUser.ClientID);
 

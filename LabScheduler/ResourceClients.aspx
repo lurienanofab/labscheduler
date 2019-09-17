@@ -16,7 +16,7 @@
 
 <asp:Content ID="Content1" ContentPlaceHolderID="head" runat="server">
     <style>
-        .email-table {
+        /*.email-table {
             border-collapse: collapse;
         }
 
@@ -109,7 +109,7 @@
                 border-collapse: collapse;
                 border-spacing: 0;
                 background-color: #fff;
-            }
+            }*/
     </style>
 </asp:Content>
 
@@ -222,31 +222,41 @@
             </h3>
         </div>
         <div class="panel-body">
-            <asp:Repeater runat="server" ID="ToolEngineersRepeater">
-                <HeaderTemplate>
-                    <table class="email-table">
-                        <tbody>
-                </HeaderTemplate>
-                <ItemTemplate>
-                    <tr>
-                        <td style="width: 300px;">
-                            <asp:HyperLink runat="server" NavigateUrl='<%#Eval("ContactUrl")%>'><%#Eval("DisplayName")%></asp:HyperLink>
-                        </td>
-                        <td class="text-center" style="width: 60px;">
-                            <asp:ImageButton runat="server" CommandName="ToolEngineer" CommandArgument='<%#Eval("ClientID")%>' OnCommand="Edit_Command" ImageUrl="~/images/edit.gif" Visible='<%#CanModify()%>' />
-                            <asp:ImageButton runat="server" CommandName="ToolEngineer" CommandArgument='<%#Eval("ClientID")%>' OnCommand="Delete_Command" ImageUrl="~/images/delete.gif" Visible='<%#CanDelete()%>' />
-                        </td>
-                    </tr>
-                </ItemTemplate>
-                <FooterTemplate>
-                    </tbody>
-                    </table>
-                </FooterTemplate>
-            </asp:Repeater>
+            <div class="row">
+                <div class="col-md-5">
+                    <asp:Repeater runat="server" ID="ToolEngineersRepeater">
+                        <HeaderTemplate>
+                            <table class="table table-hover">
+                                <thead>
+                                    <th></th>
+                                    <th style="width: 60px;"></th>
+                                    <th style="width: 60px;"></th>
+                                </thead>
+                                <tbody>
+                        </HeaderTemplate>
+                        <ItemTemplate>
+                            <tr>
+                                <td>
+                                    <asp:HyperLink runat="server" NavigateUrl='<%#Eval("ContactUrl")%>'><%#Eval("DisplayName")%></asp:HyperLink>
+                                </td>
+                                <td class="text-center" style="width: 60px;">
+                                    <asp:ImageButton runat="server" CommandName="ToolEngineer" CommandArgument='<%#Eval("ClientID")%>' OnCommand="Edit_Command" ImageUrl="~/images/edit.gif" Visible='<%#CanModify()%>' />
+                                    <asp:ImageButton runat="server" CommandName="ToolEngineer" CommandArgument='<%#Eval("ClientID")%>' OnCommand="Delete_Command" ImageUrl="~/images/delete.gif" Visible='<%#CanDelete()%>' />
+                                </td>
+                                <td class="text-center" style="width: 60px;">&nbsp;</td>
+                            </tr>
+                        </ItemTemplate>
+                        <FooterTemplate>
+                            </tbody>
+                            </table>
+                        </FooterTemplate>
+                    </asp:Repeater>
 
-            <asp:PlaceHolder runat="server" ID="NoToolEngineersPlaceHolder" Visible="false">
-                <em class="text-muted">There are no tool engineers.</em>
-            </asp:PlaceHolder>
+                    <asp:PlaceHolder runat="server" ID="NoToolEngineersPlaceHolder" Visible="false">
+                        <em class="text-muted">There are no tool engineers.</em>
+                    </asp:PlaceHolder>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -259,31 +269,41 @@
                 </h3>
             </div>
             <div class="panel-body">
-                <asp:Repeater runat="server" ID="TrainersRepeater">
-                    <HeaderTemplate>
-                        <table class="email-table">
-                            <tbody>
-                    </HeaderTemplate>
-                    <ItemTemplate>
-                        <tr>
-                            <td style="width: 300px;">
-                                <asp:HyperLink runat="server" NavigateUrl='<%#Eval("ContactUrl")%>'><%#Eval("DisplayName")%></asp:HyperLink>
-                            </td>
-                            <td class="text-center" style="width: 60px;">
-                                <asp:ImageButton runat="server" CommandName="Trainer" CommandArgument='<%#Eval("ClientID")%>' OnCommand="Edit_Command" ImageUrl="~/images/edit.gif" Visible='<%#CanModify()%>' />
-                                <asp:ImageButton runat="server" CommandName="Trainer" CommandArgument='<%#Eval("ClientID")%>' OnCommand="Delete_Command" ImageUrl="~/images/delete.gif" Visible='<%#CanDelete()%>' />
-                            </td>
-                        </tr>
-                    </ItemTemplate>
-                    <FooterTemplate>
-                        </tbody>
-                    </table>
-                    </FooterTemplate>
-                </asp:Repeater>
+                <div class="row">
+                    <div class="col-md-5">
+                        <asp:Repeater runat="server" ID="TrainersRepeater">
+                            <HeaderTemplate>
+                                <table class="table table-hover">
+                                    <thead>
+                                        <th></th>
+                                        <th style="width: 60px;"></th>
+                                        <th style="width: 60px;"></th>
+                                    </thead>
+                                    <tbody>
+                            </HeaderTemplate>
+                            <ItemTemplate>
+                                <tr>
+                                    <td>
+                                        <asp:HyperLink runat="server" NavigateUrl='<%#Eval("ContactUrl")%>'><%#Eval("DisplayName")%></asp:HyperLink>
+                                    </td>
+                                    <td class="text-center" style="width: 60px;">
+                                        <asp:ImageButton runat="server" CommandName="Trainer" CommandArgument='<%#Eval("ClientID")%>' OnCommand="Edit_Command" ImageUrl="~/images/edit.gif" Visible='<%#CanModify()%>' />
+                                        <asp:ImageButton runat="server" CommandName="Trainer" CommandArgument='<%#Eval("ClientID")%>' OnCommand="Delete_Command" ImageUrl="~/images/delete.gif" Visible='<%#CanDelete()%>' />
+                                    </td>
+                                    <td class="text-center" style="width: 60px;">&nbsp;</td>
+                                </tr>
+                            </ItemTemplate>
+                            <FooterTemplate>
+                                </tbody>
+                                </table>
+                            </FooterTemplate>
+                        </asp:Repeater>
 
-                <asp:PlaceHolder runat="server" ID="NoTrainersPlaceHolder" Visible="false">
-                    <em class="text-muted">There are no authorized staff.</em>
-                </asp:PlaceHolder>
+                        <asp:PlaceHolder runat="server" ID="NoTrainersPlaceHolder" Visible="false">
+                            <em class="text-muted">There are no authorized staff.</em>
+                        </asp:PlaceHolder>
+                    </div>
+                </div>
             </div>
         </div>
     </asp:PlaceHolder>
@@ -297,31 +317,41 @@
                 </h3>
             </div>
             <div class="panel-body">
-                <asp:Repeater runat="server" ID="SuperUsersRepeater">
-                    <HeaderTemplate>
-                        <table class="email-table">
-                            <tbody>
-                    </HeaderTemplate>
-                    <ItemTemplate>
-                        <tr>
-                            <td style="width: 300px;">
-                                <asp:HyperLink runat="server" NavigateUrl='<%#Eval("ContactUrl")%>'><%#Eval("DisplayName")%></asp:HyperLink>
-                            </td>
-                            <td class="text-center" style="width: 60px;">
-                                <asp:ImageButton runat="server" CommandName="SuperUser" CommandArgument='<%#Eval("ClientID")%>' OnCommand="Edit_Command" ImageUrl="~/images/edit.gif" Visible='<%#CanModify()%>' />
-                                <asp:ImageButton runat="server" CommandName="SuperUser" CommandArgument='<%#Eval("ClientID")%>' OnCommand="Delete_Command" ImageUrl="~/images/delete.gif" Visible='<%#CanDelete()%>' />
-                            </td>
-                        </tr>
-                    </ItemTemplate>
-                    <FooterTemplate>
-                        </tbody>
-                    </table>
-                    </FooterTemplate>
-                </asp:Repeater>
+                <div class="row">
+                    <div class="col-md-5">
+                        <asp:Repeater runat="server" ID="SuperUsersRepeater">
+                            <HeaderTemplate>
+                                <table class="table table-hover">
+                                    <thead>
+                                        <th></th>
+                                        <th style="width: 60px;"></th>
+                                        <th style="width: 60px;"></th>
+                                    </thead>
+                                    <tbody>
+                            </HeaderTemplate>
+                            <ItemTemplate>
+                                <tr>
+                                    <td>
+                                        <asp:HyperLink runat="server" NavigateUrl='<%#Eval("ContactUrl")%>'><%#Eval("DisplayName")%></asp:HyperLink>
+                                    </td>
+                                    <td class="text-center" style="width: 60px;">
+                                        <asp:ImageButton runat="server" CommandName="SuperUser" CommandArgument='<%#Eval("ClientID")%>' OnCommand="Edit_Command" ImageUrl="~/images/edit.gif" Visible='<%#CanModify()%>' />
+                                        <asp:ImageButton runat="server" CommandName="SuperUser" CommandArgument='<%#Eval("ClientID")%>' OnCommand="Delete_Command" ImageUrl="~/images/delete.gif" Visible='<%#CanDelete()%>' />
+                                    </td>
+                                    <td class="text-center" style="width: 60px;">&nbsp;</td>
+                                </tr>
+                            </ItemTemplate>
+                            <FooterTemplate>
+                                </tbody>
+                                </table>
+                            </FooterTemplate>
+                        </asp:Repeater>
 
-                <asp:PlaceHolder runat="server" ID="NoSuperUsersPlaceHolder" Visible="false">
-                    <em class="text-muted">There are no super users.</em>
-                </asp:PlaceHolder>
+                        <asp:PlaceHolder runat="server" ID="NoSuperUsersPlaceHolder" Visible="false">
+                            <em class="text-muted">There are no super users.</em>
+                        </asp:PlaceHolder>
+                    </div>
+                </div>
             </div>
         </div>
     </asp:PlaceHolder>
@@ -335,49 +365,48 @@
                 </h3>
             </div>
             <div class="panel-body">
+                <div class="row">
+                    <div class="col-md-5">
+                        <asp:Repeater runat="server" ID="AuthorizedUsersRepeater">
+                            <HeaderTemplate>
+                                <table class="table table-hover authorized-users">
+                                    <thead>
+                                        <th></th>
+                                        <th style="width: 60px;"></th>
+                                        <th style="width: 60px;"></th>
+                                    </thead>
+                                    <tbody>
+                            </HeaderTemplate>
+                            <ItemTemplate>
+                                <tr>
+                                    <td>
+                                        <asp:HyperLink runat="server" NavigateUrl='<%#Eval("ContactUrl")%>'><%#Eval("DisplayName")%></asp:HyperLink>
+                                    </td>
+                                    <td class="text-center" style="width: 60px;">
+                                        <asp:ImageButton runat="server" CommandName="AuthorizedUser" CommandArgument='<%#Eval("ClientID")%>' OnCommand="Edit_Command" ImageUrl="~/images/edit.gif" Visible='<%#CanModify()%>' />
+                                        <asp:ImageButton runat="server" CommandName="AuthorizedUser" CommandArgument='<%#Eval("ClientID")%>' OnCommand="Delete_Command" ImageUrl="~/images/delete.gif" Visible='<%#CanDelete()%>' />
+                                    </td>
+                                    <td class="text-center" style="width: 60px;">
+                                        <asp:PlaceHolder runat="server" Visible='<%#CanExtend()%>'>
+                                            <asp:ImageButton runat="server" CommandName="AuthorizedUser" CommandArgument='<%#Eval("ClientID")%>' OnCommand="Extend_Command" ImageUrl="~/images/extend.gif" Visible='<%#Eval("ShowExtendButton")%>' />
+                                        </asp:PlaceHolder>
+                                        <asp:PlaceHolder runat="server" Visible='<%#!CanExtend()%>'>
+                                            <asp:Label runat="server" Visible='<%#Eval("ShowExtendButton")%>'>E</asp:Label>
+                                        </asp:PlaceHolder>
+                                    </td>
+                                </tr>
+                            </ItemTemplate>
+                            <FooterTemplate>
+                                </tbody>
+                                </table>
+                            </FooterTemplate>
+                        </asp:Repeater>
 
-                <asp:Repeater runat="server" ID="AuthorizedUsersRepeater">
-                    <HeaderTemplate>
-                        <div class="resource-client-datatable">
-                            <table class="email-table authorized-users">
-                                <thead style="display: none;">
-                                    <tr>
-                                        <th>DisplayName</th>
-                                        <th>EditDelete</th>
-                                        <th>Extend</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                    </HeaderTemplate>
-                    <ItemTemplate>
-                        <tr>
-                            <td style="width: 300px;">
-                                <asp:HyperLink runat="server" NavigateUrl='<%#Eval("ContactUrl")%>'><%#Eval("DisplayName")%></asp:HyperLink>
-                            </td>
-                            <td class="text-center" style="width: 60px;">
-                                <asp:ImageButton runat="server" CommandName="AuthorizedUser" CommandArgument='<%#Eval("ClientID")%>' OnCommand="Edit_Command" ImageUrl="~/images/edit.gif" Visible='<%#CanModify()%>' />
-                                <asp:ImageButton runat="server" CommandName="AuthorizedUser" CommandArgument='<%#Eval("ClientID")%>' OnCommand="Delete_Command" ImageUrl="~/images/delete.gif" Visible='<%#CanDelete()%>' />
-                            </td>
-                            <td class="text-center" style="width: 60px;">
-                                <asp:PlaceHolder runat="server" Visible='<%#CanExtend()%>'>
-                                    <asp:ImageButton runat="server" CommandName="AuthorizedUser" CommandArgument='<%#Eval("ClientID")%>' OnCommand="Extend_Command" ImageUrl="~/images/extend.gif" Visible='<%#Eval("ShowExtendButton")%>' />
-                                </asp:PlaceHolder>
-                                <asp:PlaceHolder runat="server" Visible='<%#!CanExtend()%>'>
-                                    <asp:Label runat="server" Visible='<%#Eval("ShowExtendButton")%>'>E</asp:Label>
-                                </asp:PlaceHolder>
-                            </td>
-                        </tr>
-                    </ItemTemplate>
-                    <FooterTemplate>
-                        </tbody>
-                        </table>
-                        </div>
-                    </FooterTemplate>
-                </asp:Repeater>
-
-                <asp:PlaceHolder runat="server" ID="NoAuthorizedUsersPlaceHolder" Visible="false">
-                    <em class="text-muted">There are no authorized users.</em>
-                </asp:PlaceHolder>
+                        <asp:PlaceHolder runat="server" ID="NoAuthorizedUsersPlaceHolder" Visible="false">
+                            <em class="text-muted">There are no authorized users.</em>
+                        </asp:PlaceHolder>
+                    </div>
+                </div>
             </div>
         </div>
     </asp:PlaceHolder>

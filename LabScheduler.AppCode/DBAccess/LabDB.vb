@@ -7,6 +7,7 @@ Namespace DBAccess
         Public BuildingName As String
         Public LabID As Integer
         Public LabName As String
+        Public LabDisplayName As String
         Public Description As String
 
         Public Sub New()
@@ -19,10 +20,11 @@ Namespace DBAccess
                 If reader.Read() Then
                     IsValid = True
                     BuildingID = Convert.ToInt32(reader("BuildingID"))
-                    BuildingName = reader("BuildingName").ToString()
+                    BuildingName = Convert.ToString(reader("BuildingName"))
                     LabID = Convert.ToInt32(reader("LabID"))
-                    LabName = reader("LabName").ToString()
-                    Description = reader("Description").ToString()
+                    LabName = Convert.ToString(reader("LabName"))
+                    LabDisplayName = Convert.ToString(reader("LabDisplayName"))
+                    Description = Convert.ToString(reader("Description"))
                 End If
                 reader.Close()
             End Using

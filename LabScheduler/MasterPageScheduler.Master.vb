@@ -1,4 +1,4 @@
-﻿Imports LNF.Cache
+﻿Imports LNF
 Imports LNF.Models.Data
 Imports LNF.Web
 Imports LNF.Web.Scheduler
@@ -66,7 +66,7 @@ Namespace Pages
             Dim origUser As IClient = Nothing
             If Session("LogInAsOriginalUser") IsNot Nothing Then
                 Dim un As String = Session("LogInAsOriginalUser").ToString()
-                origUser = CacheManager.Current.GetClient(un)
+                origUser = ServiceProvider.Current.Data.Client.GetClient(un)
                 If origUser.HasPriv(ClientPrivilege.Developer) Then
                     Return True
                 End If

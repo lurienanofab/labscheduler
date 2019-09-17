@@ -101,7 +101,7 @@ namespace LNF.Web.Scheduler.Handlers
             {
                 var util = GetReservationUtility(DateTime.Now);
                 var rsv = ReservationManager.GetReservationWithInvitees(reservationId);
-                var client = CacheManager.Current.GetClient(clientId);
+                var client = ServiceProvider.Current.Data.Client.GetClient(clientId);
 
                 if (rsv != null)
                 {
