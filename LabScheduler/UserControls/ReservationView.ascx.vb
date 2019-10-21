@@ -14,8 +14,11 @@ Namespace UserControls
 
         Private _minGran As Integer
 
-        ' This is loaded in PopulateRecurringReservations(), unless View = ViewType.UserView, then it is loaded in LoadHeaders()
+        ' This is loaded in PopulateRecurringReservations(), unless View = ViewType.UserView, then it is loaded in LoadHeaders().
         Private _reservations As ReservationCollection
+
+        ' This is an array of ReservationIDs to which the current user was invited.
+        Private _invited As Integer()
 
         Public Property View As ViewType
         Public Property Resource As IResource
@@ -132,7 +135,7 @@ Namespace UserControls
         Private Sub InitReservations()
             ' This is first called once in LoadScheduleTable
 
-            _reservations = New ReservationCollection(Provider)
+            _reservations = New ReservationCollection(Provider, CurrentUser.ClientID)
 
             Dim sd, ed As Date
 
@@ -203,7 +206,12 @@ Namespace UserControls
                         AddHeaderCell(r.ResourceID, r.ResourceName, d)
                     Next
 
-                    _minGran = query.Min(Function(x) x.Granularity)
+                    If query.Count > 0 Then
+                        _minGran = query.Min(Function(x) x.Granularity)
+                    Else
+                        _minGran = 0
+                    End If
+
                     _minGran = If(_minGran > 60, 60, _minGran)
                 Case ViewType.UserView
                     HelpdeskInfo1.Resources = New List(Of Integer)()
@@ -212,7 +220,7 @@ Namespace UserControls
                     ' reservations for the current user. We need all reservations because 1. We don't know for sure which tools will be displayed yet,
                     ' and 2. we must make sure any newly created recurring reservations do not conflict (the result of GetReservations() will be used
                     ' when it comes time to look for conflicts).
-                    Dim activeReservationsForCurrentUser As IEnumerable(Of IReservation) = Reservations.Find(ContextBase.Request.SelectedDate(), CurrentUser.ClientID, False).ToList() 'False means no not include cancelled
+                    Dim activeReservationsForCurrentUser As IEnumerable(Of IReservation) = Reservations.Find(ContextBase.Request.SelectedDate(), False, False).ToList() 'False means do not include cancelled
                     Dim prevResourceId As Integer = -1
 
                     For Each res As IReservation In activeReservationsForCurrentUser.OrderBy(Function(x) x.ResourceID)
@@ -483,8 +491,6 @@ Namespace UserControls
         End Sub
 
         Private Sub LoadReservationCells()
-            Dim listRsv As IEnumerable(Of IReservation) = Nothing
-
             Dim totalReservationCount As Integer = 0
 
             Dim clientAccounts As List(Of Data.ClientAccountInfo) = DA.Current.Query(Of Data.ClientAccountInfo)().Where(Function(x) x.ClientAccountActive AndAlso x.ClientOrgActive).ToList()
@@ -505,9 +511,6 @@ Namespace UserControls
 
                 ResourceUtility.GetTimeSlotBoundary(TimeSpan.FromMinutes(_minGran), TimeSpan.FromHours(offset), currentStartTime, currentEndTime, displayDefaultHours, beginHour, endHour)
 
-                ' Select Reservations for this resource for this day
-                listRsv = Reservations.Find(currentStartTime, False)
-
                 Dim mergeStartCell As Integer = 0
                 Dim lastReservationCount As Integer = 0
                 Dim resourceIds As String = String.Empty
@@ -525,11 +528,11 @@ Namespace UserControls
 
                     Select Case View
                         Case ViewType.DayView, ViewType.WeekView
-                            filteredRsv = listRsv.Where(Function(x) ReservationFilter(x, beginTime, endTime)).OrderBy(Function(x) x.BeginDateTime).ToList()
+                            filteredRsv = Reservations.Find(beginTime, endTime, True, False).OrderBy(Function(x) x.BeginDateTime).ToList()
                         Case ViewType.ProcessTechView
-                            filteredRsv = listRsv.Where(Function(x) x.ResourceID = rsvCell.ResourceID AndAlso ReservationFilter(x, beginTime, endTime)).OrderBy(Function(x) x.BeginDateTime).ToList()
+                            filteredRsv = Reservations.Find(beginTime, endTime, True, False).Where(Function(x) x.ResourceID = rsvCell.ResourceID).OrderBy(Function(x) x.BeginDateTime).ToList()
                         Case ViewType.UserView
-                            filteredRsv = listRsv.Where(Function(x) x.ResourceID = rsvCell.ResourceID AndAlso x.ClientID = CurrentUser.ClientID AndAlso ReservationFilter(x, beginTime, endTime)).OrderBy(Function(x) x.BeginDateTime).ToList()
+                            filteredRsv = Reservations.Find(beginTime, endTime, False, False).Where(Function(x) x.ResourceID = rsvCell.ResourceID).OrderBy(Function(x) x.BeginDateTime).ToList()
                     End Select
 
                     Dim reservationCount As Integer = filteredRsv.Count
