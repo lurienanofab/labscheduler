@@ -8,6 +8,8 @@ namespace LNF.Web.Scheduler.Handlers
 {
     public class HelpdeskHandler : IHttpHandler, IReadOnlySessionState
     {
+        [Inject] public IProvider Provider { get; set; }
+
         public void ProcessRequest(HttpContext context)
         {
             var ctx = new HttpContextWrapper(context);
@@ -52,9 +54,9 @@ namespace LNF.Web.Scheduler.Handlers
             if (!int.TryParse(context.Request["resourceId"], out int resourceId))
                 throw new Exception("Invalid parameter: resourceId");
 
-            var res = context.ResourceTree().GetResource(resourceId);
+            var res = Provider.Scheduler.Resource.GetResource(resourceId);
 
-            HelpdeskUtility.SendHardwareIssueEmail(res, context.CurrentUser().ClientID, subject, message);
+            HelpdeskUtility.SendHardwareIssueEmail(res, context.CurrentUser(Provider).ClientID, subject, message);
         }
     }
 }

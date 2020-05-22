@@ -1,6 +1,6 @@
-﻿Imports LNF.Models.Data
+﻿Imports LNF.Data
+Imports LNF.Impl.Repository.Data
 Imports LNF.Repository
-Imports LNF.Repository.Data
 Imports LNF.Web.Scheduler.Content
 
 Namespace Pages

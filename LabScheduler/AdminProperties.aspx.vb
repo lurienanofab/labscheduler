@@ -1,10 +1,8 @@
 ﻿Imports LabScheduler.AppCode.DBAccess
-Imports LNF.Cache
 Imports LNF.CommonTools
-Imports LNF.Models.Data
-Imports LNF.Models.Scheduler
+Imports LNF.Data
+Imports LNF.Impl.Repository.Data
 Imports LNF.Repository
-Imports LNF.Repository.Data
 Imports LNF.Scheduler
 Imports LNF.Web.Scheduler
 Imports LNF.Web.Scheduler.Content
@@ -156,7 +154,7 @@ Namespace Pages
             ' Update Database
             Properties.Current.Save()
             kioskDB.Update(dtKiosk)
-            KioskUtility.ClearCache()
+            Kiosks.ClearCache()
 
             SetAlertMessage("Global Properties have been successfully modified.", "success")
         End Sub

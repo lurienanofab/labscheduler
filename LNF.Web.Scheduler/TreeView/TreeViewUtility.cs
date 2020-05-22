@@ -14,22 +14,5 @@ namespace LNF.Web.Scheduler.TreeView
 
             return string.Empty;
         }
-
-        public static string TreeItemTypeToString(NodeType type)
-        {
-            switch (type)
-            {
-                case NodeType.Building:
-                    return "building";
-                case NodeType.Lab:
-                    return "lab";
-                case NodeType.ProcessTech:
-                    return "proctech";
-                case NodeType.Resource:
-                    return "resource";
-                default:
-                    return Enum.GetName(typeof(NodeType), type).ToLower();
-            }
-        }
     }
 }

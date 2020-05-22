@@ -14,7 +14,7 @@ Namespace Pages
                 End If
 
                 ' If client logged in from a Kiosk (or is in a lab), then display My Reservations page
-                If ContextBase.ClientInLab() AndAlso Not Request.QueryString.ToString().Contains("Home") Then
+                If Helper.ClientInLab() AndAlso Not Request.QueryString.ToString().Contains("Home") Then
                     Response.Redirect("~/UserReservations.aspx", True)
                 End If
 

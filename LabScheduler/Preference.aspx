@@ -187,8 +187,7 @@
                     <div>Drag and drop accounts below to set your prefered account sorting.</div>
                     <asp:Label ID="lblAccounts" CssClass="lblAccounts" Style="visibility: hidden" runat="server"></asp:Label>
                     <asp:Label ID="lblAccountsNames" CssClass="lblAccountsNames" Style="visibility: hidden" runat="server"></asp:Label>
-                    <ul id="listAccountSortable" class="listAccountSortable">
-                    </ul>
+                    <ul id="listAccountSortable" class="listAccountSortable"></ul>
                     <div class="accounts-result">
                         <asp:HiddenField runat="server" ID="hidAccountsResult" Value="bbbb" />
                     </div>

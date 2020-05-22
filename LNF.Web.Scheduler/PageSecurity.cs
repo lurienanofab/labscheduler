@@ -1,7 +1,5 @@
 using LNF.Cache;
-using LNF.Models.Data;
-using LNF.Models.Scheduler;
-using LNF.Repository.Data;
+using LNF.Data;
 using LNF.Scheduler;
 using LNF.Web.Scheduler.Content;
 using System.IO;
@@ -17,7 +15,7 @@ namespace LNF.Web.Scheduler
 
         public static readonly ClientPrivilege AdminAuthTypes = ClientPrivilege.Administrator;
 
-        public static bool CheckAccessRight(SchedulerPage page, Client currentUser)
+        public static bool CheckAccessRight(SchedulerPage page, IClient currentUser)
         {
             var pageName = Path.GetFileName(page.AppRelativeVirtualPath).ToLower();
 

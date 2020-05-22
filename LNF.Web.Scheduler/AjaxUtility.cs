@@ -1,12 +1,10 @@
 ﻿using LNF.CommonTools;
 using LNF.Control;
+using LNF.Data;
 using LNF.Helpdesk;
-using LNF.Models.Data;
-using LNF.Models.Scheduler;
+using LNF.Impl.Repository.Data;
+using LNF.Impl.Repository.Scheduler;
 using LNF.Repository;
-using LNF.Repository.Control;
-using LNF.Repository.Data;
-using LNF.Repository.Scheduler;
 using LNF.Scheduler;
 using System;
 using System.Collections.Generic;
@@ -23,10 +21,8 @@ namespace LNF.Web.Scheduler
 {
     public static class AjaxUtility
     {
-        public static object HandleRequest(HttpContext context)
+        public static object HandleRequest(HttpContextBase context, IProvider provider)
         {
-            var ctx = new HttpContextWrapper(context);
-
             string action = context.Request["Action"].ToString();
 
             int resourceId = Utility.ConvertTo(context.Request["ResourceID"], 0);
@@ -38,7 +34,9 @@ namespace LNF.Web.Scheduler
 
             object result = null;
             GenericResult gr;
-            var model = ctx.ResourceTree().GetResource(resourceId);
+
+            var res = provider.Scheduler.Reservation.GetResource(resourceId);
+            var currentUser = context.CurrentUser(provider);
 
             switch (action)
             {
@@ -46,65 +44,65 @@ namespace LNF.Web.Scheduler
                     throw new NotImplementedException();
                 case "get-tool-engineers":
                     gr = new GenericResult();
-                    GetToolEngineers(model, gr);
+                    GetToolEngineers(provider, res, gr);
                     result = gr;
                     break;
                 case "add-tool-engineer":
                     gr = new GenericResult();
-                    AddToolEngineer(model, DA.Current.Single<Client>(clientId), gr);
-                    GetToolEngineers(model, gr);
+                    AddToolEngineer(res, DA.Current.Single<Client>(clientId), gr);
+                    GetToolEngineers(provider, res, gr);
                     result = gr;
                     break;
                 case "delete-tool-engineer":
                     gr = new GenericResult();
-                    DeleteToolEngineer(model, DA.Current.Single<Client>(clientId), gr);
-                    GetToolEngineers(model, gr);
+                    DeleteToolEngineer(res, DA.Current.Single<Client>(clientId), gr);
+                    GetToolEngineers(provider, res, gr);
                     result = gr;
                     break;
                 case "get-buildings":
                     result = GetBuildings(DA.Current.Single<Resource>(resourceId));
                     break;
                 case "get-labs":
-                    int buildingId = Utility.ConvertTo(ServiceProvider.Current.Context.GetRequestValue("BuildingID"), 0);
+                    int buildingId = Utility.ConvertTo(context.Request["BuildingID"], 0);
                     result = GetLabs(DA.Current.Single<Resource>(resourceId), DA.Current.Single<Building>(buildingId));
                     break;
                 case "get-proctechs":
-                    int labId = Utility.ConvertTo(ServiceProvider.Current.Context.GetRequestValue("LabID"), 0);
+                    int labId = Utility.ConvertTo(context.Request["LabID"], 0);
                     result = GetProcessTechs(DA.Current.Single<Resource>(resourceId), DA.Current.Single<Lab>(labId));
                     break;
                 case "add-resource":
-                    result = AddResource();
+                    result = AddResource(context);
                     break;
                 case "upload-image":
-                    result = UploadImage();
+                    result = UploadImage(context);
                     break;
                 case "helpdesk-info":
-                    result = HelpdeskInfo(DA.Current.Single<Resource>(resourceId));
+                    result = HelpdeskInfo(provider.Scheduler.Resource.GetResource(resourceId));
                     break;
                 case "helpdesk-list-tickets":
-                    result = HelpdeskListTickets(DA.Current.Single<Resource>(resourceId));
+                    result = HelpdeskListTickets(provider.Scheduler.Resource.GetResource(resourceId));
                     break;
                 case "helpdesk-detail":
-                    result = HelpdeskDetail(ticketId, ctx.CurrentUser());
+                    result = HelpdeskDetail(ticketId, currentUser);
                     break;
                 case "helpdesk-post-message":
-                    message = Utility.ConvertTo(ServiceProvider.Current.Context.GetRequestValue("Message"), string.Empty);
-                    message = $"Posted from scheduler by: {ctx.CurrentUser().DisplayName} ({ctx.CurrentUser().Email})\n----------------------------------------\n{message}";
-                    result = HelpdeskPostMessage(ticketId, message, ctx.CurrentUser());
+                    message = Utility.ConvertTo(context.Request["Message"], string.Empty);
+                    message = $"Posted from scheduler by: {currentUser.DisplayName} ({currentUser.Email})\n----------------------------------------\n{message}";
+                    result = HelpdeskPostMessage(ticketId, message, currentUser);
                     break;
                 case "send-hardware-issue-email":
-                    message = Utility.ConvertTo(ServiceProvider.Current.Context.GetRequestValue("message"), string.Empty);
-                    string subject = Utility.ConvertTo(ServiceProvider.Current.Context.GetRequestValue("subject"), string.Empty);
-                    HelpdeskUtility.SendHardwareIssueEmail(ctx.ResourceTree().GetResource(resourceId), ctx.CurrentUser().ClientID, subject, message);
+                    message = Utility.ConvertTo(context.Request["message"], string.Empty);
+                    string subject = Utility.ConvertTo(context.Request["subject"], string.Empty);
+                    HelpdeskUtility.SendHardwareIssueEmail(res, currentUser.ClientID, subject, message);
                     break;
                 case "interlock":
                     bool state = Utility.ConvertTo(context.Request["State"], false);
                     int duration = Utility.ConvertTo(context.Request["Duration"], 0);
                     uint d = (duration >= 0) ? (uint)duration : 0;
-                    result = HandleInterlockRequest(command, resourceId, state, d);
+                    result = HandleInterlockRequest(provider, command, resourceId, state, d);
                     break;
                 case "test":
-                    result = new GenericResult() { Success = true, Message = $"current client: {ctx.CurrentUser().ClientID}", Data = null, Log = null };
+                    result = new GenericResult() { Success = true, Message = $"current client: {currentUser.ClientID}", Data = null, Log = null };
                     break;
                 default:
                     result = new GenericResult
@@ -139,7 +137,7 @@ namespace LNF.Web.Scheduler
             };
         }
 
-        private static GenericResult HelpdeskInfo(Resource res)
+        private static GenericResult HelpdeskInfo(IResource res)
         {
             var result = new GenericResult();
 
@@ -163,11 +161,11 @@ namespace LNF.Web.Scheduler
             return result;
         }
 
-        private static GenericResult HelpdeskListTickets(Resource resource)
+        private static GenericResult HelpdeskListTickets(IResource res)
         {
             var result = new GenericResult();
 
-            DataTable dt = HelpdeskUtility.GetTickets(resource);
+            DataTable dt = HelpdeskUtility.GetTickets(res);
             object[] list = new object[] { };
 
             if (dt != null)
@@ -210,17 +208,17 @@ namespace LNF.Web.Scheduler
             return result;
         }
 
-        public static GenericResult HandleInterlockRequest(string command, int resourceId, bool state = false, uint duration = 0)
+        public static GenericResult HandleInterlockRequest(IProvider provider, string command, int resourceId, bool state = false, uint duration = 0)
         {
             var result = new GenericResult();
 
             if (!string.IsNullOrEmpty(command))
             {
-                Resource res = DA.Current.Query<Resource>().FirstOrDefault(x => x.ResourceID == resourceId);
+                var res = provider.Scheduler.Resource.GetResource(resourceId);
 
                 if (res != null)
                 {
-                    var inst = DA.Current.Query<ActionInstance>().FirstOrDefault(x => x.ActionID == res.ResourceID);
+                    var inst = provider.Control.GetActionInstance(ActionType.Interlock, res.ResourceID);
 
                     if (inst == null)
                     {
@@ -234,7 +232,7 @@ namespace LNF.Web.Scheduler
                     switch (command)
                     {
                         case "get-point-state":
-                            var br = ServiceProvider.Current.Control.GetBlockState(p.Block);
+                            var br = provider.Control.GetBlockState(p.BlockID);
                             var bs = br.BlockState;
                             if (bs.Points != null)
                             {
@@ -248,7 +246,7 @@ namespace LNF.Web.Scheduler
                             }
                             break;
                         case "set-point-state":
-                            var pr = ServiceProvider.Current.Control.SetPointState(p, state, duration);
+                            var pr = provider.Control.SetPointState(p.PointID, state, duration);
 
                             if (pr.Error)
                             {
@@ -278,32 +276,32 @@ namespace LNF.Web.Scheduler
             return result;
         }
 
-        private static GenericResult UploadImage()
+        private static GenericResult UploadImage(HttpContextBase ctx)
         {
             var result = new GenericResult();
 
-            if (ServiceProvider.Current.Context.GetRequestFileCount() > 0)
+            if (ctx.Request.Files.Count > 0)
             {
-                string path = ServiceProvider.Current.Context.GetRequestValue("Path").ToString();
-                int resourceId = Utility.ConvertTo(ServiceProvider.Current.Context.GetRequestValue("ResourceID"), 0);
+                string path = ctx.Request["Path"];
+                int resourceId = Utility.ConvertTo(ctx.Request["ResourceID"], 0);
                 if (!string.IsNullOrEmpty(path))
                 {
                     if (resourceId > 0)
                     {
-                        if (ServiceProvider.Current.Context.GetRequestFileContentLength(0) < 1048596)
+                        if (ctx.Request.Files[0].ContentLength < 1048596)
                         {
                             string id = resourceId.ToString().PadLeft(6, '0');
 
                             //Check for existing files
                             string fileName = $"images/{path}/{path}{id}.png";
                             string iconName = $"images/{path}/{path}{id}_icon.png";
-                            string filePhysicalName = Path.GetFullPath(ServiceProvider.Current.Context.GetRequestPhysicalApplicationPath() + fileName);
-                            string iconPhysicalName = Path.GetFullPath(ServiceProvider.Current.Context.GetRequestPhysicalApplicationPath() + iconName);
+                            string filePhysicalName = Path.GetFullPath(ctx.Request.PhysicalApplicationPath + fileName);
+                            string iconPhysicalName = Path.GetFullPath(ctx.Request.PhysicalApplicationPath + iconName);
                             if (File.Exists(filePhysicalName)) File.Delete(filePhysicalName);
                             if (File.Exists(iconPhysicalName)) File.Delete(iconPhysicalName);
 
                             //Save original image
-                            Bitmap bImage = new Bitmap(ServiceProvider.Current.Context.GetRequestFileInputStream(0));
+                            Bitmap bImage = new Bitmap(ctx.Request.Files[0].InputStream);
                             bImage.Save(filePhysicalName, ImageFormat.Png);
 
                             //Save icon image
@@ -350,7 +348,7 @@ namespace LNF.Web.Scheduler
             var result = new GenericResult() { Success = true, Message = string.Empty, Data = null };
 
             int id = (r == null) ? 0 : r.ProcessTech.Lab.Building.BuildingID;
-            IList<Building> query = DA.Current.Query<Building>().Where(x => x.IsActive).ToList();
+            IList<Building> query = DA.Current.Query<Building>().Where(x => x.BuildingIsActive).ToList();
             result.Data = query
                 .Select(x => new { Text = x.BuildingName, Value = x.BuildingID, Selected = x.BuildingID == id })
                 .OrderBy(x => x.Text);
@@ -365,7 +363,7 @@ namespace LNF.Web.Scheduler
             if (b != null)
             {
                 int id = (r == null) ? 0 : r.ProcessTech.Lab.LabID;
-                IList<Lab> query = b.Labs().ToList();
+                IList<Lab> query = DA.Current.Query<Lab>().Where(x => x.Building == b).ToList();
                 result.Data = query
                     .Select(x => new { Text = x.LabName, Value = x.LabID, Selected = x.LabID == id })
                     .OrderBy(x => x.Text);
@@ -386,7 +384,7 @@ namespace LNF.Web.Scheduler
             if (l != null)
             {
                 int id = (r == null) ? 0 : r.ProcessTech.ProcessTechID;
-                IList<ProcessTech> query = l.GetProcessTechs().ToList();
+                IList<ProcessTech> query = DA.Current.Query<ProcessTech>().Where(x => x.Lab == l).ToList();
                 result.Data = query
                     .Select(x => new { Text = x.ProcessTechName, Value = x.ProcessTechID, Selected = x.ProcessTechID == id })
                     .OrderBy(x => x.Text);
@@ -400,23 +398,28 @@ namespace LNF.Web.Scheduler
             return result;
         }
 
-        private static void GetToolEngineers(IResource res, GenericResult result)
+        private static void GetToolEngineers(IProvider provider, IResource res, GenericResult result)
         {
             object data = null;
 
             if (Validate(res, result))
             {
-                IList<ResourceClientInfo> toolEng = ResourceClientInfoUtility.GetToolEngineers(res.ResourceID).ToList();
-                int[] existingToolEngClientIDs = toolEng.Select(x => x.ClientID).ToArray();
-                IList<IClient> staff = ServiceProvider.Current.Data.Client.FindByPrivilege(ClientPrivilege.Staff, true).Where(x => !existingToolEngClientIDs.Contains(x.ClientID)).ToList();
+                IList<IResourceClient> toolEng = ResourceClients.GetToolEngineers(res.ResourceID).ToList();
+                int[] existingToolEngClientIDs = toolEng.Select(x => AsAuthorized(x).ClientID).ToArray();
+                IList<IClient> staff = provider.Data.Client.FindByPrivilege(ClientPrivilege.Staff, true).Where(x => !existingToolEngClientIDs.Contains(x.ClientID)).ToList();
 
                 data = new
                 {
-                    ToolEngineers = toolEng.Select(x => new { x.ClientID, x.DisplayName }).OrderBy(x => x.DisplayName),
+                    ToolEngineers = toolEng.Select(x => new { AsAuthorized(x).ClientID, x.DisplayName }).OrderBy(x => x.DisplayName),
                     Staff = staff.Select(x => new { x.ClientID, x.DisplayName }).OrderBy(x => x.DisplayName)
                 };
                 result.Data = data;
             }
+        }
+
+        private static IAuthorized AsAuthorized(IResourceClient rc)
+        {
+            return rc;
         }
 
         private static void AddToolEngineer(IResource res, Client c, GenericResult result)
@@ -430,7 +433,7 @@ namespace LNF.Web.Scheduler
                     EmailNotify = null,
                     Expiration = null,
                     PracticeResEmailNotify = null,
-                    Resource = DA.Current.Single<Resource>(res.ResourceID)
+                    ResourceID = res.ResourceID
                 };
 
                 DA.Current.Insert(rc);
@@ -441,19 +444,20 @@ namespace LNF.Web.Scheduler
         {
             if (Validate(res, c, result))
             {
-                ResourceClientInfo rc = DA.Current.Query<ResourceClientInfo>().FirstOrDefault(x => x.ClientID == c.ClientID && x.ResourceID == res.ResourceID);
-                if (Validate(rc, result))
+                ResourceClientInfo rci = DA.Current.Query<ResourceClientInfo>().FirstOrDefault(x => x.ClientID == c.ClientID && x.ResourceID == res.ResourceID);
+                if (Validate(rci, result))
                 {
-                    DA.Current.Delete(rc.GetResourceClient());
+                    ResourceClient rc = DA.Current.Single<ResourceClient>(rci.ResourceClientID);
+                    DA.Current.Delete(rc);
                 }
             }
         }
 
-        private static GenericResult AddResource()
+        private static GenericResult AddResource(HttpContextBase ctx)
         {
             var result = new GenericResult();
 
-            if (Validate(result, out dynamic v))
+            if (Validate(ctx, result, out dynamic v))
             {
                 Lab lab = DA.Current.Single<Lab>(v.LabID);
 
@@ -526,18 +530,18 @@ namespace LNF.Web.Scheduler
             return result;
         }
 
-        private static bool Validate(GenericResult result, out object obj)
+        private static bool Validate(HttpContextBase ctx, GenericResult result, out object obj)
         {
-            int buildingId = Utility.ConvertTo(ServiceProvider.Current.Context.GetRequestValue("BuildingID"), 0);
-            int labId = Utility.ConvertTo(ServiceProvider.Current.Context.GetRequestValue("LabID"), 0);
-            int proctechId = Utility.ConvertTo(ServiceProvider.Current.Context.GetRequestValue("ProcessTechID"), 0);
-            int resourceId = Utility.ConvertTo(ServiceProvider.Current.Context.GetRequestValue("ResourceID"), 0);
-            int editResourceId = Utility.ConvertTo(ServiceProvider.Current.Context.GetRequestValue("EditResourceID"), 0);
-            string resourceName = ServiceProvider.Current.Context.GetRequestValue("ResourceName").ToString();
-            bool schedulable = Utility.ConvertTo(ServiceProvider.Current.Context.GetRequestValue("Schedulable"), false);
-            bool active = Utility.ConvertTo(ServiceProvider.Current.Context.GetRequestValue("Active"), false);
-            string description = ServiceProvider.Current.Context.GetRequestValue("Description").ToString();
-            string helpdeskEmail = ServiceProvider.Current.Context.GetRequestValue("HelpdeskEmail").ToString();
+            int buildingId = Utility.ConvertTo(ctx.Request["BuildingID"], 0);
+            int labId = Utility.ConvertTo(ctx.Request["LabID"], 0);
+            int proctechId = Utility.ConvertTo(ctx.Request["ProcessTechID"], 0);
+            int resourceId = Utility.ConvertTo(ctx.Request["ResourceID"], 0);
+            int editResourceId = Utility.ConvertTo(ctx.Request["EditResourceID"], 0);
+            string resourceName = ctx.Request["ResourceName"];
+            bool schedulable = Utility.ConvertTo(ctx.Request["Schedulable"], false);
+            bool active = Utility.ConvertTo(ctx.Request["Active"], false);
+            string description = ctx.Request["Description"];
+            string helpdeskEmail = ctx.Request["HelpdeskEmail"];
 
             obj = null;
 

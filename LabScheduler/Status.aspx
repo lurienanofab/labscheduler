@@ -4,7 +4,7 @@
 <%@ Import Namespace="System.Threading.Tasks" %>
 <%@ Import Namespace="LNF.Scheduler" %>
 <%@ Import Namespace="LNF.Repository" %>
-<%@ Import Namespace="LNF.Repository.Scheduler" %>
+<%@ Import Namespace="LNF.Impl.Repository.Scheduler" %>
 <%@ Import Namespace="LNF.CommonTools" %>
 <%@ Import Namespace="LNF.Web" %>
 

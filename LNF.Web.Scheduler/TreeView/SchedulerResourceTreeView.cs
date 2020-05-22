@@ -1,17 +1,22 @@
 ﻿using LNF.Scheduler;
 using System.Linq;
-using System.Web;
 
 namespace LNF.Web.Scheduler.TreeView
 {
-    public class SchedulerResourceTreeView
+    public class SchedulerTreeView
     {
-        public SchedulerResourceTreeView(IProvider provider, ResourceTreeItemCollection resourceTree)
+        public TreeViewNodeCollection Root { get; set; }
+    }
+
+    public class SchedulerResourceTreeView
+    {        
+        public TreeItemCollection ResourceTree { get; }
+
+        public SchedulerResourceTreeView(TreeItemCollection resourceTree)
         {
-            var buildings = resourceTree.Buildings().Where(x => x.BuildingIsActive).OrderBy(x => x.BuildingName).ToArray();
-            Buildings = new TreeViewItemCollection(buildings.Select(x => new BuildingNode(provider, resourceTree, x)));
+            ResourceTree = resourceTree;
         }
 
-        public TreeViewItemCollection Buildings { get; }
+        public TreeViewNodeCollection Root { get; set; }
     }
 }

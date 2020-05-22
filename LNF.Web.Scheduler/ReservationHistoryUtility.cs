@@ -1,9 +1,7 @@
 ﻿using LNF.CommonTools;
 using LNF.Data;
-using LNF.Models.Data;
-using LNF.Models.Scheduler;
-using LNF.Models.Worker;
-using LNF.Repository.Scheduler;
+using LNF.Scheduler;
+using LNF.Worker;
 using System;
 using System.Collections.Generic;
 using System.Messaging;
@@ -15,7 +13,7 @@ namespace LNF.Web.Scheduler
         public static IList<ReservationHistoryItem> GetReservationHistoryData(IClient client, DateTime? sd, DateTime? ed, bool includeCanceledForModification)
         {
             // Select Past Reservations
-            var reservations = ServiceProvider.Current.Scheduler.Reservation.SelectHistory(client.ClientID, sd.GetValueOrDefault(Reservation.MinReservationBeginDate), ed.GetValueOrDefault(Reservation.MaxReservationEndDate));
+            var reservations = ServiceProvider.Current.Scheduler.Reservation.SelectHistory(client.ClientID, sd.GetValueOrDefault(Reservations.MinReservationBeginDate), ed.GetValueOrDefault(Reservations.MaxReservationEndDate));
             var filtered = ServiceProvider.Current.Scheduler.Reservation.FilterCancelledReservations(reservations, includeCanceledForModification);
             var result = ReservationHistoryItem.CreateList(filtered);
             return result;
@@ -114,7 +112,7 @@ namespace LNF.Web.Scheduler
         public static DateTime GetStartDate(string input)
         {
             if (string.IsNullOrEmpty(input))
-                return Reservation.MinReservationBeginDate;
+                return Reservations.MinReservationBeginDate;
 
             if (DateTime.TryParse(input, out DateTime d))
                 return d.Date;
@@ -125,7 +123,7 @@ namespace LNF.Web.Scheduler
         public static DateTime GetEndDate(string input)
         {
             if (string.IsNullOrEmpty(input))
-                return Reservation.MaxReservationEndDate;
+                return Reservations.MaxReservationEndDate;
 
             if (DateTime.TryParse(input, out DateTime d))
                 return d.Date.AddDays(1);

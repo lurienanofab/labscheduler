@@ -85,5 +85,14 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents txtCalendarURL As Global.System.Web.UI.WebControls.TextBox
+        
+        '''<summary>
+        '''litTimer control.
+        '''</summary>
+        '''<remarks>
+        '''Auto-generated field.
+        '''To modify move field declaration from designer file to code-behind file.
+        '''</remarks>
+        Protected WithEvents litTimer As Global.System.Web.UI.WebControls.Literal
     End Class
 End Namespace

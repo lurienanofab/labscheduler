@@ -1,8 +1,8 @@
-﻿Imports LNF.Models.Scheduler
-Imports LNF.Repository
+﻿Imports LNF.Repository
+Imports LNF.Scheduler
 Imports LNF.Web.Scheduler
 Imports LNF.Web.Scheduler.Content
-Imports Scheduler = LNF.Repository.Scheduler
+Imports Scheduler = LNF.Impl.Repository.Scheduler
 
 Namespace Pages
     Public Class ReservationRunNotes

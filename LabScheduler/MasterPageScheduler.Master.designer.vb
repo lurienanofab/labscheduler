@@ -141,6 +141,24 @@ Namespace Pages
         Protected WithEvents Calendar1 As Global.LNF.Web.Scheduler.Controls.Calendar
         
         '''<summary>
+        '''phLocations control.
+        '''</summary>
+        '''<remarks>
+        '''Auto-generated field.
+        '''To modify move field declaration from designer file to code-behind file.
+        '''</remarks>
+        Protected WithEvents phLocations As Global.System.Web.UI.WebControls.PlaceHolder
+        
+        '''<summary>
+        '''ResourceTreeView2 control.
+        '''</summary>
+        '''<remarks>
+        '''Auto-generated field.
+        '''To modify move field declaration from designer file to code-behind file.
+        '''</remarks>
+        Protected WithEvents ResourceTreeView2 As Global.LNF.Web.Scheduler.Controls.ResourceTreeView
+        
+        '''<summary>
         '''ResourceTreeView1 control.
         '''</summary>
         '''<remarks>
@@ -175,6 +193,15 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents ContentPlaceHolder1 As Global.System.Web.UI.WebControls.ContentPlaceHolder
+        
+        '''<summary>
+        '''litMasterTimer control.
+        '''</summary>
+        '''<remarks>
+        '''Auto-generated field.
+        '''To modify move field declaration from designer file to code-behind file.
+        '''</remarks>
+        Protected WithEvents litMasterTimer As Global.System.Web.UI.WebControls.Literal
         
         '''<summary>
         '''scripts control.

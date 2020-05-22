@@ -150,6 +150,15 @@ Namespace Pages
         Protected WithEvents txtNotes As Global.System.Web.UI.WebControls.TextBox
         
         '''<summary>
+        '''phNotesWarning control.
+        '''</summary>
+        '''<remarks>
+        '''Auto-generated field.
+        '''To modify move field declaration from designer file to code-behind file.
+        '''</remarks>
+        Protected WithEvents phNotesWarning As Global.System.Web.UI.WebControls.PlaceHolder
+        
+        '''<summary>
         '''btnReserve control.
         '''</summary>
         '''<remarks>

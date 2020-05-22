@@ -1,8 +1,9 @@
-﻿Imports LNF
-Imports LNF.Models.Data
+﻿Imports LNF.Data
+Imports LNF.Scheduler
 Imports LNF.Web
 Imports LNF.Web.Scheduler
 Imports LNF.Web.Scheduler.Content
+Imports LNF.Web.Scheduler.TreeView
 
 Namespace Pages
     Public Class MasterPageScheduler
@@ -36,7 +37,7 @@ Namespace Pages
         End Property
 
         Protected Sub Page_Load(ByVal sender As Object, ByVal e As EventArgs) Handles Me.Load
-            Dim startTime As Date = Date.Now
+            Dim sw As Stopwatch = Stopwatch.StartNew()
 
             If Not String.IsNullOrEmpty(Request.QueryString("error")) Then
                 Throw New Exception(Request.QueryString("error"))
@@ -55,8 +56,29 @@ Namespace Pages
                 phUtility.Visible = HasUtilityPriv()
             End If
 
-            RequestLog.Append("MasterPageScheduler.Page_Load: {0}", Date.Now - startTime)
+            ResourceTreeView1.SelectedPath = ContextBase.Request.SelectedPath().ToString()
+            ResourceTreeView1.View = Helper.CurrentResourceTreeView()
+
+            phLocations.Visible = False
+            If ShowLabLocations() Then
+                Dim locationTree As SchedulerResourceTreeView = Helper.CurrentLocationTreeView()
+                If locationTree.Root.Count > 0 Then
+                    phLocations.Visible = True
+                    ResourceTreeView2.SelectedPath = LocationPathInfo.Parse(Request.QueryString("LocationPath")).ToString()
+                    ResourceTreeView2.View = Helper.CurrentLocationTreeView()
+                End If
+            End If
+
+            Dim elapsed As TimeSpan = sw.Elapsed
+            sw.Stop()
+
+            RequestLog.Append("MasterPageScheduler.Page_Load: {0}", elapsed)
+            'litMasterTimer.Text = $"<div>MasterPageScheduler.Page_Load: {elapsed}</div>"
         End Sub
+
+        Private Function ShowLabLocations() As Boolean
+            Return Boolean.Parse(ConfigurationManager.AppSettings("ShowLabLocations"))
+        End Function
 
         Private Function HasUtilityPriv() As Boolean
             If CurrentUser.HasPriv(ClientPrivilege.Developer) Then
@@ -66,7 +88,7 @@ Namespace Pages
             Dim origUser As IClient = Nothing
             If Session("LogInAsOriginalUser") IsNot Nothing Then
                 Dim un As String = Session("LogInAsOriginalUser").ToString()
-                origUser = ServiceProvider.Current.Data.Client.GetClient(un)
+                origUser = Provider.Data.Client.GetClient(un)
                 If origUser.HasPriv(ClientPrivilege.Developer) Then
                     Return True
                 End If

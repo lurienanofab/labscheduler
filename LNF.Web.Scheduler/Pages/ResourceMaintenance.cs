@@ -1,6 +1,5 @@
-﻿using LNF.Models.Scheduler;
+﻿using LNF.Impl.Repository.Scheduler;
 using LNF.Repository;
-using LNF.Repository.Scheduler;
 using LNF.Scheduler;
 using LNF.Web.Scheduler.Content;
 using System;
@@ -90,7 +89,7 @@ namespace LNF.Web.Scheduler.Pages
             else if (res.HasState(ResourceState.Offline))
             {
                 // Tool state is offline
-                var rip = ReservationUtility.GetRepairReservationInProgress(ContextBase.ResourceTree().Find(res.ResourceID));
+                var rip = Reservations.GetRepairReservationInProgress(Helper.GetResourceTreeItemCollection().GetResourceTree(res.ResourceID));
 
                 Reservation rsv = null;
 
@@ -172,7 +171,7 @@ namespace LNF.Web.Scheduler.Pages
                 litErrMsg.Text = string.Empty;
 
                 IResource res = GetCurrentResource();
-                ResourceTreeItem treeItem = ContextBase.ResourceTree().Find(res.ResourceID);
+                IResourceTree treeItem = Helper.GetResourceTreeItemCollection().GetResourceTree(res.ResourceID);
                 IReservation repair;
 
                 var util = new RepairUtility(treeItem, CurrentUser, Provider);
@@ -180,10 +179,11 @@ namespace LNF.Web.Scheduler.Pages
                 switch (e.CommandName)
                 {
                     case "start":
-                        repair = util.StartRepair(GetSelectedState(), GetRepairActualBeginDateTime(), GetRepairActualEndDateTime(), txtNotes.Text);
+                        var state = GetSelectedState();
+                        repair = util.StartRepair(ContextBase, GetSelectedState(), GetRepairActualBeginDateTime(state), GetRepairActualEndDateTime(state), txtNotes.Text);
                         break;
                     case "update":
-                        repair = util.UpdateRepair(GetRepairActualBeginDateTime(), GetRepairActualEndDateTime(), txtNotes.Text);
+                        repair = util.UpdateRepair(GetRepairActualBeginDateTime(res.State), GetRepairActualEndDateTime(res.State), txtNotes.Text);
                         break;
                     case "end":
                         repair = util.EndRepair(DateTime.Now);
@@ -200,9 +200,10 @@ namespace LNF.Web.Scheduler.Pages
             }
         }
 
-        private DateTime GetRepairActualBeginDateTime()
+        private DateTime GetRepairActualBeginDateTime(ResourceState state)
         {
-            EnsureRepairDurationEnteredByUser();
+            if (state == ResourceState.Offline)
+                EnsureRepairDurationEnteredByUser();
 
             DateTime actualBeginDateTime = DateTime.Now;
 
@@ -212,9 +213,10 @@ namespace LNF.Web.Scheduler.Pages
             return actualBeginDateTime;
         }
 
-        private DateTime GetRepairActualEndDateTime()
+        private DateTime GetRepairActualEndDateTime(ResourceState state)
         {
-            EnsureRepairDurationEnteredByUser();
+            if (state == ResourceState.Offline)
+                EnsureRepairDurationEnteredByUser();
 
             DateTime actualEndDateTime = DateTime.Now;
 

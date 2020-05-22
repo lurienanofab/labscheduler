@@ -1,25 +1,24 @@
-﻿using LNF.Cache;
-using LNF.Models.Scheduler;
+﻿using LNF.Impl.Repository.Scheduler;
 using LNF.Repository;
-using LNF.Repository.Scheduler;
-using System;
+using LNF.Scheduler;
 using System.Collections.Generic;
 using System.Linq;
-using System.Web;
 
 namespace LNF.Web.Scheduler
 {
     public class ResourceTreeManager
     {
-        private IList<ResourceTree> _items;
+        private IList<IResourceTree> _items;
 
         public ResourceTreeManager(int clientId)
         {
             // create a new ResourceTreeManager based on the currently logged in user
-            _items = DA.Current.Query<ResourceTree>().Where(x => x.ClientID == clientId).ToList();
+            _items = new List<IResourceTree>();
+            foreach(IResourceTree rt in DA.Current.Query<ResourceTree>().Where(x => x.ClientID == clientId).ToList())
+                _items.Add(rt);
         }
 
-        public static ProcessTechItem CreateProcessTechModel(ResourceTree item)
+        public static ProcessTechItem CreateProcessTechModel(IResourceTree item)
         {
             return new ProcessTechItem()
             {
@@ -39,7 +38,7 @@ namespace LNF.Web.Scheduler
             };
         }
 
-        public static LabItem CreateLabModel(ResourceTree item)
+        public static LabItem CreateLabModel(IResourceTree item)
         {
             return new LabItem()
             {
@@ -48,15 +47,13 @@ namespace LNF.Web.Scheduler
                 LabDisplayName = item.LabDisplayName,
                 LabDescription = item.LabDescription,
                 LabIsActive = item.LabIsActive,
-                RoomID = item.RoomID,
-                RoomName = item.RoomName,
                 BuildingID = item.BuildingID,
                 BuildingName = item.BuildingName,
                 BuildingIsActive = item.BuildingIsActive
             };
         }
 
-        public static BuildingItem CreateBuildingModel(ResourceTree item)
+        public static BuildingItem CreateBuildingModel(IResourceTree item)
         {
             return new BuildingItem()
             {
@@ -67,14 +64,14 @@ namespace LNF.Web.Scheduler
             };
         }
 
-        public IEnumerable<ResourceTree> GetItems()
+        public IEnumerable<IResourceTree> GetItems()
         {
             return _items.AsEnumerable();
         }
 
         public IEnumerable<IResource> GetResources()
         {
-            var result = _items.AsQueryable().CreateModels<ResourceTreeItem>().OrderBy(x => x.BuildingID).ThenBy(x => x.LabID).ThenBy(x => x.ProcessTechID).ThenBy(x => x.ResourceID).ToList();
+            var result = _items.AsQueryable().OrderBy(x => x.BuildingID).ThenBy(x => x.LabID).ThenBy(x => x.ProcessTechID).ThenBy(x => x.ResourceID).ToList();
             return result;
         }
 
@@ -102,12 +99,8 @@ namespace LNF.Web.Scheduler
         public IResource GetResource(int resourceId)
         {
             var item = _items.FirstOrDefault(x => x.ResourceID == resourceId);
-
             if (item == null) return null;
-
-            var result = item.CreateModel<ResourceTreeItem>();
-
-            return result;
+            return item;
         }
 
         public ProcessTechItem GetProcessTech(int procTechId)

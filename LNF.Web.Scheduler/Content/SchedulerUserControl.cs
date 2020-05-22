@@ -1,32 +1,25 @@
-﻿using LNF.Models.Data;
-using LNF.Scheduler;
-using LNF.Web.Content;
+﻿using LNF.Web.Content;
 using System;
+using System.Web;
 
 namespace LNF.Web.Scheduler.Content
 {
     public class SchedulerUserControl : LNFUserControl
     {
-        public SchedulerMasterPage Master
+        public ContextHelper Helper => SchedulerPage.Helper;
+        public SchedulerMasterPage SchedulerMaster => SchedulerPage.SchedulerMaster;
+        
+        public SchedulerPage SchedulerPage
         {
-            get { return Page.Master; }
-        }
+            get
+            {
+                if (Page == null) return null;
 
-        protected IClient CurrentUser
-        {
-            get { return Page.CurrentUser; }
-        }
+                if (typeof(SchedulerPage).IsAssignableFrom(Page.GetType()))
+                    return (SchedulerPage)Page;
 
-        public new SchedulerPage Page
-        {
-            get { return (SchedulerPage)base.Page; }
+                throw new Exception($"Cannot convert {Page.GetType().Name} to SchedulerPage.");
+            }
         }
-
-        public ReservationUtility GetReservationUtility(DateTime now)
-        {
-            return new ReservationUtility(now, ServiceProvider.Current);
-        }
-
-        public IProvider Provider => ServiceProvider.Current;
     }
 }

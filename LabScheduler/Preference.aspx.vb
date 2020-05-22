@@ -1,15 +1,12 @@
 ﻿Imports LabScheduler.AppCode.DBAccess
+Imports LNF
 Imports LNF.CommonTools
 Imports LNF.Data
-Imports LNF.Models.Data
-Imports LNF.Models.Scheduler
+Imports LNF.Impl.Repository.Scheduler
 Imports LNF.Repository
-Imports LNF.Repository.Data
-Imports LNF.Repository.Scheduler
 Imports LNF.Scheduler
 Imports LNF.Scheduler.Data
 Imports LNF.Web
-Imports LNF.Web.Scheduler
 Imports LNF.Web.Scheduler.Content
 
 Namespace Pages
@@ -98,12 +95,7 @@ Namespace Pages
         Private Sub InitSettings()
             Dim clientId As Integer = CurrentUser.ClientID
 
-            Dim cs As ClientSetting = DA.Current.Single(Of ClientSetting)(clientId)
-
-            If cs Is Nothing Then
-                cs = New ClientSetting() With {.ClientID = clientId}
-                DA.Current.Insert(cs)
-            End If
+            Dim cs As IClientSetting = ServiceProvider.Current.Scheduler.ClientSetting.GetClientSettingOrDefault(clientId)
 
             ddlBuilding.ClearSelection()
             ddlLab.ClearSelection()
@@ -118,18 +110,18 @@ Namespace Pages
                 ddlLab.SelectedValue = cs.LabID.Value.ToString()
             End If
 
-            rdoDefaultViewDay.Checked = cs.GetDefaultViewOrDefault() = ViewType.DayView
-            rdoDefaultViewWeek.Checked = cs.GetDefaultViewOrDefault() = ViewType.WeekView
+            rdoDefaultViewDay.Checked = cs.GetDefaultView() = ViewType.DayView
+            rdoDefaultViewWeek.Checked = cs.GetDefaultView() = ViewType.WeekView
 
             ' Default Working Hours
-            If cs.GetBeginHourOrDefault() = 0 AndAlso cs.GetEndHourOrDefault() = 24 Then
+            If cs.GetBeginHour() = 0 AndAlso cs.GetEndHour() = 24 Then
                 rdoHoursAllDay.Checked = True
                 rdoHoursRange.Checked = False
             Else
                 rdoHoursAllDay.Checked = False
                 rdoHoursRange.Checked = True
-                ddlBeginHour.SelectedValue = cs.GetBeginHourOrDefault().ToString()
-                ddlEndHour.SelectedValue = cs.GetEndHourOrDefault().ToString()
+                ddlBeginHour.SelectedValue = cs.GetBeginHour().ToString()
+                ddlEndHour.SelectedValue = cs.GetEndHour().ToString()
             End If
             ddlBeginHour.Enabled = rdoHoursRange.Checked
             ddlEndHour.Enabled = rdoHoursRange.Checked
@@ -138,10 +130,10 @@ Namespace Pages
             ' Default Working Days
             SetWorkDays(cs.WorkDays)
 
-            chkCreateReserv.Checked = cs.GetEmailCreateReservOrDefault()
-            chkModifyReserv.Checked = cs.GetEmailModifyReservOrDefault()
-            chkDeleteReserv.Checked = cs.GetEmailDeleteReservOrDefault()
-            chkInviteReserv.Checked = cs.GetEmailInvitedOrDefault()
+            chkCreateReserv.Checked = cs.GetEmailCreateReserv()
+            chkModifyReserv.Checked = cs.GetEmailModifyReserv()
+            chkDeleteReserv.Checked = cs.GetEmailDeleteReserv()
+            chkInviteReserv.Checked = cs.GetEmailInvited()
 
             GetAccountOrdering()
             GetShowTreeviewImages()
@@ -150,8 +142,9 @@ Namespace Pages
         Protected Sub GetAccountOrdering()
             'Dim cp As ClientPreference = ClientPreferenceUtility.Find(ClientUtility.CurrentUser, "common")
             'Dim orderedAccounts As IList(Of Account) = DataUtility.OrderAccountsByUserPreference(cp)
-            Dim util As New ClientPreferenceUtility(Provider)
-            Dim orderedAccounts As IList(Of IAccount) = util.OrderAccountsByUserPreference(CurrentUser)
+            Dim accounts As IEnumerable(Of IAccount) = Provider.Data.Client.GetActiveAccounts(CurrentUser.ClientID)
+            Dim orderedAccounts As IList(Of IAccount) = ClientPreferenceUtility.OrderListByUserPreference(CurrentUser, accounts, Function(x) x.AccountID, Function(x) x.AccountName)
+
             Dim resultIdList As New List(Of String)
             Dim resultNamesList As New List(Of String)
 
@@ -165,19 +158,16 @@ Namespace Pages
         End Sub
 
         Protected Sub SetAccountOrdering()
-            'Dim cp As ClientPreference = ClientPreferenceUtility.Find(ClientUtility.CurrentUser, "common")
-            'cp.SetPreference("account-order", hidAccountsResult.Value)
-            Dim cs As ClientSetting = DA.Current.Single(Of ClientSetting)(CurrentUser.ClientID)
-            cs.AccountOrder = hidAccountsResult.Value
+            ServiceProvider.Current.Scheduler.ClientSetting.SetAccountOrdering(CurrentUser.ClientID, hidAccountsResult.Value)
         End Sub
 
         Protected Sub GetShowTreeviewImages()
-            Dim cp As ClientPreference = ClientPreferenceUtility.Find(CurrentUser.ClientID, "scheduler")
+            Dim cp As IClientPreference = ClientPreferenceUtility.Find(CurrentUser.ClientID, "scheduler")
             chkShowTreeViewImages.Checked = cp.GetPreference("show-treeview-images", False)
         End Sub
 
         Protected Sub SetShowTreeviewImages()
-            Dim cp As ClientPreference = ClientPreferenceUtility.Find(CurrentUser.ClientID, "scheduler")
+            Dim cp As IClientPreference = ClientPreferenceUtility.Find(CurrentUser.ClientID, "scheduler")
             cp.SetPreference("show-treeview-images", chkShowTreeViewImages.Checked)
         End Sub
 
@@ -221,6 +211,9 @@ Namespace Pages
             ClearErrorMessage()
             ClearSuccessMessage()
 
+            ' Clear session variable to force refresh
+            Session.Remove("ClientSetting")
+
             ' Default Working Hours        
             Dim beginHour As Integer = If(rdoHoursAllDay.Checked, 0, Integer.Parse(ddlBeginHour.SelectedValue))
             Dim endHour As Integer = If(rdoHoursAllDay.Checked, 24, Integer.Parse(ddlEndHour.SelectedValue))
@@ -235,7 +228,7 @@ Namespace Pages
 
             Try
                 ' Insert/Update Setting
-                Dim cs As ClientSetting = ContextBase.GetClientSetting()
+                Dim cs = DA.Current.Single(Of ClientSetting)(ContextBase.CurrentUser(Provider).ClientID)
 
                 cs.BuildingID = Integer.Parse(ddlBuilding.SelectedValue)
                 cs.LabID = Integer.Parse(ddlLab.SelectedValue)

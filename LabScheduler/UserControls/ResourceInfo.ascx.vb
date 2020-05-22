@@ -1,17 +1,12 @@
 ﻿Imports LNF.Cache
-Imports LNF.Models.Scheduler
 Imports LNF.Scheduler
 Imports LNF.Web
 Imports LNF.Web.Scheduler
 Imports LNF.Web.Scheduler.Content
-Imports StructureMap.Attributes
 
 Namespace UserControls
     Public Class ResourceInfo
         Inherits SchedulerUserControl
-
-        <SetterProperty>
-        Public Property SchedulerRepository As ISchedulerRepository
 
         Protected Sub Page_Load(sender As Object, e As EventArgs) Handles Me.Load
             Dim startTime As Date = Date.Now
@@ -26,7 +21,7 @@ Namespace UserControls
                 Dim res As IResource = Nothing
 
                 Try
-                    res = ContextBase.GetCurrentResource()
+                    res = Helper.GetCurrentResource()
                     If res Is Nothing Then
                         Return
                     End If
@@ -73,7 +68,7 @@ Namespace UserControls
 
         Private Function GetToolEngineers() As List(Of ToolEngineerItem)
             Dim result As List(Of ToolEngineerItem) = New List(Of ToolEngineerItem)()
-            Dim toolEngineers As IList(Of ResourceClientItem) = CacheManager.Current.ToolEngineers(ContextBase.Request.SelectedPath().ResourceID).ToList()
+            Dim toolEngineers As IList(Of IResourceClient) = CacheManager.Current.ToolEngineers(ContextBase.Request.SelectedPath().ResourceID).ToList()
 
             If String.IsNullOrEmpty(hidResourceID.Value) OrElse toolEngineers Is Nothing OrElse toolEngineers.Count = 0 Then
                 'tdEngineers.InnerText = "Unknown"
@@ -81,7 +76,7 @@ Namespace UserControls
                 'Sometimes dtEngineers contains every tool engineer. This happens when we are in the
                 'Resources Administration tab. This means we should always select the engineers for
                 'the current resource.
-                For Each te As ResourceClientItem In toolEngineers
+                For Each te As IResourceClient In toolEngineers
                     Dim item As New ToolEngineerItem(ContextBase) With {
                         .ClientID = te.ClientID,
                         .DisplayName = te.DisplayName,

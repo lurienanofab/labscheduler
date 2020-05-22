@@ -1,20 +1,21 @@
 ﻿using LNF.Scheduler;
+using System.Web;
 
 namespace LNF.Web.Scheduler.TreeView
 {
     public interface INode
     {
-        IProvider Provider { get; }
         INode Parent { get; }
-        TreeViewItemCollection Children { get; }
-        ResourceTreeItemCollection ResourceTree { get; }
-        NodeType Type { get; }
+        TreeViewNodeCollection Children { get; }
         int ID { get; }
         string Name { get; }
         string Description { get; }
         string Value { get; }
         string CssClass { get; }
         string ToolTip { get; }
-        PathInfo GetPath();
+        string GetUrl(HttpContextBase context);
+        string GetImageUrl(HttpContextBase context);
+        bool IsExpanded(string path);
+        bool HasChildren();
     }
 }

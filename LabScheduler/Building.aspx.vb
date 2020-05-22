@@ -1,6 +1,5 @@
 ﻿Imports LabScheduler.AppCode
-Imports LNF.Models.Scheduler
-Imports LNF.Web.Scheduler
+Imports LNF.Scheduler
 Imports LNF.Web.Scheduler.Content
 
 Namespace Pages
@@ -12,14 +11,14 @@ Namespace Pages
         End Sub
 
         Private Sub LoadBuilding()
-            Dim bldg As BuildingItem = ContextBase.GetCurrentBuilding()
+            Dim bldg As IBuilding = Helper.GetCurrentBuilding()
             If bldg IsNot Nothing Then
                 litBuildingName.Text = bldg.BuildingName
                 lblDescription.Text = bldg.BuildingDescription
                 UploadFileUtility.DisplayImage(imgPicture, "Building", bldg.BuildingID.ToString())
             End If
 
-            rptResources.DataSource = ContextBase.GetResourceTableItemList(bldg.BuildingID)
+            rptResources.DataSource = Helper.GetResourceTableItemList(bldg.BuildingID)
             rptResources.DataBind()
         End Sub
 

@@ -40,7 +40,7 @@
             <asp:Literal runat="server" ID="litComputer"></asp:Literal>
         </div>
 
-        <asp:PlaceHolder runat="server" ID="phMobileLink" Visible='<%#Not LNF.Scheduler.KioskUtility.IsKiosk(Request.Url.ToString())%>'>
+        <asp:PlaceHolder runat="server" ID="phMobileLink" Visible='<%#Not LNF.Scheduler.Kiosks.IsKiosk(Request.Url.ToString())%>'>
             <div style="margin-top: 10px;">
                 <a href="." target="_top" class="mobile-link">Reload for mobile browsers (no menu)</a>
             </div>
@@ -68,6 +68,8 @@
             <asp:TextBox runat="server" ID="txtCalendarURL" Width="650" CssClass="calendar-feed-url form-control" Style="display: inline-block;"></asp:TextBox>
         </div>
     </div>
+
+    <asp:Literal runat="server" ID="litTimer"></asp:Literal>
 </asp:Content>
 
 <asp:Content ID="Content3" ContentPlaceHolderID="scripts" runat="server">

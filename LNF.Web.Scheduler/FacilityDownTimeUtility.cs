@@ -1,7 +1,6 @@
-﻿using LNF.Models.Scheduler;
+﻿using LNF.Impl.Repository.Data;
+using LNF.Impl.Repository.Scheduler;
 using LNF.Repository;
-using LNF.Repository.Data;
-using LNF.Repository.Scheduler;
 using LNF.Scheduler;
 using System;
 using System.Collections.Generic;
@@ -69,7 +68,7 @@ namespace LNF.Web.Scheduler
                 if (existing.ActualBeginDateTime == null)
                 {
                     ServiceProvider.Current.Scheduler.Reservation.CancelReservation(existing.ReservationID, modifiedByClientId);
-                    ServiceProvider.Current.EmailManager.EmailOnCanceledByRepair(existing, true, "LNF Facility Down", "Facility is down, thus we have to disable the tool.", endDateTime, modifiedByClientId);
+                    ServiceProvider.Current.Scheduler.Email.EmailOnCanceledByRepair(existing, true, "LNF Facility Down", "Facility is down, thus we have to disable the tool.", endDateTime, modifiedByClientId);
                     canceled.Add(new CanceledReservation(existing.ReservationID));
                 }
                 else

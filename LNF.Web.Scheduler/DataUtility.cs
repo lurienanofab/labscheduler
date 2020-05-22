@@ -1,7 +1,7 @@
 ﻿using LNF.CommonTools;
-using LNF.Models.Data;
-using LNF.Models.Scheduler;
-using LNF.Repository.Scheduler;
+using LNF.Data;
+using LNF.Impl.Repository.Scheduler;
+using LNF.Scheduler;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -105,7 +105,7 @@ namespace LNF.Web.Scheduler
                 nr["Granularity"] = rsv.Granularity;
                 nr["IsSchedulable"] = rsv.IsSchedulable;
                 nr["Editable"] = rsv.Editable;
-                nr["DisplayName"] = ClientItem.GetDisplayName(rsv.LName, rsv.FName);
+                nr["DisplayName"] = Clients.GetDisplayName(rsv.LName, rsv.FName);
                 dt.Rows.Add(nr);
             }
 

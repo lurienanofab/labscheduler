@@ -123,6 +123,24 @@ Namespace Pages
         Protected WithEvents litSaveAlertText As Global.System.Web.UI.WebControls.Literal
         
         '''<summary>
+        '''phUpdateBilling control.
+        '''</summary>
+        '''<remarks>
+        '''Auto-generated field.
+        '''To modify move field declaration from designer file to code-behind file.
+        '''</remarks>
+        Protected WithEvents phUpdateBilling As Global.System.Web.UI.WebControls.PlaceHolder
+        
+        '''<summary>
+        '''divUpdateBilling control.
+        '''</summary>
+        '''<remarks>
+        '''Auto-generated field.
+        '''To modify move field declaration from designer file to code-behind file.
+        '''</remarks>
+        Protected WithEvents divUpdateBilling As Global.System.Web.UI.HtmlControls.HtmlGenericControl
+        
+        '''<summary>
         '''litResourceName control.
         '''</summary>
         '''<remarks>
@@ -355,6 +373,15 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents chkEmailClient As Global.System.Web.UI.WebControls.CheckBox
+        
+        '''<summary>
+        '''litForgiveChargeNote control.
+        '''</summary>
+        '''<remarks>
+        '''Auto-generated field.
+        '''To modify move field declaration from designer file to code-behind file.
+        '''</remarks>
+        Protected WithEvents litForgiveChargeNote As Global.System.Web.UI.WebControls.Literal
         
         '''<summary>
         '''btnEditSave control.

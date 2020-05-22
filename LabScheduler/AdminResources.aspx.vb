@@ -1,8 +1,6 @@
-﻿Imports LNF.Cache
-Imports LNF.Models.Data
-Imports LNF.Models.Scheduler
+﻿Imports LNF.Data
+Imports LNF.Impl.Repository.Scheduler
 Imports LNF.Repository
-Imports LNF.Repository.Scheduler
 Imports LNF.Scheduler
 Imports LNF.Web.Scheduler
 Imports LNF.Web.Scheduler.Content
@@ -57,7 +55,7 @@ Namespace Pages
             If ResourceID = 0 Then
                 LoadEditForm(Nothing)
             Else
-                Dim res As IResource = ContextBase.ResourceTree().GetResource(ResourceID)
+                Dim res As IResource = Helper.GetResourceTreeItemCollection().GetResource(ResourceID)
                 If res IsNot Nothing Then
                     LoadEditForm(res)
                 Else
@@ -109,7 +107,7 @@ Namespace Pages
 
         Private Sub LoadResources()
             Dim start As Date = Date.Now
-            Dim query As IEnumerable(Of ResourceTreeItem) = ContextBase.ResourceTree().Resources()
+            Dim query As IEnumerable(Of IResourceTree) = Helper.GetResourceTreeItemCollection().Resources()
             Dim secondsTaken As Double = (Date.Now - start).TotalSeconds
             Dim items As IList(Of ResourceTableItem) = ResourceTableItem.CreateList(query)
             rptResources.DataSource = items

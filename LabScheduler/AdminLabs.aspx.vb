@@ -1,7 +1,7 @@
 ﻿Imports LabScheduler.AppCode
 Imports LabScheduler.AppCode.DBAccess
 Imports LNF.CommonTools
-Imports LNF.Models.Data
+Imports LNF.Data
 Imports LNF.Repository
 Imports LNF.Web
 Imports LNF.Web.Scheduler

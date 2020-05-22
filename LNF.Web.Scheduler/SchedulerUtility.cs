@@ -1,8 +1,6 @@
 ﻿using LNF.Data;
-using LNF.Models.Data;
-using LNF.Models.Scheduler;
+using LNF.Impl.Repository.Data;
 using LNF.Repository;
-using LNF.Repository.Data;
 using LNF.Scheduler;
 using LNF.Web.Controls;
 using System;
@@ -18,6 +16,9 @@ namespace LNF.Web.Scheduler
 {
     public static class SchedulerUtility
     {
+        // Fix this dependency
+        public static IProvider Provider => ServiceProvider.Current;
+
         public static ReservationState GetReservationCell(CustomTableCell rsvCell, IReservation rsv, ReservationClient client, DateTime now)
         {
             int reservationId = rsv.ReservationID;
@@ -25,7 +26,7 @@ namespace LNF.Web.Scheduler
 
             // Reservation State
             var args = ReservationStateArgs.Create(rsv, client);
-            var util = new ReservationUtility(now, ServiceProvider.Current);
+            var util = Reservations.Create(Provider, now);
             var state = util.GetReservationState(args);
 
             // 2008-08-15 temp
@@ -33,8 +34,8 @@ namespace LNF.Web.Scheduler
                 state = ReservationState.Meeting;
 
             // Tooltip Caption and Text
-            string caption = ReservationUtility.GetReservationCaption(state);
-            string toolTip = ReservationUtility.GetReservationToolTip(rsv, state);
+            string caption = Reservations.GetReservationCaption(state);
+            string toolTip = Reservations.Create(Provider, now).GetReservationToolTip(rsv, state);
             rsvCell.Attributes["data-tooltip"] = toolTip;
             rsvCell.Attributes["data-caption"] = caption;
 
@@ -121,7 +122,7 @@ namespace LNF.Web.Scheduler
             string toolTip = string.Empty;
             foreach (var rsv in reservs)
             {
-                toolTip += $"<div>[{rsv.ReservationID}] <b>{ClientItem.GetDisplayName(rsv.LName, rsv.FName)}</b> ";
+                toolTip += $"<div>[{rsv.ReservationID}] <b>{Clients.GetDisplayName(rsv.LName, rsv.FName)}</b> ";
 
                 if (rsv.ActualEndDateTime == null)
                     toolTip += rsv.BeginDateTime.ToShortTimeString() + " - ";
@@ -197,12 +198,41 @@ namespace LNF.Web.Scheduler
                     result = $"~/UserReservations.aspx?Date={date:yyyy-MM-dd}";
                     separator = "&";
                     break;
+                case ViewType.LocationView:
+                    LocationPathInfo locationPath = GetLocationPath(ctx);
+                    result = $"~/LabLocation.aspx?LocationPath={locationPath.UrlEncode()}&Date={date:yyyy-MM-dd}";
+                    separator = "&";
+                    break;
                 default:
                     throw new ArgumentException($"Invalid view: {view}");
             }
 
             if (confirm && reservationId > 0)
                 result += $"{separator}Confirm=1&ReservationID={reservationId}";
+
+            return result;
+        }
+
+        public static LocationPathInfo GetLocationPath(HttpContextBase context)
+        {
+            LocationPathInfo result;
+
+            if (string.IsNullOrEmpty(context.Request.QueryString["LocationPath"]))
+            {
+                // This can happen when ending a reservation from LabLocation.aspx. The QueryString passed to this controller does not contain
+                // the LocationPath variable but this is needed for the redirect url when View == ViewType.LocationView.
+                var labId = context.Request.SelectedPath().LabID;
+                var resourceId = context.Request.SelectedPath().ResourceID;
+                var loc = Provider.Scheduler.LabLocation.GetResourceLabLocationByResource(resourceId);
+                if (loc == null)
+                    result = LocationPathInfo.Create(Provider.Scheduler.Resource.GetLab(labId));
+                else
+                    result = LocationPathInfo.Create(labId, loc.LabLocationID);
+            }
+            else
+            { 
+                result = LocationPathInfo.Parse(context.Request.QueryString["LocationPath"]);
+            }
 
             return result;
         }

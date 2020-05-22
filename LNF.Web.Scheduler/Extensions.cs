@@ -1,10 +1,6 @@
 ﻿using LNF.Cache;
-using LNF.Models.Data;
-using LNF.Models.PhysicalAccess;
-using LNF.Models.Scheduler;
+using LNF.Data;
 using LNF.PhysicalAccess;
-using LNF.Repository;
-using LNF.Repository.Scheduler;
 using LNF.Scheduler;
 using LNF.Web.Scheduler.TreeView;
 using System;
@@ -14,8 +10,435 @@ using System.Web;
 
 namespace LNF.Web.Scheduler
 {
+    public class ContextHelper
+    {
+        public HttpContextBase Context { get; }
+        public IProvider Provider { get; }
+
+        public ContextHelper(HttpContextBase context, IProvider provider)
+        {
+            Context = context ?? throw new ArgumentNullException("context");
+            Provider = provider ?? throw new ArgumentNullException("provider");
+        }
+
+        public IClient CurrentUser() => Context.CurrentUser(Provider);
+
+        public IEnumerable<Badge> CurrentlyInLab()
+        {
+            if (!Context.Items.Contains("CurrentlyInLab"))
+                Context.Items["CurrentlyInLab"] = GetPhysicalAccessUtility().CurrentlyInLab;
+
+            var result = (IEnumerable<Badge>)Context.Items["CurrentlyInLab"];
+
+            return result;
+        }
+
+        public bool IsInLab() => GetPhysicalAccessUtility().IsInLab(CurrentUser().ClientID);
+
+        public PhysicalAccessUtility GetPhysicalAccessUtility()
+        {
+            PhysicalAccessUtility util;
+
+            if (!Context.Items.Contains("PhysicalAccessUtility"))
+            {
+                var inlab = Provider.PhysicalAccess.GetCurrentlyInArea("all");
+                util = new PhysicalAccessUtility(inlab, Context.Request.UserHostAddress);
+                Context.Items["PhysicalAccessUtility"] = util;
+            }
+            else
+            {
+                util = (PhysicalAccessUtility)Context.Items["PhysicalAccessUtility"];
+            }
+
+            return util;
+        }
+
+        public bool ClientInLab()
+        {
+            if (!Context.Items.Contains("ClientInLab"))
+                Context.Items["ClientInLab"] = GetPhysicalAccessUtility().ClientInLab(CurrentUser().ClientID);
+
+            var result = (bool)Context.Items["ClientInLab"];
+
+            return result;
+        }
+
+        public bool ClientInLab(int labId)
+        {
+            var clientId = CurrentUser().ClientID;
+            return GetPhysicalAccessUtility().ClientInLab(clientId, labId);
+        }
+
+        public ILab ClientLab()
+        {
+            if (!Context.Items.Contains("ClientLab"))
+            {
+                var inlab = GetPhysicalAccessUtility().CurrentlyInLab;
+                var badge = inlab.FirstOrDefault(x => x.ClientID == CurrentUser().ClientID);
+                ILab lab = null;
+                if (badge != null)
+                    lab = CacheManager.Current.GetLab(badge.CurrentAreaName);
+                Context.Items["ClientLab"] = lab;
+            }
+
+            var result = (ILab)Context.Items["ClientLab"];
+
+            return result;
+        }
+
+        public IClientSetting GetClientSetting()
+        {
+            IClientSetting result;
+
+            if (Context.Session["ClientSetting"] == null)
+            {
+                result = Provider.Scheduler.ClientSetting.GetClientSettingOrDefault(CurrentUser().ClientID);
+                Context.Session["ClientSetting"] = result;
+            }
+            else
+            {
+                result = (IClientSetting)Context.Session["ClientSetting"];
+            }
+
+            return result;
+        }
+
+        public IReservation GetReservation()
+        {
+            if (int.TryParse(Context.Request.QueryString["ReservationID"], out int reservationId))
+            {
+                var result = Provider.Scheduler.Reservation.GetReservation(reservationId);
+
+                if (result == null)
+                    throw new InvalidOperationException($"Cannot find a Reservation with ReservationID = {reservationId}");
+
+                return result;
+            }
+            else
+                throw new InvalidOperationException("Missing query string parameter: ReservationID");
+        }
+
+        public IReservationWithInvitees GetReservationWithInvitees()
+        {
+            if (int.TryParse(Context.Request.QueryString["ReservationID"], out int reservationId))
+            {
+                var result = Provider.Scheduler.Reservation.GetReservationWithInvitees(reservationId);
+
+                if (result == null)
+                    throw new InvalidOperationException($"Cannot find a Reservation with ReservationID = {reservationId}");
+
+                return result;
+            }
+            else
+                throw new InvalidOperationException("Missing query string parameter: ReservationID");
+        }
+
+        public ReservationClient GetReservationClientItem(IReservationWithInvitees rsv) => GetReservationClientItem(rsv, CurrentUser());
+
+        public ReservationClient GetReservationClientItem(IReservationWithInvitees rsv, IClient client)
+        {
+            var resourceClients = Provider.Scheduler.Reservation.GetResourceClients(rsv.ResourceID);
+            var userAuth = Reservations.GetAuthLevel(resourceClients, client);
+
+            var result = new ReservationClient
+            {
+                ClientID = client.ClientID,
+                ReservationID = rsv.ReservationID,
+                ResourceID = rsv.ResourceID,
+                IsReserver = rsv.ClientID == client.ClientID,
+                IsInvited = rsv.Invitees.Any(x => x.InviteeID == client.ClientID),
+                InLab = ClientInLab(rsv.LabID),
+                UserAuth = userAuth
+            };
+
+            return result;
+        }
+
+        public ReservationClient GetReservationClientItem(IReservation rsv) => GetReservationClientItem(rsv, CurrentUser());
+
+        public ReservationClient GetReservationClientItem(IReservation rsv, IClient client)
+        {
+            var resourceClients = Provider.Scheduler.Reservation.GetResourceClients(rsv.ResourceID);
+            var userAuth = Reservations.GetAuthLevel(resourceClients, client);
+            var invitees = Provider.Scheduler.Reservation.GetInvitees(rsv.ReservationID);
+            var isReserver = rsv.ClientID == client.ClientID;
+            var isInvited = invitees.Any(x => x.InviteeID == client.ClientID);
+
+            var physicalAccessUtil = GetPhysicalAccessUtility();
+            var inLab = physicalAccessUtil.ClientInLab(client.ClientID, rsv.LabID);
+
+            var result = new ReservationClient
+            {
+                ClientID = client.ClientID,
+                ReservationID = rsv.ReservationID,
+                ResourceID = rsv.ResourceID,
+                IsReserver = isReserver,
+                IsInvited = isInvited,
+                InLab = inLab,
+                UserAuth = userAuth
+            };
+
+            return result;
+        }
+
+        public IEnumerable<IResourceClient> GetResourceClients(int resourceId)
+        {
+            string key = "ResourceClients#" + resourceId;
+
+            var result = (IEnumerable<IResourceClient>)Context.Items[key];
+
+            if (result == null || result.Count() == 0)
+            {
+                result = Provider.Scheduler.Resource.GetResourceClients(resourceId);
+                Context.Items[key] = result;
+            }
+
+            return result;
+        }
+
+        public IEnumerable<IResourceTree> ResourceTree()
+        {
+            IEnumerable<IResourceTree> resources;
+
+            if (Context.Items["CurrentResourceTree"] == null)
+            {
+                resources = Provider.Scheduler.Resource.GetResourceTree(CurrentUser().ClientID);
+                Context.Items["CurrentResourceTree"] = resources;
+            }
+            else
+            {
+                resources = (IEnumerable<IResourceTree>)Context.Items["CurrentResourceTree"];
+            }
+
+            return resources;
+        }
+
+        public ResourceTreeItemCollection GetResourceTreeItemCollection()
+        {
+            ResourceTreeItemCollection tree;
+
+            if (Context.Items["CurrentResourceTreeItemCollection"] == null)
+            {
+                // always for the current user
+                var resources = ResourceTree();
+                tree = new ResourceTreeItemCollection(resources);
+                Context.Items["CurrentResourceTreeItemCollection"] = tree;
+            }
+            else
+            {
+                tree = (ResourceTreeItemCollection)Context.Items["CurrentResourceTreeItemCollection"];
+            }
+
+            return tree;
+        }
+
+        public IEnumerable<ILabLocation> LabLocations()
+        {
+            IEnumerable<ILabLocation> labLocations;
+
+            if (Context.Session["LabLocations"] == null)
+            {
+                labLocations = Provider.Scheduler.LabLocation.GetLabLocations();
+                Context.Session["LabLocations"] = labLocations;
+            }
+            else
+            {
+                labLocations = (IEnumerable<ILabLocation>)Context.Session["LabLocations"];
+            }
+
+            return labLocations;
+        }
+
+        public IEnumerable<IResourceLabLocation> ResourceLabLocations()
+        {
+            IEnumerable<IResourceLabLocation> resourceLabLocations;
+
+            if (Context.Session["ResourceLabLocations"] == null)
+            {
+                resourceLabLocations = Provider.Scheduler.LabLocation.GetResourceLabLocations();
+                Context.Session["ResourceLabLocations"] = resourceLabLocations;
+            }
+            else
+            {
+                resourceLabLocations = (IEnumerable<IResourceLabLocation>)Context.Session["ResourceLabLocations"];
+            }
+
+            return resourceLabLocations;
+        }
+
+        public LocationTreeItemCollection GetLocationTreeItemCollection()
+        {
+            LocationTreeItemCollection tree;
+
+            if (Context.Items["CurrentLocationTreeItemCollection"] == null)
+            {
+                // always for the current user
+                var resources = ResourceTree();
+                var labLocations = LabLocations();
+                var resourceLabLocations = ResourceLabLocations();
+                tree = new LocationTreeItemCollection(resources, labLocations, resourceLabLocations);
+                Context.Items["CurrentLocationTreeItemCollection"] = tree;
+            }
+            else
+            {
+                tree = (LocationTreeItemCollection)Context.Items["CurrentLocationTreeItemCollection"];
+            }
+
+            return tree;
+        }
+
+        /// <summary>
+        /// The current resource treeview for this request.
+        /// </summary>
+        public SchedulerResourceTreeView CurrentResourceTreeView()
+        {
+            SchedulerResourceTreeView result;
+
+            if (Context.Items["SchedulerTreeView"] == null)
+            {
+                result = CreateResourceTreeView();
+                Context.Items["SchedulerTreeView"] = result;
+            }
+            else
+            {
+                result = (SchedulerResourceTreeView)Context.Items["SchedulerTreeView"];
+            }
+
+            return result;
+        }
+
+        public SchedulerResourceTreeView CreateResourceTreeView()
+        {
+            var result = new SchedulerResourceTreeView(GetResourceTreeItemCollection());
+            var buildings = result.ResourceTree.Buildings().Where(x => x.BuildingIsActive).OrderBy(x => x.BuildingName).ToArray();
+            result.Root = new TreeViewNodeCollection(buildings.Select(x => new BuildingNode(result, x)).ToArray());
+            return result;
+        }
+
+        /// <summary>
+        /// The current location treeview for this request.
+        /// </summary>
+        public SchedulerResourceTreeView CurrentLocationTreeView()
+        {
+            SchedulerResourceTreeView result;
+
+            if (Context.Items["LocationTreeView"] == null)
+            {
+                result = CreateLocationTreeView();
+                Context.Items["LocationTreeView"] = result;
+            }
+            else
+            {
+                result = (SchedulerResourceTreeView)Context.Items["LocationTreeView"];
+            }
+
+            return result;
+        }
+
+        public SchedulerResourceTreeView CreateLocationTreeView()
+        {
+            var locationTree = GetLocationTreeItemCollection();
+            var include = locationTree.GetLabLocations().Select(x => x.LabID).Distinct().ToArray();
+            var result = new SchedulerResourceTreeView(locationTree);
+            var labs = result.ResourceTree.Labs().Where(x => x.BuildingIsActive && x.LabIsActive && include.Contains(x.LabID)).OrderBy(x => x.BuildingName).ThenBy(x => x.LabDisplayName).ToArray();
+            result.Root = new TreeViewNodeCollection(labs.Select(x => new LocationLabNode(result, locationTree, x)).ToArray());
+            return result;
+        }
+
+        public IEnumerable<ResourceTableItem> GetResourceTableItemList(int buildingId)
+        {
+            List<ResourceTableItem> result = new List<ResourceTableItem>();
+            var resourceTree = GetResourceTreeItemCollection();
+            var bldg = resourceTree.GetBuilding(buildingId);
+
+            if (bldg != null)
+            {
+                foreach (var lab in resourceTree.Labs().Where(x => x.LabIsActive && x.BuildingID == bldg.BuildingID).OrderBy(x => x.LabDisplayName).ToList())
+                {
+                    foreach (var pt in resourceTree.ProcessTechs().Where(x => x.ProcessTechIsActive && x.LabID == lab.LabID).OrderBy(x => x.ProcessTechName).ToList())
+                    {
+                        foreach (var res in resourceTree.Resources().Where(x => x.ResourceIsActive && x.ProcessTechID == pt.ProcessTechID).OrderBy(x => x.ResourceName).ToList())
+                            result.Add(new ResourceTableItem(Context, bldg, lab, pt, res));
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        public IBuilding GetCurrentBuilding()
+        {
+            var pathInfo = Context.Request.SelectedPath();
+
+            if (pathInfo.BuildingID > 0)
+                return GetResourceTreeItemCollection().GetBuilding(pathInfo.BuildingID);
+            else
+                return null;
+        }
+
+        public ILab GetCurrentLab()
+        {
+            var pathInfo = Context.Request.SelectedPath();
+
+            if (pathInfo.LabID > 0)
+                return GetResourceTreeItemCollection().GetLab(pathInfo.LabID);
+            else
+                return null;
+        }
+
+        public IProcessTech GetCurrentProcessTech()
+        {
+            var pathInfo = Context.Request.SelectedPath();
+
+            if (pathInfo.ProcessTechID > 0)
+                return GetResourceTreeItemCollection().GetProcessTech(pathInfo.ProcessTechID);
+            else
+                return null;
+        }
+
+        public IResource GetCurrentResource()
+        {
+            var pathInfo = Context.Request.SelectedPath();
+
+            if (pathInfo.ResourceID > 0)
+                return GetResourceTreeItemCollection().GetResource(pathInfo.ResourceID);
+            else
+                return null;
+        }
+
+        public IResourceTree GetCurrentResourceTreeItem()
+        {
+            var pathInfo = Context.Request.SelectedPath();
+
+            if (pathInfo.ResourceID > 0)
+                return GetResourceTreeItemCollection().GetResourceTree(pathInfo.ResourceID);
+            else
+                return null;
+        }
+
+        public IResourceClient GetCurrentResourceClient(int resourceId)
+        {
+            // will return Everyone user if available because of the OrderBy
+            // will return null if both CurrentUser and Everyone is not AuthorizedUser
+            int clientId = CurrentUser().ClientID;
+            return CacheManager.Current
+                .ResourceClients(resourceId).OrderBy(x => x.ClientID)
+                .FirstOrDefault(x => x.ClientID == clientId || x.ClientID == -1);
+        }
+
+        public ClientAuthLevel GetCurrentAuthLevel(int resourceId)
+        {
+            return CacheManager.Current.GetAuthLevel(resourceId, CurrentUser().ClientID);
+        }
+    }
+
     public static class Extensions
     {
+        public static ContextHelper ContextHelper(this HttpContextBase context, IProvider provider)
+        {
+            return new ContextHelper(context, provider);
+        }
+
         public static DateTime SelectedDate(this HttpRequestBase request)
         {
             if (!string.IsNullOrEmpty(request.QueryString["Date"]))
@@ -27,80 +450,7 @@ namespace LNF.Web.Scheduler
             return DateTime.Now.Date;
         }
 
-        public static PathInfo SelectedPath(this HttpRequestBase request)
-        {
-            return PathInfo.Parse(request.QueryString["Path"]);
-        }
-
-        public static IEnumerable<Badge> CurrentlyInLab(this HttpContextBase context)
-        {
-            if (!context.Items.Contains("CurrentlyInLab"))
-                context.Items["CurrentlyInLab"] = context.GetPhysicalAccessUtility().CurrentlyInLab;
-
-            var result = (IEnumerable<Badge>)context.Items["CurrentlyInLab"];
-
-            return result;
-        }
-
-        public static bool IsInLab(this HttpContextBase context)
-        {
-            return context.GetPhysicalAccessUtility().IsInLab(context.CurrentUser().ClientID);
-        }
-
-        public static bool ClientInLab(this HttpContextBase context)
-        {
-            if (!context.Items.Contains("ClientInLab"))
-                context.Items["ClientInLab"] = context.GetPhysicalAccessUtility().ClientInLab(context.CurrentUser().ClientID);
-
-            var result = (bool)context.Items["ClientInLab"];
-
-            return result;
-        }
-
-        public static ILab ClientLab(this HttpContextBase context)
-        {
-            if (!context.Items.Contains("ClientLab"))
-            {
-                var inlab = context.GetPhysicalAccessUtility().CurrentlyInLab;
-                var badge = inlab.FirstOrDefault(x => x.ClientID == context.CurrentUser().ClientID);
-                ILab lab = null;
-                if (badge != null)
-                    lab = CacheManager.Current.GetLab(badge.CurrentAreaName);
-                context.Items["ClientLab"] = lab;
-            }
-
-            var result = (ILab)context.Items["ClientLab"];
-
-            return result;
-        }
-
-        public static bool ClientInLab(this HttpContextBase context, int labId)
-        {
-            return context.GetPhysicalAccessUtility().ClientInLab(context.CurrentUser().ClientID, labId);
-        }
-
-        public static PhysicalAccessUtility GetPhysicalAccessUtility(this HttpContextBase context)
-        {
-            if (!context.Items.Contains("PhysicalAccessUtility"))
-                context.Items["PhysicalAccessUtility"] = new PhysicalAccessUtility(context.Request.UserHostAddress);
-
-            var result = (PhysicalAccessUtility)context.Items["PhysicalAccessUtility"];
-
-            return result;
-        }
-
-        public static ClientSetting GetClientSetting(this HttpContextBase context)
-        {
-            var result = (ClientSetting)context.Items["ClientSetting"];
-
-            if (result == null)
-            {
-                result = ClientSetting.GetClientSettingOrDefault(context.CurrentUser().ClientID);
-                context.Items["ClientSetting"] = result;
-            }
-
-            return result;
-        }
+        public static PathInfo SelectedPath(this HttpRequestBase request) => PathInfo.Parse(request.QueryString["Path"]);
 
         public static bool GetDisplayDefaultHours(this HttpContextBase context)
         {
@@ -119,90 +469,6 @@ namespace LNF.Web.Scheduler
             context.Session["DisplayDefaultHours"] = value;
         }
 
-        public static IReservation GetReservation(this HttpContextBase context)
-        {
-            if (int.TryParse(context.Request.QueryString["ReservationID"], out int reservationId))
-            {
-                var result = ServiceProvider.Current.Scheduler.Reservation.GetReservation(reservationId);
-
-                if (result == null)
-                    throw new InvalidOperationException($"Cannot find a Reservation with ReservationID = {reservationId}");
-
-                return result;
-            }
-            else
-                throw new InvalidOperationException("Missing query string parameter: ReservationID");
-        }
-
-        public static IReservationWithInvitees GetReservationWithInvitees(this HttpContextBase context)
-        {
-            if (int.TryParse(context.Request.QueryString["ReservationID"], out int reservationId))
-            {
-                var result = ServiceProvider.Current.Scheduler.Reservation.GetReservationWithInvitees(reservationId);
-
-                if (result == null)
-                    throw new InvalidOperationException($"Cannot find a Reservation with ReservationID = {reservationId}");
-
-                return result;
-            }
-            else
-                throw new InvalidOperationException("Missing query string parameter: ReservationID");
-        }
-
-        public static ReservationClient GetReservationClientItem(this HttpContextBase context, IReservationWithInvitees rsv)
-        {
-            return context.GetReservationClientItem(rsv, context.CurrentUser());
-        }
-
-        public static ReservationClient GetReservationClientItem(this HttpContextBase context, IReservationWithInvitees rsv, IClient client)
-        {
-            var resourceClients = ServiceProvider.Current.Scheduler.Reservation.GetResourceClients(rsv.ResourceID);
-            var userAuth = ReservationUtility.GetAuthLevel(resourceClients, client);
-
-            var result = new ReservationClient
-            {
-                ClientID = client.ClientID,
-                ReservationID = rsv.ReservationID,
-                ResourceID = rsv.ResourceID,
-                IsReserver = rsv.ClientID == client.ClientID,
-                IsInvited = rsv.Invitees.Any(x => x.InviteeID == client.ClientID),
-                InLab = context.ClientInLab(rsv.LabID),
-                UserAuth = userAuth
-            };
-
-            return result;
-        }
-
-        public static ReservationClient GetReservationClientItem(this HttpContextBase context, IReservation rsv)
-        {
-            return context.GetReservationClientItem(rsv, context.CurrentUser());
-        }
-
-        public static ReservationClient GetReservationClientItem(this HttpContextBase context, IReservation rsv, IClient client)
-        {
-            var resourceClients = ServiceProvider.Current.Scheduler.Reservation.GetResourceClients(rsv.ResourceID);
-            var userAuth = ReservationUtility.GetAuthLevel(resourceClients, client);
-            var invitees = ServiceProvider.Current.Scheduler.Reservation.GetInvitees(rsv.ReservationID);
-            var isReserver = rsv.ClientID == client.ClientID;
-            var isInvited = invitees.Any(x => x.InviteeID == client.ClientID);
-
-            var physicalAccessUtil = GetPhysicalAccessUtility(context);
-            var inLab = physicalAccessUtil.ClientInLab(client.ClientID, rsv.LabID);
-
-            var result = new ReservationClient
-            {
-                ClientID = client.ClientID,
-                ReservationID = rsv.ReservationID,
-                ResourceID = rsv.ResourceID,
-                IsReserver = isReserver,
-                IsInvited = isInvited,
-                InLab = inLab,
-                UserAuth = userAuth
-            };
-
-            return result;
-        }
-
         public static ViewType GetCurrentViewType(this HttpContextBase context)
         {
             if (context.Session["CurrentViewType"] == null)
@@ -213,132 +479,6 @@ namespace LNF.Web.Scheduler
         public static void SetCurrentViewType(this HttpContextBase context, ViewType value)
         {
             context.Session["CurrentViewType"] = value;
-        }
-
-        public static IEnumerable<ResourceClientItem> GetResourceClients(this HttpContextBase context, int resourceId)
-        {
-            string key = "ResourceClients#" + resourceId;
-
-            var result = (IEnumerable<ResourceClientItem>)context.Items[key];
-
-            if (result == null || result.Count() == 0)
-            {
-                result = DA.Current.Query<ResourceClientInfo>().Where(x => x.ResourceID == resourceId).CreateModels<ResourceClientItem>();
-                context.Items[key] = result;
-            }
-
-            return result;
-        }
-
-        public static ResourceTreeItemCollection ResourceTree(this HttpContextBase context)
-        {
-            // always for the current user
-            return context.GetClientSetting().GetResourceTree();
-        }
-
-        /// <summary>
-        /// The current resource treeview for this request.
-        /// </summary>
-        public static SchedulerResourceTreeView CurrentResourceTreeView(this HttpContextBase context, IProvider provider)
-        {
-            SchedulerResourceTreeView result;
-
-            if (context.Items["SchedulerTreeView"] == null)
-            {
-                result = new SchedulerResourceTreeView(provider, context.ResourceTree());
-                context.Items["SchedulerTreeView"] = result;
-            }
-            else
-            {
-                result = (SchedulerResourceTreeView)context.Items["SchedulerTreeView"];
-            }
-
-            return result;
-        }
-
-        public static IEnumerable<ResourceTableItem> GetResourceTableItemList(this HttpContextBase context, int buildingId)
-        {
-            List<ResourceTableItem> result = new List<ResourceTableItem>();
-            var bldg = context.ResourceTree().GetBuilding(buildingId);
-
-            if (bldg != null)
-            {
-                foreach (var lab in context.ResourceTree().Labs().Where(x => x.LabIsActive && x.BuildingID == bldg.BuildingID).OrderBy(x => x.LabDisplayName))
-                {
-                    foreach (var pt in context.ResourceTree().ProcessTechs().Where(x => x.ProcessTechIsActive && x.LabID == lab.LabID).OrderBy(x => x.ProcessTechName))
-                    {
-                        foreach (var res in context.ResourceTree().Resources().Where(x => x.ResourceIsActive && x.ProcessTechID == pt.ProcessTechID).OrderBy(x => x.ResourceName))
-                            result.Add(new ResourceTableItem(context, bldg, lab, pt, res));
-                    }
-                }
-            }
-
-            return result;
-        }
-
-        public static BuildingItem GetCurrentBuilding(this HttpContextBase context)
-        {
-            var pathInfo = context.Request.SelectedPath();
-
-            if (pathInfo.BuildingID > 0)
-                return context.ResourceTree().GetBuilding(pathInfo.BuildingID);
-            else
-                return null;
-        }
-
-        public static LabItem GetCurrentLab(this HttpContextBase context)
-        {
-            var pathInfo = context.Request.SelectedPath();
-
-            if (pathInfo.LabID > 0)
-                return context.ResourceTree().GetLab(pathInfo.LabID);
-            else
-                return null;
-        }
-
-        public static ProcessTechItem GetCurrentProcessTech(this HttpContextBase context)
-        {
-            var pathInfo = context.Request.SelectedPath();
-
-            if (pathInfo.ProcessTechID > 0)
-                return context.ResourceTree().GetProcessTech(pathInfo.ProcessTechID);
-            else
-                return null;
-        }
-
-        public static IResource GetCurrentResource(this HttpContextBase context)
-        {
-            var pathInfo = context.Request.SelectedPath();
-
-            if (pathInfo.ResourceID > 0)
-                return context.ResourceTree().GetResource(pathInfo.ResourceID);
-            else
-                return null;
-        }
-
-        public static ResourceTreeItem GetCurrentResourceTreeItem(this HttpContextBase context)
-        {
-            var pathInfo = context.Request.SelectedPath();
-
-            if (pathInfo.ResourceID > 0)
-                return context.ResourceTree().Find(pathInfo.ResourceID);
-            else
-                return null;
-        }
-
-        public static ResourceClientItem GetCurrentResourceClient(this HttpContextBase context, int resourceId)
-        {
-            // will return Everyone user if available because of the OrderBy
-            // will return null if both CurrentUser and Everyone is not AuthorizedUser
-            int clientId = context.CurrentUser().ClientID;
-            return CacheManager.Current
-                .ResourceClients(resourceId).OrderBy(x => x.ClientID)
-                .FirstOrDefault(x => x.ClientID == clientId || x.ClientID == -1);
-        }
-
-        public static ClientAuthLevel GetCurrentAuthLevel(this HttpContextBase context, int resourceId)
-        {
-            return CacheManager.Current.GetAuthLevel(resourceId, context.CurrentUser().ClientID);
         }
 
         public static void SetWeekStartDate(this HttpContextBase context, DateTime value)
@@ -353,7 +493,7 @@ namespace LNF.Web.Scheduler
 
             var result = Convert.ToDateTime(context.Session["WeekStartDate"]);
 
-            if (result < Reservation.MinReservationBeginDate)
+            if (result < Reservations.MinReservationBeginDate)
             {
                 if (!DateTime.TryParse(context.Request.QueryString["Date"], out result))
                     result = DateTime.Now.Date;

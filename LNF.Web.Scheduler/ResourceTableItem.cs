@@ -1,6 +1,4 @@
-﻿using LNF.Models.Scheduler;
-using System.Collections.Generic;
-using System.Linq;
+﻿using LNF.Scheduler;
 using System.Web;
 
 namespace LNF.Web.Scheduler
@@ -21,7 +19,7 @@ namespace LNF.Web.Scheduler
         public string ProcessTechUrl { get; set; }
         public string ResourceUrl { get; set; }
 
-        public ResourceTableItem(HttpContextBase context, BuildingItem bld, LabItem lab, ProcessTechItem pt, IResource res)
+        public ResourceTableItem(HttpContextBase context, IBuilding bld, ILab lab, IProcessTech pt, IResource res)
         {
             _context = context;
             BuildingID = bld.BuildingID;

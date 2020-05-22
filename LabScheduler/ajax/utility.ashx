@@ -1,7 +1,7 @@
 <%@ WebHandler Language="C#" Class="LabScheduler.Api.Utility" %>
 
 using LNF.Cache;
-using LNF.Models.Data;
+using LNF.Data;
 using Newtonsoft.Json;
 using System;
 using System.Web;

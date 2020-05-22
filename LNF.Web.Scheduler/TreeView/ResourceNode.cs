@@ -1,12 +1,10 @@
-﻿using LNF.Cache;
-using LNF.Models.Scheduler;
-using LNF.Repository;
-using LNF.Scheduler;
+﻿using LNF.Scheduler;
 using System;
+using System.Web;
 
 namespace LNF.Web.Scheduler.TreeView
 {
-    public class ResourceNode : TreeViewNode<ResourceTreeItem>
+    public class ResourceNode : TreeViewNode<IResourceTree>
     {
         public bool IsSchedulable { get; private set; }
         public ResourceState State { get; private set; }
@@ -17,27 +15,40 @@ namespace LNF.Web.Scheduler.TreeView
         public ClientAuthLevel EveryoneAuthLevel { get; private set; }
         public ClientAuthLevel EffectiveAuthLevel { get; private set; }
 
-        public ResourceNode(ResourceTreeItem item, INode parent) : base(item, parent) { }
-
-        public override NodeType Type { get { return NodeType.Resource; } }
-
-        protected override void Load(ResourceTreeItem item)
+        public ResourceNode(SchedulerResourceTreeView view, IResourceTree item, INode parent) : base(view, item, parent)
         {
-            ID = item.ResourceID;
-            Name = item.ResourceName;
-            Description = item.ResourceDescription;
-            IsSchedulable = item.IsSchedulable;
-            State = item.State;
-            StateNotes = item.StateNotes;
+            Load();
+        }
+
+        public override string GetUrl(HttpContextBase context)
+        {
+            return VirtualPathUtility.ToAbsolute(string.Format("~/ResourceDayWeek.aspx?Path={0}&Date={1:yyyy-MM-dd}", context.Server.UrlEncode(Value), context.Request.SelectedDate()));
+        }
+
+        public override string GetImageUrl(HttpContextBase context)
+        {
+            return string.Format("/scheduler/image/resource_icon/{0}", ID);
+        }
+
+        public override bool IsExpanded(string path) => PathInfo.Parse(path).ResourceID == ID;
+
+        protected override void Load()
+        {
+            ID = Item.ResourceID;
+            Name = Resources.CleanResourceName(Item.ResourceName);
+            Description = Item.ResourceDescription;
+            IsSchedulable = Item.IsSchedulable;
+            State = Item.State;
+            StateNotes = Item.StateNotes;
             RepairEndDateTime = null;
             RepairNotes = string.Empty;
-            AuthLevel = item.AuthLevel;
-            EveryoneAuthLevel = item.EveryoneAuthLevel;
-            EffectiveAuthLevel = item.EffectiveAuthLevel;
+            AuthLevel = Item.AuthLevel;
+            EveryoneAuthLevel = Item.EveryoneAuthLevel;
+            EffectiveAuthLevel = Item.EffectiveAuthLevel;
 
             if (State == ResourceState.Online && !IsSchedulable)
             {
-                ReservationInProgress repair = ReservationUtility.GetRepairReservationInProgress(item);
+                ReservationInProgress repair = Reservations.GetRepairReservationInProgress(Item);
                 if (repair != null)
                 {
                     RepairEndDateTime = repair.EndDateTime;
@@ -46,16 +57,7 @@ namespace LNF.Web.Scheduler.TreeView
             }
         }
 
-        public ClientAuthLevel GetClientAuth()
-        {
-            return EffectiveAuthLevel;
-            //var rc = CacheManager.Current.GetCurrentResourceClient(ID);
-
-            //if (rc != null)
-            //    return rc.AuthLevel;
-            //else
-            //    return ClientAuthLevel.UnauthorizedUser;
-        }
+        public ClientAuthLevel GetClientAuth() => EffectiveAuthLevel;
 
         public override string CssClass
         {

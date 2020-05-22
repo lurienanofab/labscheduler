@@ -1,6 +1,6 @@
+Imports LNF.Impl.Repository.Data
+Imports LNF.Impl.Repository.Scheduler
 Imports LNF.Repository
-Imports LNF.Repository.Data
-Imports LNF.Repository.Scheduler
 
 Namespace DBAccess
     Public Class ReservationRecurrenceDB

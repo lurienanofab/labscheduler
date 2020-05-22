@@ -1,5 +1,4 @@
 ﻿Imports LabScheduler.AppCode.DBAccess
-Imports LNF.Models.Scheduler
 Imports LNF.Scheduler
 Imports LNF.Web.Scheduler
 Imports LNF.Web.Scheduler.Content
@@ -126,7 +125,7 @@ Namespace Pages
                     If existing.ActualBeginDateTime Is Nothing Then
                         ' handle unstarted reservations
                         Provider.Scheduler.Reservation.CancelAndForgive(existing.ReservationID, CurrentUser.ClientID)
-                        Provider.EmailManager.EmailOnCanceledByRepair(existing, True, "LNF Facility Down", "Facility is down, thus we have to disable the tool.", endDateTime, CurrentUser.ClientID)
+                        Provider.Scheduler.Email.EmailOnCanceledByRepair(existing, True, "LNF Facility Down", "Facility is down, thus we have to disable the tool.", endDateTime, CurrentUser.ClientID)
                     Else
                         ' handle started reservations
 
@@ -143,7 +142,7 @@ Namespace Pages
                             ' The user will have to request that the reservation be forgiven.
                             ' We only need to deal with in-progress reservations.
                             If existing.ActualEndDateTime Is Nothing Then
-                                Provider.Scheduler.Reservation.EndReservation(existing.ReservationID, CurrentUser.ClientID, CurrentUser.ClientID)
+                                Provider.Scheduler.Reservation.EndReservation(New EndReservationArgs(existing.ReservationID, Date.Now, CurrentUser.ClientID))
                             End If
                         End If
                     End If
@@ -163,8 +162,7 @@ Namespace Pages
             Dim ed As Date = repair.GetNextGranularity(Date.Now, GranularityDirection.Next)
             Dim notes As String = (repair.Notes + $" Ended for Facility Down Time at {Date.Now:yyyy-MM-dd HH:mm:ss}.").Trim()
             Provider.Scheduler.Reservation.UpdateRepair(repair.ReservationID, ed, notes, CurrentUser.ClientID)
-            Provider.Scheduler.Reservation.EndReservation(repair.ReservationID, CurrentUser.ClientID, CurrentUser.ClientID)
-
+            Provider.Scheduler.Reservation.EndReservation(New EndReservationArgs(repair.ReservationID, Date.Now, CurrentUser.ClientID))
         End Sub
 
         Protected Sub BtnBack_Click(sender As Object, e As EventArgs)
@@ -330,7 +328,7 @@ Namespace Pages
                     ' Only if the reservation has not begun
                     If existing.ActualBeginDateTime Is Nothing Then
                         Provider.Scheduler.Reservation.CancelReservation(existing.ReservationID, CurrentUser.ClientID)
-                        Provider.EmailManager.EmailOnCanceledByRepair(existing, True, "LNF Facility Down", "Facility is down, thus we have to disable the tool. Notes:", endDateTime, CurrentUser.ClientID)
+                        Provider.Scheduler.Email.EmailOnCanceledByRepair(existing, True, "LNF Facility Down", "Facility is down, thus we have to disable the tool. Notes:", endDateTime, CurrentUser.ClientID)
                     Else
                         'We have to disable all those reservations that have been activated by setting isActive to 0.  
                         'The catch here is that we must compare the "Actual" usage time with the repair time because if the user ends the reservation before the repair starts, we still 

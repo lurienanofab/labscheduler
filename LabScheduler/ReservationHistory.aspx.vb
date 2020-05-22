@@ -2,12 +2,9 @@
 Imports LNF.Cache
 Imports LNF.CommonTools
 Imports LNF.Data
-Imports LNF.Models.Data
-Imports LNF.Models.Scheduler
-Imports LNF.Scheduler.Data
+Imports LNF.Scheduler
 Imports LNF.Web.Scheduler
 Imports LNF.Web.Scheduler.Content
-Imports Data = LNF.Repository.Data
 
 Namespace Pages
     Public Class ReservationHistory
@@ -43,7 +40,6 @@ Namespace Pages
             End Get
         End Property
 
-
         Public ReadOnly Property EditReservation As IReservation
             Get
                 If _EditReservation Is Nothing OrElse _EditReservation.ReservationID <> EditReservationID Then
@@ -70,9 +66,7 @@ Namespace Pages
         End Sub
 
         Private Sub LoadClients()
-            Dim dtClients As DataTable = ResourceClientData.SelectReservationHistoryClient(CurrentUser)
-
-            ddlClients.DataSource = dtClients
+            ddlClients.DataSource = SelectReservationHistoryClients()
             ddlClients.DataBind()
 
             If EditReservation IsNot Nothing Then
@@ -86,7 +80,7 @@ Namespace Pages
             End If
 
             Dim range As Integer
-            Dim sd, ed As DateTime?
+            Dim sd, ed As Date?
 
             If Session("SelectedRange") Is Nothing Then
                 range = Integer.Parse(ddlRange.SelectedValue)
@@ -205,6 +199,7 @@ Namespace Pages
             litIsCanceled.Text = If(IsCanceled(EditReservation.IsActive), "Yes", "No")
             litInvitees.Text = InviteeListHTML()
             litCurrentAccount.Text = EditReservation.AccountName
+            litForgiveChargeNote.Text = ConfigurationManager.AppSettings("ForgiveChargeNote")
             trAccount.Visible = canChangeAcct
 
             '2012-10-23 It's possible that there are no available accounts. For example
@@ -217,14 +212,14 @@ Namespace Pages
             End If
 
             If accts IsNot Nothing Then
-                ddlEditReservationAccount.DataSource = Provider.Data.Account.ConvertToAccountTable(accts.ToList())
+                ddlEditReservationAccount.DataSource = Accounts.ConvertToAccountTable(accts.ToList())
                 ddlEditReservationAccount.DataBind()
             Else
                 ddlEditReservationAccount.Visible = False
                 litEditReservationAccountMessage.Text = "<div>No accounts are available for this reservation</div>"
             End If
 
-            Dim item As ListItem = ddlEditReservationAccount.Items.FindByValue(EditReservation.AccountID.ToString())
+            Dim item As WebControls.ListItem = ddlEditReservationAccount.Items.FindByValue(EditReservation.AccountID.ToString())
 
             If item IsNot Nothing Then
                 ddlEditReservationAccount.SelectedValue = EditReservation.AccountID.ToString()
@@ -264,6 +259,14 @@ Namespace Pages
             Else
                 chkEmailClient.Visible = False
                 btnEditSave.Visible = False
+            End If
+
+            If Request.QueryString("Event") = "EditReservationSave" Then
+                SetSaveAlert()
+                phUpdateBilling.Visible = UpdateBilling()
+                divUpdateBilling.Attributes("data-client-id") = EditReservation.ClientID.ToString()
+                divUpdateBilling.Attributes("data-period") = EditReservation.ChargeBeginDateTime.ToString("yyyy-MM-01")
+                divUpdateBilling.Attributes("data-ajax-url") = VirtualPathUtility.ToAbsolute("~/ajax/reservation.ashx")
             End If
 
             phEditHistory.Visible = True
@@ -306,34 +309,35 @@ Namespace Pages
         Private Sub EditReservationSave()
             Dim alertText As String = String.Empty
             Dim alertType As String = "success"
+            Dim updateBilling As Boolean = False
 
             If EditReservationID > 0 Then
                 Dim accountId As Integer = Integer.Parse(ddlEditReservationAccount.SelectedValue)
                 Dim forgivenPct As Double = GetForgiveAmount()
-                Dim period As DateTime = EditReservation.ChargeBeginDateTime.FirstOfMonth()
+                Dim period As Date = EditReservation.ChargeBeginDateTime.FirstOfMonth()
+                Dim temp As Boolean = Utility.IsCurrentPeriod(period)
                 Dim clientId As Integer = EditReservation.ClientID
 
                 Dim result = Provider.Scheduler.Reservation.SaveReservationHistory(EditReservation, accountId, forgivenPct, txtNotes.Text, chkEmailClient.Checked)
 
                 If result.ReservationUpdated Then
-                    alertText += "<div>&bull; Reservation updated OK!</div>"
+                    alertText += "<strong>Reservation updated OK!</strong>"
                 Else
-                    alertText += "<div>&bull; Reservation update failed.</div>"
+                    alertText += "<strong>Reservation update failed.</strong>"
                     alertType = "danger"
                 End If
 
-                If Not String.IsNullOrEmpty(result.BillingLog) Then
-                    alertText += "<div>&bull; Billing updated OK!</div>"
-                Else
-                    alertText += $"<div>&bull; Billing update failed.</div>"
-                    alertType = "danger"
-                End If
+                updateBilling = result.UpdateBilling AndAlso Not temp 'do not update if period is current month (temp is true)
             Else
-                alertText += "Invalid ReservationID."
+                alertText += "<strong>Invalid ReservationID.</strong>"
                 alertType = "danger"
             End If
 
-            ShowSaveAlert(alertText, alertType)
+            Session("EditReservationSave.AlertText") = alertText
+            Session("EditReservationSave.AlertType") = alertType
+
+            Dim redirectUrl = $"~/ReservationHistory.aspx?Date={ContextBase.Request.SelectedDate():yyyy-MM-dd}&ReservationID={EditReservationID}&Event=EditReservationSave&UpdateBilling={updateBilling}"
+            Response.Redirect(redirectUrl, True)
         End Sub
 
         Protected Function IsCanceled(obj As Object) As Boolean
@@ -356,6 +360,25 @@ Namespace Pages
         Protected Function GetEditUrl(item As Web.Scheduler.ReservationHistoryItem) As String
             Return String.Format("~/ReservationHistory.aspx?Date={0:yyyy-MM-dd}&ReservationID={1}", ContextBase.Request.SelectedDate(), item.ReservationID)
         End Function
+
+        Private Function UpdateBilling() As Boolean
+            Return Request.QueryString("UpdateBilling") = "True"
+        End Function
+
+        Private Sub SetSaveAlert()
+            If Session("EditReservationSave.AlertText") IsNot Nothing Then
+                Dim alertText As String = Session("EditReservationSave.AlertText").ToString()
+                Session.Remove("EditReservationSave.AlertText")
+                Dim alertType As String
+                If Session("EditReservationSave.AlertType") IsNot Nothing Then
+                    alertType = Session("EditReservationSave.AlertType").ToString()
+                    Session.Remove("EditReservationSave.AlertType")
+                Else
+                    alertType = "danger"
+                End If
+                ShowSaveAlert(alertText, alertType)
+            End If
+        End Sub
 
         Private Sub ShowSaveAlert(text As String, Optional type As String = "danger")
             If String.IsNullOrEmpty(text) Then
@@ -398,6 +421,22 @@ Namespace Pages
             End If
 
             Return _holidays
+        End Function
+
+        Private Function SelectReservationHistoryClients() As IEnumerable(Of IClient)
+            ' Dim canViewEveryone = CurrentUser.HasPriv(ClientPrivilege.Staff Or ClientPrivilege.Administrator Or ClientPrivilege.Developer)
+
+            ' allow everyone to see other users history
+            Dim canViewEveryone As Boolean = True
+
+            Dim priv As ClientPrivilege = ClientPrivilege.LabUser Or ClientPrivilege.Staff
+
+            Dim result As IEnumerable(Of IClient) = Provider.Data.Client.GetActiveClients(priv) _
+                .Where(Function(x) canViewEveryone OrElse x.ClientID = CurrentUser.ClientID) _
+                .OrderBy(Function(x) x.DisplayName) _
+                .ToList()
+
+            Return result
         End Function
     End Class
 End Namespace

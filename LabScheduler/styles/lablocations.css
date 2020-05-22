@@ -1,0 +1,12 @@
+﻿.lab-locations {
+    padding: 7px 7px 0 7px;
+}
+
+.lab-location-item {
+    font-size: 13px;
+    padding-bottom: 7px;
+}
+
+    .lab-location-item.active {
+        font-weight: bold;
+    }

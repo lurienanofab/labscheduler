@@ -2,7 +2,7 @@
 
 <%@ Import Namespace="LabScheduler.AppCode.DBAccess"  %>
 <%@ Import Namespace="LNF.Scheduler"  %>
-<%@ Import Namespace="LNF.Models.Scheduler"  %>
+<%@ Import Namespace="LNF.Scheduler"  %>
 
 
 <%@ Register TagPrefix="lnf" Assembly="LNF.Web.Scheduler" Namespace="LNF.Web.Scheduler.Controls" %>
@@ -39,10 +39,16 @@
                     padding: 2px;
                 }
 
-                    .activity-item table td.label {
-                        width: 120px;
-                        background-color: #E7E7FF;
+                    .activity-item table td.cell-label {
+                        width: 110px;
+                        font-weight: bold;
                         text-align: right;
+                        color: #000;
+                        border: 0;  
+                    }
+
+                    .activity-item table td.cell-value {
+                        width: 250px; 
                     }
     </style>
 </asp:Content>
@@ -305,17 +311,17 @@
                         </tr>
                         <tr>
                             <td>
-                                <asp:Button ID="btnNewActivity" runat="server" Text="Add Activities" CssClass="Button" OnClick="btnNewActivity_Click" />
+                                <asp:Button ID="btnNewActivity" runat="server" Text="Add Activities" CssClass="Button" OnClick="BtnNewActivity_Click" />
                             </td>
                         </tr>
                         <tr>
                             <td>
-                                <asp:Repeater runat="server" ID="rptActivities" OnItemDataBound="rptActivities_ItemDataBound">
+                                <asp:Repeater runat="server" ID="rptActivities" OnItemDataBound="RptActivities_ItemDataBound">
                                     <ItemTemplate>
                                         <div class="activity-item">
                                             <table>
                                                 <tr>
-                                                    <td style="text-align: center; width: 50px;">
+                                                    <td style="text-align: center; width: 70px;">
                                                         <asp:ImageButton runat="server" ID="btnEdit" ImageUrl="~/images/edit.gif" OnCommand="Activity_Command" CommandName="edit" CommandArgument='<%#Eval("ActivityID")%>' />
                                                         <asp:ImageButton runat="server" ID="btnDelete" ImageUrl="~/images/delete.gif" OnCommand="Activity_Command" CommandName="delete" CommandArgument='<%#Eval("ActivityID")%>' />
                                                     </td>
@@ -335,20 +341,20 @@
                                             <div style="float: left;">
                                                 <table>
                                                     <tr>
-                                                        <td class="label">Chargeable</td>
-                                                        <td><%#Eval("Chargeable")%></td>
+                                                        <td class="cell-label">Chargeable</td>
+                                                        <td class="cell-value"><%#Eval("Chargeable")%></td>
                                                     </tr>
                                                     <tr>
-                                                        <td class="label">Editable</td>
-                                                        <td><%#Eval("Editable")%></td>
+                                                        <td class="cell-label">Editable</td>
+                                                        <td class="cell-value"><%#Eval("Editable")%></td>
                                                     </tr>
                                                     <tr>
-                                                        <td class="label">Account Type</td>
-                                                        <td><%#GetAccountTypeName(Eval("AccountType"))%></td>
+                                                        <td class="cell-label">Account Type</td>
+                                                        <td class="cell-value"><%#GetAccountTypeName(Eval("AccountType"))%></td>
                                                     </tr>
                                                     <tr>
-                                                        <td class="label">Invitee Type</td>
-                                                        <td><%#GetInviteeTypeName(Eval("InviteeType"))%></td>
+                                                        <td class="cell-label">Invitee Type</td>
+                                                        <td class="cell-value"><%#GetInviteeTypeName(Eval("InviteeType"))%></td>
                                                     </tr>
                                                 </table>
                                             </div>

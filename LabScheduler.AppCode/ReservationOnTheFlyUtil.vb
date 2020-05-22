@@ -1,7 +1,7 @@
 Imports System.Configuration
 Imports System.Web
+Imports LNF.Impl.Repository.Scheduler
 Imports LNF.Repository
-Imports LNF.Repository.Scheduler
 
 Public Class ReservationOnTheFlyUtil
 

@@ -1,5 +1,4 @@
-﻿using LNF.Models.Data;
-using LNF.Models.Scheduler;
+﻿using LNF.Data;
 using LNF.Scheduler;
 using LNF.Web.Content;
 using System;
@@ -8,9 +7,19 @@ namespace LNF.Web.Scheduler.Content
 {
     public abstract class SchedulerPage : LNFPage
     {
-        public new SchedulerMasterPage Master
+        public ContextHelper Helper => NewHelper();
+
+        public SchedulerMasterPage SchedulerMaster
         {
-            get { return (SchedulerMasterPage)Page.Master; }
+            get
+            {
+                if (Master == null) return null;
+
+                if (typeof(SchedulerMasterPage).IsAssignableFrom(Master.GetType()))
+                    return (SchedulerMasterPage)Master;
+
+                throw new Exception($"Cannot convert {Master.GetType().Name} to SchedulerMasterPage.");
+            }
         }
 
         public override ClientPrivilege AuthTypes
@@ -18,10 +27,7 @@ namespace LNF.Web.Scheduler.Content
             get { return PageSecurity.DefaultAuthTypes; }
         }
 
-        public virtual IResource GetCurrentResource()
-        {
-            return ContextBase.GetCurrentResourceTreeItem();
-        }
+        public virtual IResource GetCurrentResource() => Helper.GetCurrentResourceTreeItem();
 
         /// <summary>
         /// Gets the current ViewType from session
@@ -68,9 +74,9 @@ namespace LNF.Web.Scheduler.Content
             Response.Redirect(string.Format("~/{0}?Date={1:yyyy-MM-dd}&ReservationID={2}", page, ContextBase.Request.SelectedDate(), reservationId));
         }
 
-        public ReservationUtility GetReservationUtility(DateTime now)
+        private ContextHelper NewHelper()
         {
-            return new ReservationUtility(now, Provider);
+            return new ContextHelper(ContextBase, Provider);
         }
     }
 }

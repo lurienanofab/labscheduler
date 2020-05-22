@@ -2,12 +2,10 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace LNF.Web.Scheduler.TreeView
 {
-    public class TreeViewItemCollection : IEnumerable<INode>
+    public class TreeViewNodeCollection : IEnumerable<INode>
     {
         private List<INode> _items = new List<INode>();
 
@@ -16,18 +14,23 @@ namespace LNF.Web.Scheduler.TreeView
             get { return _items.Count; }
         }
 
-        public TreeViewItemCollection(IEnumerable<INode> items)
-        {
-            _items = new List<INode>();
+        public TreeViewNodeCollection() { }
 
+        public TreeViewNodeCollection(IEnumerable<INode> items)
+        {
+            Load(items);
+        }
+
+        public void Load(IEnumerable<INode> items)
+        {
             INode prevItem = null;
 
-            foreach(var item in items.OrderBy(x=>x.Name))
+            foreach (var item in items.OrderBy(x => x.Name))
             {
                 if (prevItem == null || item.Name != prevItem.Name)
                 {
                     prevItem = item;
-                    _items.Add(item);
+                    Add(item);
                 }
                 else
                     throw new Exception(string.Format("duplicate detected: {0}, value = {1}", item.Name, item.Value));

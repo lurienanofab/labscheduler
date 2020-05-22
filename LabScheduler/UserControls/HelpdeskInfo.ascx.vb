@@ -1,7 +1,4 @@
-﻿Imports LNF
-Imports LNF.Cache
-Imports LNF.Models.Scheduler
-Imports LNF.Scheduler
+﻿Imports LNF.Scheduler
 Imports LNF.Web.Scheduler
 Imports LNF.Web.Scheduler.Content
 
@@ -24,21 +21,21 @@ Namespace UserControls
             Dim list As New ArrayList()
             If MultiTool Then
                 If Resources IsNot Nothing Then
-                    Dim resList As IEnumerable(Of ResourceTreeItem) = ContextBase.ResourceTree().Resources().Where(Function(x) Resources.Contains(x.ResourceID))
+                    Dim resList As IEnumerable(Of IResourceTree) = Helper.GetResourceTreeItemCollection().Resources().Where(Function(x) Resources.Contains(x.ResourceID))
                     For Each res As IResource In resList
                         list.Add(New With {.id = res.ResourceID, .name = res.ResourceName})
                     Next
                 End If
             Else
                 If ContextBase.Request.SelectedPath().ResourceID > 0 Then
-                    Dim res As IResource = ContextBase.GetCurrentResource()
+                    Dim res As IResource = Helper.GetCurrentResource()
                     If res IsNot Nothing Then
                         list.Add(New With {.id = res.ResourceID, .name = res.ResourceName})
                     End If
                 End If
             End If
 
-            Return ServiceProvider.Current.Serialization.Json.SerializeObject(list)
+            Return Provider.Utility.Serialization.Json.SerializeObject(list)
         End Function
     End Class
 End Namespace

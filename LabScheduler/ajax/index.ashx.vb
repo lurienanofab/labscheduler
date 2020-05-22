@@ -1,8 +1,13 @@
 ﻿Imports LNF
+Imports LNF.Scheduler
+Imports LNF.Web
 Imports LNF.Web.Scheduler
+Imports Newtonsoft.Json
 
 Public Class Index
     Implements IHttpHandler, IReadOnlySessionState
+
+    <Inject> Public Property Provider As IProvider
 
     Public ReadOnly Property IsReusable As Boolean Implements IHttpHandler.IsReusable
         Get
@@ -14,7 +19,9 @@ Public Class Index
         Dim result As Object = Nothing
 
         Try
-            Dim action As String = GetParam(context, "Action")
+            Dim ctx As HttpContextBase = New HttpContextWrapper(context)
+
+            Dim action As String = GetParam(ctx, "Action")
 
             If action = "enablewago" Then
 
@@ -24,7 +31,7 @@ Public Class Index
                 'Response.Write(Providers.Serialization.Json.SerializeObject(schedule))
                 'Return
             Else
-                result = AjaxUtility.HandleRequest(context)
+                result = AjaxUtility.HandleRequest(ctx, Provider)
             End If
         Catch ex As Exception
             result = New GenericResult With {
@@ -38,7 +45,7 @@ Public Class Index
         context.Response.Write(JsonResult(result))
     End Sub
 
-    Private Function GetParam(context As HttpContext, paramName As String) As String
+    Private Function GetParam(context As HttpContextBase, paramName As String) As String
         If context.Request(paramName) Is Nothing OrElse String.IsNullOrEmpty(context.Request(paramName)) Then
             Return String.Empty
         End If
@@ -47,6 +54,6 @@ Public Class Index
     End Function
 
     Private Function JsonResult(obj As Object) As String
-        Return ServiceProvider.Current.Serialization.Json.SerializeObject(obj)
+        Return JsonConvert.SerializeObject(obj)
     End Function
 End Class

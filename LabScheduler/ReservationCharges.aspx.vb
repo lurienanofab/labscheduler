@@ -1,4 +1,4 @@
-﻿Imports LNF.Models.Scheduler
+﻿Imports LNF.Scheduler
 Imports LNF.Web
 Imports LNF.Web.Scheduler.Content
 

@@ -22,7 +22,7 @@ namespace LNF.Web.Scheduler.Controls
             writer.AddAttribute("data-date", ContextBase.Request.SelectedDate().ToString("yyyy-MM-dd"));
             writer.AddAttribute("data-month", GetSelectedMonth().ToString("yyyy-MM-dd"));
             //writer.AddAttribute("data-returnto", ReturnTo);
-            writer.AddAttribute("data-pathinfo", SelectedPathFromViewState.ToString());
+            writer.AddAttribute("data-pathinfo", SelectedPath.ToString());
             writer.AddAttribute("data-headers", string.Join(",", ColumnHeaders));
             base.RenderBeginTag(writer);
         }

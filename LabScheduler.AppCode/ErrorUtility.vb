@@ -1,10 +1,10 @@
 ﻿Imports System.Text
 Imports System.Web
 Imports LNF
-Imports LNF.Models.Data
-Imports LNF.Models.Mail
+Imports LNF.Data
+Imports LNF.Impl.Repository.Data
+Imports LNF.Mail
 Imports LNF.Repository
-Imports LNF.Repository.Data
 Imports LNF.Web
 
 Public Class ErrorUtility
@@ -14,15 +14,17 @@ Public Class ErrorUtility
     Private toAddr As String() = {"lnf-it@umich.edu"}
 
     Public ReadOnly Property ContextBase As HttpContextBase
+    Public ReadOnly Property Provider As IProvider
 
     Public ReadOnly Property CurrentUser As IClient
         Get
-            Return ContextBase.CurrentUser()
+            Return ContextBase.CurrentUser(Provider)
         End Get
     End Property
 
-    Public Sub New(context As HttpContextBase)
+    Public Sub New(context As HttpContextBase, prov As IProvider)
         ContextBase = context
+        Provider = prov
     End Sub
 
     Public Function GetErrorData(ex As Exception) As ErrorLog()
@@ -97,7 +99,7 @@ Public Class ErrorUtility
                 .To = toAddr
             }
 
-            ServiceProvider.Current.Mail.SendMessage(args)
+            Provider.Mail.SendMessage(args)
         Catch ex As Exception
             errors.Add(New ErrorLog() With {
                 .Application = appName,

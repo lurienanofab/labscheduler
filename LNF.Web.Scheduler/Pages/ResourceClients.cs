@@ -1,8 +1,7 @@
-﻿using LNF.Models.Data;
-using LNF.Models.Scheduler;
+﻿using LNF.Data;
+using LNF.Impl.Repository.Data;
+using LNF.Impl.Repository.Scheduler;
 using LNF.Repository;
-using LNF.Repository.Data;
-using LNF.Repository.Scheduler;
 using LNF.Scheduler;
 using LNF.Web.Scheduler.Content;
 using System;
@@ -50,7 +49,8 @@ namespace LNF.Web.Scheduler.Pages
 
         protected void Page_Load(object sender, EventArgs e)
         {
-            CurrentClients = CreateResourceClientItems(DA.Current.Query<ResourceClientInfo>().Where(x => x.ResourceID == GetCurrentResource().ResourceID)).ToList();
+            var resourceId = GetCurrentResource().ResourceID;
+            CurrentClients = CreateResourceClientItems(Provider.Scheduler.Resource.GetResourceClients(resourceId)).ToList();
 
             if (!Page.IsPostBack)
             {
@@ -82,7 +82,7 @@ namespace LNF.Web.Scheduler.Pages
         {
             if (CanAuthorize())
             {
-                AuthLevelDropDownList.DataSource = DA.Current.Query<AuthLevel>().Where(x => x.Authorizable == 1).OrderBy(x => x.AuthLevelID);
+                AuthLevelDropDownList.DataSource = Provider.Scheduler.Resource.GetAuthLevels().Where(x => x.Authorizable == 1).OrderBy(x => x.AuthLevelID);
                 AuthLevelDropDownList.DataBind();
                 AddUserPlaceHolder.Visible = true;
             }
@@ -154,12 +154,14 @@ namespace LNF.Web.Scheduler.Pages
             return (ClientAuthLevel)Enum.Parse(typeof(ClientAuthLevel), AuthLevelDropDownList.SelectedValue);
         }
 
-        private IEnumerable<ResourceClientItem> CreateResourceClientItems(IEnumerable<ResourceClientInfo> source)
+        private IEnumerable<ResourceClientItem> CreateResourceClientItems(IEnumerable<IResourceClient> source)
         {
             return source.Select(x => new ResourceClientItem()
             {
                 ResourceClientID = x.ResourceClientID,
                 ClientID = x.ClientID,
+                UserName = x.UserName,
+                Privs = x.Privs,
                 DisplayName = x.DisplayName,
                 Email = x.Email,
                 ContactUrl = GetContactUrl(x.ClientID),
@@ -251,7 +253,7 @@ namespace LNF.Web.Scheduler.Pages
         protected bool CanAuthorize()
         {
             var p = ClientAuthLevel.Trainer | ClientAuthLevel.ToolEngineer;
-            var currentUserAuthLevel = ReservationUtility.GetAuthLevel(CurrentClients, CurrentUser);
+            var currentUserAuthLevel = Reservations.GetAuthLevel(CurrentClients, CurrentUser);
             return (currentUserAuthLevel & p) > 0;
         }
 
@@ -277,7 +279,7 @@ namespace LNF.Web.Scheduler.Pages
                     clientId = int.Parse(ClientsDropDownList.SelectedValue);
                     var rc = new ResourceClient()
                     {
-                        Resource = DA.Current.Single<Resource>(resourceId),
+                        ResourceID = resourceId,
                         ClientID = clientId,
                         AuthLevel = selectedAuthLevel,
                         Expiration = null,
@@ -397,13 +399,15 @@ namespace LNF.Web.Scheduler.Pages
         public int ResourceClientID { get; set; }
         public int ClientID { get; set; }
         public string Email { get; set; }
+        public string UserName { get; set; }
+        public ClientPrivilege Privs { get; set; }
         public ClientAuthLevel AuthLevel { get; set; }
         public DateTime? Expiration { get; set; }
         public string DisplayName { get; set; }
         public string ContactUrl { get; set; }
         public int AuthDuration { get; set; }
-        public bool IsEveryone() => LNF.Models.Scheduler.ResourceClientItem.IsEveryone(ClientID);
-        public bool HasAuth(ClientAuthLevel auths) => LNF.Models.Scheduler.ResourceClientItem.HasAuth(AuthLevel, auths);
+        public bool IsEveryone() => LNF.Scheduler.ResourceClients.IsEveryone(ClientID);
+        public bool HasAuth(ClientAuthLevel auths) => LNF.Scheduler.ResourceClients.HasAuth(AuthLevel, auths);
 
         public bool ShowExtendButton
         {

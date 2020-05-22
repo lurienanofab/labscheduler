@@ -127,6 +127,11 @@
                         <label class="col-sm-1 control-label">Notes</label>
                         <div class="col-sm-4">
                             <asp:TextBox ID="txtNotes" runat="server" TextMode="MultiLine" CssClass="form-control" Height="100"></asp:TextBox>
+                            <asp:PlaceHolder runat="server" ID="phNotesWarning" Visible="false">
+                                <div class="alert alert-warning" role="alert">
+                                    <strong>Warning:</strong> Modifying notes on this page will overwrite all existing reservation notes for reservations related to this facility down time instance.
+                                </div>
+                            </asp:PlaceHolder>
                         </div>
                     </div>
                 </div>

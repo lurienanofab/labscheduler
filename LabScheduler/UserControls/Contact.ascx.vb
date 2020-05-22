@@ -1,14 +1,13 @@
-﻿Imports LNF
-Imports LNF.Cache
-Imports LNF.Models.Data
-Imports LNF.Models.Mail
-Imports LNF.Models.Scheduler
+﻿Imports LNF.Cache
+Imports LNF.Data
+Imports LNF.Impl
+Imports LNF.Impl.Repository.Data
+Imports LNF.Mail
 Imports LNF.Repository
-Imports LNF.Repository.Data
 Imports LNF.Scheduler
 Imports LNF.Web.Scheduler
 Imports LNF.Web.Scheduler.Content
-Imports Scheduler = LNF.Repository.Scheduler
+Imports Scheduler = LNF.Impl.Repository.Scheduler
 
 Namespace UserControls
     Public Class Contact
@@ -81,9 +80,9 @@ Namespace UserControls
             Return result
         End Function
 
-        Private Function GetEmailFromReservation(rsv As Scheduler.Reservation) As String
-            Dim r As IReservation = rsv.CreateModel(Of IReservation)
-            Return r.Email
+        Private Function GetEmailFromReservation(rsv As IReservation) As String
+            Dim c As IClient = Provider.Data.Client.GetClient(rsv.ClientID)
+            Return c.Email
         End Function
 
         Protected Sub Page_Load(sender As Object, e As EventArgs) Handles Me.Load
@@ -100,16 +99,16 @@ Namespace UserControls
                         SetSendTo("Administrator")
                         showCancel = False
                     ElseIf clientId > 0 Then
-                        Dim client As IClient = DA.Current.Single(Of ClientInfo)(clientId).CreateModel(Of IClient)()
+                        Dim client As IClient = Provider.Data.Client.GetClient(clientId)
                         If client IsNot Nothing Then
                             SetSendTo(client.DisplayName, client.Email)
                         Else
                             Throw New Exception(String.Format("Cannot find Client with ClientID = {0}", clientId))
                         End If
                     ElseIf reservationId > 0 Then
-                        Dim rsv As Scheduler.Reservation = DA.Current.Single(Of Scheduler.Reservation)(reservationId)
+                        Dim rsv As IReservation = Provider.Scheduler.Reservation.GetReservation(reservationId)
                         If rsv IsNot Nothing Then
-                            SetSendTo(rsv.Client.DisplayName, GetEmailFromReservation(rsv))
+                            SetSendTo(rsv.DisplayName, GetEmailFromReservation(rsv))
                         Else
                             Throw New Exception(String.Format("Cannot find Reservation with ReservationID = {0}", reservationId))
                         End If
@@ -136,8 +135,8 @@ Namespace UserControls
                     phSendToText.Visible = False
                     litSendTo.Text = String.Empty
                     ddlSendTo.Items.Clear()
-                    ddlSendTo.Items.Add(New ListItem("Tool Engineers"))
-                    ddlSendTo.Items.Add(New ListItem("Administrator"))
+                    ddlSendTo.Items.Add(New WebControls.ListItem("Tool Engineers"))
+                    ddlSendTo.Items.Add(New WebControls.ListItem("Administrator"))
                     phReservation.Visible = True
                     LoadReservations()
                 End If
@@ -180,20 +179,20 @@ Namespace UserControls
             End If
         End Sub
 
-        Private Function GetRecentReservations(resourceId As Integer) As IList(Of Scheduler.Reservation)
+        Private Function GetRecentReservations(resourceId As Integer) As IEnumerable(Of IReservation)
             If resourceId = 0 Then
-                Return DA.SchedulerRepository.SelectRecentReservations(ContextBase.Request.SelectedPath().ResourceID).ToList()
+                Return Provider.Scheduler.Reservation.SelectRecentReservations(ContextBase.Request.SelectedPath().ResourceID)
             Else
-                Return DA.SchedulerRepository.SelectRecentReservations(resourceId).ToList()
+                Return Provider.Scheduler.Reservation.SelectRecentReservations(resourceId)
             End If
         End Function
 
         Private Sub LoadReservations()
-            Dim recentRsv As IList(Of Scheduler.Reservation) = GetRecentReservations(GetResourceID())
+            Dim recentRsv As IEnumerable(Of IReservation) = GetRecentReservations(GetResourceID())
             ddlReservations.Items.Clear()
-            ddlReservations.Items.Add(New ListItem("None"))
+            ddlReservations.Items.Add(New WebControls.ListItem("None"))
             For Each rsv As Scheduler.Reservation In recentRsv
-                Dim newItem As New ListItem With {
+                Dim newItem As New WebControls.ListItem With {
                     .Value = rsv.ReservationID.ToString(),
                     .Text = rsv.BeginDateTime.ToString() + " - " + rsv.EndDateTime.ToString() + " Reserved by " + rsv.Client.DisplayName
                 }
@@ -211,17 +210,17 @@ Namespace UserControls
             Dim authLevel As ClientAuthLevel = GetAuthLevel()
 
             If resourceId > 0 AndAlso authLevel > 0 Then
-                Dim clients As IList(Of Scheduler.ResourceClientInfo) = ResourceClientUtility.SelectByResource(resourceId, authLevel).ToList()
+                Dim clients As IEnumerable(Of IResourceClient) = Provider.Scheduler.Resource.GetResourceClients(resourceId, authLevel:=authLevel).ToList()
                 receiverAddr = String.Join(",", clients.Select(Function(x) x.Email))
             ElseIf clientId > 0 Then
-                Dim client As IClient = DA.Current.Single(Of ClientInfo)(clientId).CreateModel(Of IClient)()
+                Dim client As IClient = Provider.Data.Client.GetClient(clientId)
                 If client IsNot Nothing Then
                     receiverAddr = client.Email
                 Else
                     Throw New Exception(String.Format("Cannot find Client with ClientID = {0}", clientId))
                 End If
             ElseIf reservationId > 0 Then
-                Dim rsv As Scheduler.Reservation = DA.Current.Single(Of Scheduler.Reservation)(reservationId)
+                Dim rsv As IReservation = Provider.Scheduler.Reservation.GetReservation(reservationId)
                 If rsv IsNot Nothing Then
                     receiverAddr = GetEmailFromReservation(rsv)
                 Else
@@ -233,10 +232,10 @@ Namespace UserControls
                 If ddlSendTo.SelectedValue = "Administrator" Then
                     receiverAddr = Properties.Current.SchedulerEmail
                 ElseIf ddlSendTo.SelectedValue = "Tool Engineers" Then
-                    Dim res As IResource = ContextBase.GetCurrentResource()
+                    Dim res As IResource = Helper.GetCurrentResource()
                     If res IsNot Nothing Then
-                        Dim toolEng As IList(Of ResourceClientItem) = CacheManager.Current.ToolEngineers(res.ResourceID).ToList()
-                        If toolEng.Count > 0 Then
+                        Dim toolEng As IEnumerable(Of IResourceClient) = CacheManager.Current.ToolEngineers(res.ResourceID)
+                        If toolEng.Count() > 0 Then
                             receiverAddr = String.Join(",", toolEng.Select(Function(x) x.Email))
                         End If
                     End If
@@ -272,7 +271,7 @@ Namespace UserControls
                 Dim body As String = String.Empty
                 Dim sb As New StringBuilder()
 
-                Dim res As IResource = ContextBase.GetCurrentResource()
+                Dim res As IResource = Helper.GetCurrentResource()
 
                 If res IsNot Nothing Then
                     sb.AppendLine("Resource: " + res.ResourceName)
@@ -298,23 +297,23 @@ Namespace UserControls
 
                 Dim cc As String() = Nothing
                 If chkCC.Checked Then
-                    cc = {Page.CurrentUser.Email}
+                    cc = {CurrentUser.Email}
                 End If
 
                 ' Send Email
                 Dim args As New SendMessageArgs With {
                     .Caller = "LabScheduler.UserControls.Contact.BtnSend_Click",
-                    .ClientID = Page.CurrentUser.ClientID,
+                    .ClientID = CurrentUser.ClientID,
                     .Subject = txtSubject.Text,
                     .Body = body,
-                    .From = Page.CurrentUser.Email,
+                    .From = CurrentUser.Email,
                     .To = receiverAddr.Split(","c),
                     .Cc = cc,
                     .Bcc = GetContactBccEmails(),
                     .IsHtml = False
                 }
 
-                ServiceProvider.Current.Mail.SendMessage(args)
+                Provider.Mail.SendMessage(args)
 
                 phSuccessMessage.Visible = True
                 litSuccessMessage.Text = "Your email has been sent successfully."

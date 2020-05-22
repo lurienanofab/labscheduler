@@ -1,9 +1,5 @@
-﻿using LNF.Cache;
-using LNF.CommonTools;
+﻿using LNF.CommonTools;
 using LNF.Helpdesk;
-using LNF.Models.Scheduler;
-using LNF.Repository;
-using LNF.Repository.Scheduler;
 using LNF.Scheduler;
 using LNF.Web.Scheduler.Content;
 using System;
@@ -36,7 +32,7 @@ namespace LNF.Web.Scheduler.Controls
         {
             if (!Page.IsPostBack)
             {
-                Resource res = DA.Current.Single<Resource>(ResourceID);
+                IResource res = Provider.Scheduler.Resource.GetResource(ResourceID);
 
                 if (res != null)
                 {
@@ -44,7 +40,7 @@ namespace LNF.Web.Scheduler.Controls
 
                     hidAjaxUrl.Value = "/ostclient/ajax.aspx";
                     hidHelpdeskQueue.Value = helpdeskEmail;
-                    hidHelpdeskResource.Value = ServiceProvider.Current.Serialization.Json.SerializeObject(new { id = res.ResourceID, name = res.ResourceName });
+                    hidHelpdeskResource.Value = Provider.Utility.Serialization.Json.SerializeObject(new { id = res.ResourceID, name = res.ResourceName });
                     hidHelpdeskFromEmail.Value = CurrentUser.Email;
                     hidHelpdeskFromName.Value = string.Format("{0} {1}", CurrentUser.FName, CurrentUser.LName);
 
@@ -62,15 +58,15 @@ namespace LNF.Web.Scheduler.Controls
 
         private void LoadReservations()
         {
-            var recentRsvQuery = DA.SchedulerRepository.SelectRecentReservations(ResourceID);
+            var recentRsvQuery = Provider.Scheduler.Reservation.SelectRecentReservations(ResourceID);
             ddlReservations.Items.Clear();
             ddlReservations.Items.Add(new ListItem("None"));
-            foreach (Reservation recentRsv in recentRsvQuery)
+            foreach (var recentRsv in recentRsvQuery)
             {
-                ListItem item = new ListItem
+                var item = new ListItem
                 {
                     Value = recentRsv.ReservationID.ToString(),
-                    Text = recentRsv.BeginDateTime.ToString() + " - " + recentRsv.EndDateTime.ToString() + " Reserved by " + recentRsv.Client.DisplayName
+                    Text = recentRsv.BeginDateTime.ToString() + " - " + recentRsv.EndDateTime.ToString() + " Reserved by " + recentRsv.DisplayName
                 };
 
                 ddlReservations.Items.Add(item);
@@ -87,7 +83,7 @@ namespace LNF.Web.Scheduler.Controls
 
         protected void btnCreateTicket_Click(object sender, EventArgs e)
         {
-            var res = ContextBase.ResourceTree().GetResource(ResourceID);
+            var res = Helper.GetResourceTreeItemCollection().GetResource(ResourceID);
 
             litErrMsg.Text = string.Empty;
 
@@ -103,12 +99,12 @@ namespace LNF.Web.Scheduler.Controls
                 litErrMsg.Text = WebUtility.BootstrapAlert("danger", "An error occurred while creating the ticket. A helpdesk email is not configured for this resource.", true);
             else
             {
-                Reservation rsv = null;
+                IReservation rsv = null;
                 if (ddlReservations.SelectedValue != "None")
-                    rsv = DA.Current.Single<Reservation>(int.Parse(ddlReservations.SelectedValue));
+                    rsv = Provider.Scheduler.Reservation.GetReservation(int.Parse(ddlReservations.SelectedValue));
 
                 string subjectText = "[" + res.ResourceID.ToString() + ":" + res.ResourceName + "] " + txtSubject.Text;
-                CreateTicketResult addTicketResult = HelpdeskUtility.CreateTicket(CurrentUser, res, rsv, CurrentUser.ClientID, ddlReservations.SelectedItem.Text, subjectText, txtMessage.Text, ddlTicketType.SelectedItem.Text);
+                CreateTicketResult addTicketResult = HelpdeskUtility.CreateTicket(CurrentUser, res, rsv, CurrentUser.ClientID, ddlReservations.SelectedItem.Text, subjectText, txtMessage.Text, ddlTicketType.SelectedItem.Text, Request.Url);
                 if (addTicketResult.Success)
                 {
                     litErrMsg.Text = WebUtility.BootstrapAlert("success", string.Format("Your ticket has been created. A confirmation email has been sent to {0}.", CurrentUser.Email));

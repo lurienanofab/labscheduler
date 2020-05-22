@@ -1,6 +1,4 @@
-﻿Imports LNF.Cache
-Imports LNF.Feeds
-Imports LNF.Models.Scheduler
+﻿Imports LNF.Feeds
 Imports LNF.Scheduler
 Imports LNF.Web.Scheduler
 Imports LNF.Web.Scheduler.Content
@@ -56,7 +54,7 @@ Namespace Pages
                 ResourceTabMenu1.SelectedIndex = view
                 ReservationView1.View = view
                 ReservationView1.Resource = res
-                txtCalendarURL.Text = FeedGenerator.Scheduler.Reservations.GetUrl(FeedFormats.Calendar, "all", res.ResourceID.ToString(), "tool-reservations")
+                txtCalendarURL.Text = FeedGenerator.Scheduler.Reservations.GetUrl(FeedFormats.Calendar, "all", res.ResourceID.ToString(), "tool-reservations", Request.Url)
             Else
                 Redirect("ResourceClients.aspx")
             End If
@@ -75,7 +73,7 @@ Namespace Pages
         ''' </summary>
         Private Function GetDayViewOrWeekView() As ViewType
             If Session("DayViewOrWeekView") Is Nothing Then
-                Dim defval As ViewType = ContextBase.GetClientSetting().GetDefaultViewOrDefault()
+                Dim defval As ViewType = Helper.GetClientSetting().GetDefaultView()
                 If defval = ViewType.DayView OrElse defval = ViewType.WeekView Then
                     Session("DayViewOrWeekView") = defval
                 Else

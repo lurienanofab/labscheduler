@@ -1,7 +1,8 @@
 ﻿Imports LabScheduler.AppCode.DBAccess
-Imports LNF.Models.Scheduler
+Imports LNF
+Imports LNF.Impl.Repository.Scheduler
 Imports LNF.Repository
-Imports LNF.Repository.Scheduler
+Imports LNF.Scheduler
 Imports LNF.Web.Scheduler
 Imports LNF.Web.Scheduler.Content
 
@@ -77,8 +78,9 @@ Namespace Pages
             End If
         End Function
 
-        Public Function GetResourceUrl(context As HttpContextBase) As String
-            Dim model As ResourceTreeItem = context.ResourceTree().Find(ResourceID)
+        Public Function GetResourceUrl(context As HttpContextBase, provider As IProvider) As String
+            Dim helper As New ContextHelper(context, provider)
+            Dim model As IResourceTree = helper.GetResourceTreeItemCollection().GetResourceTree(ResourceID)
             Return String.Format("~/ResourceDayWeek.aspx?Path={0}&Date={1:yyyy-MM-dd}", PathInfo.Create(model), context.Request.SelectedDate())
         End Function
 

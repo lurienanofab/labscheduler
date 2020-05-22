@@ -1,6 +1,4 @@
 ﻿using LNF.CommonTools;
-using LNF.Models.Scheduler;
-using LNF.Repository.Scheduler;
 using LNF.Scheduler;
 using System;
 using System.Collections.Generic;

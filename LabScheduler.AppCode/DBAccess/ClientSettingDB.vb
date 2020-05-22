@@ -1,11 +1,10 @@
-Imports LNF.CommonTools
-Imports LNF.Models.Scheduler
 Imports LNF.Repository
+Imports LNF.Scheduler
 
 Namespace DBAccess
 
     <Serializable>
-    <Obsolete("Use LNF.Repository.Scheduler.ClientSetting")>
+    <Obsolete("Use LNF.Impl.Repository.Scheduler.ClientSetting")>
     Public Class ClientSettingDB
         Public IsValid As Boolean = False
         Public ClientID As Integer = -1

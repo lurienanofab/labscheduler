@@ -1,8 +1,8 @@
-﻿Imports LNF
-Imports LNF.Cache
+﻿Imports LNF.Cache
 Imports LNF.CommonTools
-Imports LNF.Models.Data
-Imports LNF.Models.Scheduler
+Imports LNF.Data
+Imports LNF.Impl
+Imports LNF.Impl.Repository.Scheduler
 Imports LNF.Repository
 Imports LNF.Scheduler
 Imports LNF.Scheduler.Data
@@ -10,8 +10,8 @@ Imports LNF.Web
 Imports LNF.Web.Scheduler
 Imports LNF.Web.Scheduler.Content
 Imports LNF.Web.Scheduler.Models
-Imports Data = LNF.Repository.Data
-Imports Scheduler = LNF.Repository.Scheduler
+Imports Data = LNF.Impl.Repository.Data
+Imports Scheduler = LNF.Impl.Repository.Scheduler
 
 Namespace Pages
     Public Class Reservation
@@ -155,7 +155,7 @@ Namespace Pages
 
         Private Sub SetHeader()
             litHeader.Text = If(ReservationID = 0, "Create", "Modify") + " Reservation for"
-            litResourceName.Text = ResourceItem.GetResourceDisplayName(Resource.ResourceName, Resource.ResourceID)
+            litResourceName.Text = Resources.GetResourceDisplayName(Resource.ResourceName, Resource.ResourceID)
         End Sub
 
         Private Sub SetStartDate()
@@ -257,7 +257,7 @@ Namespace Pages
                 phBillingAccountMessage.Visible = False
                 litBillingAccountMessage.Text = String.Empty
 
-                ddlAccount.DataSource = accts.Select(Function(x) New With {.Name = AccountItem.GetFullAccountName(x.AccountName, x.ShortCode, x.OrgName), .AccountID = x.AccountID.ToString()})
+                ddlAccount.DataSource = accts.Select(Function(x) New With {.Name = Accounts.GetFullAccountName(x.AccountName, x.ShortCode, x.OrgName), .AccountID = x.AccountID.ToString()})
                 ddlAccount.DataBind()
 
                 ' check for scheduled maintenance activity
@@ -412,7 +412,7 @@ Namespace Pages
                     Dim hourText As String = String.Empty
                     hourText = If((grans(i) Mod 12) = 0, "12 ", (grans(i) Mod 12).ToString() + " ")
                     hourText += If(grans(i) < 12, "am", "pm")
-                    ddlStartTimeHour.Items.Add(New ListItem(hourText, grans(i).ToString()))
+                    ddlStartTimeHour.Items.Add(New WebControls.ListItem(hourText, grans(i).ToString()))
                 End If
             Next
 
@@ -447,7 +447,7 @@ Namespace Pages
 
             For i As Integer = 0 To 59 Step Resource.Granularity
                 If start.AddMinutes(i) >= Date.Now Then
-                    ddlStartTimeMin.Items.Add(New ListItem(i.ToString("00"), i.ToString()))
+                    ddlStartTimeMin.Items.Add(New WebControls.ListItem(i.ToString("00"), i.ToString()))
                 End If
             Next
         End Sub
@@ -502,7 +502,7 @@ Namespace Pages
                 Dim minute As Integer = Convert.ToInt32(curValue Mod 60)
                 Dim text As String = $"{hour} hr {minute} min"
 
-                ddlDuration.Items.Add(New ListItem(text, curValue.ToString()))
+                ddlDuration.Items.Add(New WebControls.ListItem(text, curValue.ToString()))
 
                 curValue += Resource.Granularity
             End While
@@ -664,13 +664,13 @@ Namespace Pages
         Private Function GetInviteeReservations(inviteeClientId As Integer, startDateTime As Date, duration As Integer) As IEnumerable(Of IReservation)
             Dim endDateTime As Date = startDateTime.AddMinutes(duration)
             Dim inviteeReservations As IEnumerable(Of IReservation) = Provider.Scheduler.Reservation.SelectByClient(inviteeClientId, ContextBase.Request.SelectedDate().AddHours(0), ContextBase.Request.SelectedDate().AddHours(24), False)
-            Dim conflictingReservations As IEnumerable(Of IReservation) = ReservationUtility.GetConflictingReservations(inviteeReservations, startDateTime, endDateTime)
+            Dim conflictingReservations As IEnumerable(Of IReservation) = Reservations.GetConflictingReservations(inviteeReservations, startDateTime, endDateTime)
             Return conflictingReservations
         End Function
 
         Private Function GetReservationInvitees() As List(Of IReservationInvitee)
             If Session("ReservationInvitees") Is Nothing Then
-                Dim query = DA.Current.Query(Of Scheduler.ReservationInviteeInfo)().Where(Function(x) x.ReservationID = ReservationID)
+                Dim query = DA.Current.Query(Of ReservationInviteeInfo)().Where(Function(x) x.ReservationID = ReservationID)
                 Session("ReservationInvitees") = query.CreateModels(Of IReservationInvitee).ToList()
             End If
 
@@ -679,7 +679,7 @@ Namespace Pages
             Return result
         End Function
 
-        Private Function GetAvailableInvitees() As List(Of AvailableInviteeItem)
+        Private Function GetAvailableInvitees() As List(Of IAvailableInvitee)
             Dim clientId As Integer
             Dim activityId As Integer
 
@@ -692,10 +692,10 @@ Namespace Pages
             End If
 
             If Session("AvailableInvitees") Is Nothing Then
-                Session("AvailableInvitees") = ReservationInviteeUtility.SelectAvailable(ReservationID, Resource.ResourceID, activityId, clientId)
+                Session("AvailableInvitees") = ReservationInvitees.SelectAvailable(ReservationID, Resource.ResourceID, activityId, clientId)
             End If
 
-            Dim result As List(Of AvailableInviteeItem) = CType(Session("AvailableInvitees"), List(Of AvailableInviteeItem))
+            Dim result As List(Of IAvailableInvitee) = CType(Session("AvailableInvitees"), IEnumerable(Of IAvailableInvitee)).ToList()
 
             Return result
         End Function
@@ -753,8 +753,8 @@ Namespace Pages
                     If Date.TryParse(txtRecurringStartDate.Text, rrStartDate) Then
                         Dim rr As New Scheduler.ReservationRecurrence()
                         Dim patId As Integer = If(rdoRecurringPatternWeekly.Checked, 1, 2)
-                        rr.Pattern = DA.Current.Single(Of Scheduler.RecurrencePattern)(patId)
-                        rr.Resource = DA.Current.Single(Of Scheduler.Resource)(Resource.ResourceID)
+                        rr.Pattern = DA.Current.Single(Of RecurrencePattern)(patId)
+                        rr.Resource = DA.Current.Single(Of Resource)(Resource.ResourceID)
                         rr.Client = DA.Current.Single(Of Data.Client)(client.ClientID)
                         rr.Account = DA.Current.Single(Of Data.Account)(Properties.Current.LabAccount.AccountID) 'Currently only supports general lab account
                         rr.BeginTime = duration.BeginDateTime
@@ -844,8 +844,8 @@ Namespace Pages
             Return True
         End Function
 
-        Private Function CreateReservationProcessInfoItem(processInfoLineId As Integer, value As Integer, special As Boolean, pil As IProcessInfoLine, pi As IProcessInfo) As Models.Scheduler.ReservationProcessInfoItem
-            Return New Models.Scheduler.ReservationProcessInfoItem With {
+        Private Function CreateReservationProcessInfoItem(processInfoLineId As Integer, value As Integer, special As Boolean, pil As IProcessInfoLine, pi As IProcessInfo) As IReservationProcessInfo
+            Return New ReservationProcessInfoItem With {
                 .ReservationID = ReservationID,
                 .ProcessInfoLineID = processInfoLineId,
                 .Value = value,
@@ -863,7 +863,7 @@ Namespace Pages
 
         Private Sub InviteeModification(action As String, ddlInvitees As DropDownList, lblInviteeID As Label, lblInviteeName As Label)
             Dim invitees As List(Of IReservationInvitee) = GetReservationInvitees()
-            Dim available As List(Of AvailableInviteeItem) = GetAvailableInvitees()
+            Dim available As List(Of IAvailableInvitee) = GetAvailableInvitees()
 
             If action = "Insert" Then
                 ' Insert invitee into ReservInvitee list
@@ -879,7 +879,7 @@ Namespace Pages
 
                 ' make sure the selected invitee is in the list of available invitees
                 If avail IsNot Nothing Then
-                    Dim item As IReservationInvitee = New ReservationInviteeItem With {
+                    Dim item As IReservationInvitee = New ReservationInviteeInfo With {
                         .ReservationID = ReservationID,
                         .InviteeID = avail.ClientID,
                         .LName = avail.LName,
@@ -901,7 +901,15 @@ Namespace Pages
 
                 If ri IsNot Nothing Then
                     ri.Removed = True
-                    available.Add(AvailableInviteeItem.Create(ri.InviteeID, ri.LName, ri.FName))
+
+                    Dim a As IAvailableInvitee = New AvailableInvitee() With {
+                        .ClientID = ri.InviteeID,
+                        .LName = ri.LName,
+                        .FName = ri.FName,
+                        .DisplayName = Clients.GetDisplayName(ri.LName, ri.FName)
+                    }
+
+                    available.Add(a)
                 End If
             End If
 
@@ -911,7 +919,7 @@ Namespace Pages
 
         Private Sub StartReservation(rsv As IReservation)
             If rsv IsNot Nothing Then
-                GetReservationUtility(Date.Now).Start(rsv, ContextBase().GetReservationClientItem(rsv), CurrentUser.ClientID)
+                Reservations.Create(Provider, Date.Now).Start(rsv, Helper.GetReservationClientItem(rsv), CurrentUser.ClientID)
             End If
         End Sub
 
@@ -927,7 +935,7 @@ Namespace Pages
                     redirectUrl = $"~/UserReservations.aspx?Date={ContextBase.Request.SelectedDate():yyyy-MM-dd}"
                 ElseIf view = ViewType.ProcessTechView Then
                     ' When we come from ProcessTech.aspx the full path is used (to avoid a null object error). When returning we just want the ProcessTech path.
-                    Dim pt As ProcessTechItem = ContextBase.GetCurrentProcessTech()
+                    Dim pt As IProcessTech = Helper.GetCurrentProcessTech()
                     Dim path As PathInfo = PathInfo.Create(pt)
                     redirectUrl = $"~/ProcessTech.aspx?Path={path.UrlEncode()}&Date={ContextBase.Request.SelectedDate():yyyy-MM-dd}"
                 Else 'ViewType.DayView OrElse Scheduler.ViewType.WeekView
@@ -1008,7 +1016,7 @@ Namespace Pages
                 Return False
             End If
 
-            Dim item As ListItem = ddl.Items.FindByValue(value.ToString())
+            Dim item As WebControls.ListItem = ddl.Items.FindByValue(value.ToString())
 
             If item IsNot Nothing Then
                 item.Selected = True
@@ -1071,11 +1079,11 @@ Namespace Pages
                 Dim ddlParam As DropDownList = CType(e.Item.FindControl("ddlParam"), DropDownList)
 
                 If di("RequireSelection").AsBoolean Then
-                    ddlParam.Items.Add(New ListItem("", ""))
+                    ddlParam.Items.Add(New WebControls.ListItem("", ""))
                 End If
 
                 If di("AllowNone").AsBoolean Then     ' Allow None
-                    ddlParam.Items.Add(New ListItem("None", "0"))
+                    ddlParam.Items.Add(New WebControls.ListItem("None", "0"))
                 End If
 
                 Dim text As String
@@ -1083,7 +1091,7 @@ Namespace Pages
                 For i As Integer = 0 To pils.Count - 1
                     text = String.Format("{0} ({1} - {2})", pils(i).Param, pils(i).MinValue, pils(i).MaxValue)
                     value = pils(i).ProcessInfoLineID.ToString()
-                    ddlParam.Items.Add(New ListItem(text, value))
+                    ddlParam.Items.Add(New WebControls.ListItem(text, value))
                 Next
 
                 ' Reservation Process Info
@@ -1117,10 +1125,10 @@ Namespace Pages
                 ' Select Available Invitees and Remove already Selected Invitees
 
                 Dim invitees As List(Of IReservationInvitee) = GetReservationInvitees()
-                Dim available As List(Of AvailableInviteeItem) = GetAvailableInvitees()
+                Dim available As List(Of IAvailableInvitee) = GetAvailableInvitees()
 
                 For Each inv As IReservationInvitee In invitees
-                    Dim avail As AvailableInviteeItem = available.FirstOrDefault(Function(x) x.ClientID = inv.InviteeID)
+                    Dim avail As IAvailableInvitee = available.FirstOrDefault(Function(x) x.ClientID = inv.InviteeID)
                     available.Remove(avail)
                 Next
 
@@ -1223,24 +1231,30 @@ Namespace Pages
 
             '2007-03-05 if User is making remote processing or future practice, then we have to make sure the invitee's max sched hours
             'do not go over the limit
-            If proxyActivities.Contains(activity.ActivityID) Then
-                For Each ri In GetReservationInvitees()
-                    Dim availableMinutes As Integer = Provider.Scheduler.Reservation.GetAvailableSchedMin(Resource.ResourceID, ri.InviteeID)
 
-                    'This code is trying to solve the problem about calculating correct available time when current reservation being modified
-                    'must be excluded.  So we must added the current reservation's duration back to available time
+            '[2020-01-15 jg] If staff needs to exceed the max schedulable hours for the invitee (happens occasionally) they should coordinate with
+            '       the tool engineer to extend the limit temporarily. This was the agreed upon solution after discussing the issue in the weekly
+            '       staff meeting on 2020-01-14 and per Sandrine. I'm adding the setting check just in case we ever need to disable this rule.
+            If Properties.Current.EnforceMaxSchedulableHoursOnRemoteProcessingInvitees Then
+                If proxyActivities.Contains(activity.ActivityID) Then
+                    For Each ri In GetReservationInvitees()
+                        Dim availableMinutes As Integer = Provider.Scheduler.Reservation.GetAvailableSchedMin(Resource.ResourceID, ri.InviteeID)
 
-                    If ReservationID > 0 Then
-                        availableMinutes += Convert.ToInt32(Reservation.Duration)
-                    End If
+                        'This code is trying to solve the problem about calculating correct available time when current reservation being modified
+                        'must be excluded.  So we must added the current reservation's duration back to available time
 
-                    If rd.Duration.TotalMinutes > availableMinutes Then
-                        ShowReservationAlert($"The reservation you are making exceed your invitee's maximum reservable hours. You can only reserve {availableMinutes} minutes for this invitee.")
-                        Return
-                    End If
+                        If ReservationID > 0 Then
+                            availableMinutes += Convert.ToInt32(Reservation.Duration)
+                        End If
 
-                    Exit For
-                Next
+                        If rd.Duration.TotalMinutes > availableMinutes Then
+                            ShowReservationAlert($"The reservation you are making exceed your invitee's maximum reservable hours. You can only reserve {availableMinutes} minutes for this invitee.")
+                            Return
+                        End If
+
+                        Exit For
+                    Next
+                End If
             End If
 
             ' Check Reservation Fence Constraint for current user's auth level
@@ -1315,14 +1329,14 @@ Namespace Pages
 
             lblConfirm.Text += String.Format("<br/><br/>The estimated cost of this activity will be {0}.", dblCostStr)
 
-            Dim processInfoEnum As IList(Of Scheduler.ProcessInfo) = DA.Current.Query(Of Scheduler.ProcessInfo)().Where(Function(x) x.Resource.ResourceID = Resource.ResourceID).ToList()
+            Dim processInfoEnum As IList(Of Scheduler.ProcessInfo) = DA.Current.Query(Of ProcessInfo)().Where(Function(x) x.Resource.ResourceID = Resource.ResourceID).ToList()
 
             If processInfoEnum.Count > 0 Then
                 lblConfirm.Text += "<br/>Additional precious metal charges may apply."
             End If
 
             If rd.IsAfterHours() Then
-                If KioskUtility.IsKiosk(ContextBase.Request.UserHostAddress) Then
+                If Kiosks.IsKiosk(ContextBase.Request.UserHostAddress) Then
                     ' do not show the link on kiosks
                     lblConfirm.Text += "<br/><br/>This reservation occurs during after-hours.<br/>Please add an event to the After-Hours Buddy Calendar for this reservation."
                 Else
@@ -1334,12 +1348,12 @@ Namespace Pages
 
             lblConfirm.Text += "<br/><br/>Click 'Yes' to accept reservation or 'No' to cancel scheduling."
 
-            Dim inLab As Boolean = ContextBase.ClientInLab(Resource.LabID)
+            Dim inLab As Boolean = Helper.ClientInLab(Resource.LabID)
             Dim isEngineer As Boolean = (authLevel And ClientAuthLevel.ToolEngineer) > 0
             Dim minReservTime As Integer = Convert.ToInt32(Resource.MinReservTime)
 
             Dim args As New ReservationStateArgs(inLab, True, False, True, False, False, True, minReservTime, rd.BeginDateTime, rd.EndDateTime, Nothing, Nothing, authLevel)
-            Dim resevationState As ReservationState = GetReservationUtility(Date.Now).GetReservationState(args)
+            Dim resevationState As ReservationState = Reservations.Create(Provider, Date.Now).GetReservationState(args)
             Dim allowedAuths As ClientAuthLevel = ClientAuthLevel.AuthorizedUser Or ClientAuthLevel.SuperUser Or ClientAuthLevel.ToolEngineer Or ClientAuthLevel.Trainer
 
             phConfirmYesAndStart.Visible = False ' reset to false 

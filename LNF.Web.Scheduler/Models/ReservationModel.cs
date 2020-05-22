@@ -1,8 +1,8 @@
 ﻿using LNF.Cache;
-using LNF.Models.Data;
-using LNF.Models.Scheduler;
+using LNF.Data;
+using LNF.Impl;
+using LNF.Impl.Repository.Scheduler;
 using LNF.Repository;
-using LNF.Repository.Scheduler;
 using LNF.Scheduler;
 using System;
 using System.Collections.Generic;
@@ -18,7 +18,7 @@ namespace LNF.Web.Scheduler.Models
 
         public DateTime Now { get; }
         public IProvider Provider { get; }
-        public IClient CurrentUser => _context.CurrentUser();
+        public IClient CurrentUser => GetContextHelper().CurrentUser();
         public IReservation Reservation { get; }
         public IResource Resource { get; }
 
@@ -83,10 +83,10 @@ namespace LNF.Web.Scheduler.Models
             OverwriteReservations();
 
             var data = GetReservationData(duration);
-            var util = GetReservationUtility();
+            var util = Reservations.Create(Provider, Now);
 
             if (Reservation == null)
-                result = util.Create(data);
+                result = util.CreateReservation(data);
             else
                 result = util.Modify(Reservation, data);
 
@@ -129,7 +129,7 @@ namespace LNF.Web.Scheduler.Models
                     Provider.Scheduler.Reservation.CancelReservation(rsv.ReservationID, CurrentUser.ClientID);
 
                     // Send email to reserver informing them that their reservation has been canceled
-                    Provider.EmailManager.EmailOnToolEngDelete(rsv, CurrentUser, CurrentUser.ClientID);
+                    Provider.Scheduler.Email.EmailOnToolEngDelete(rsv, CurrentUser, CurrentUser.ClientID);
                 }
             }
         }
@@ -201,7 +201,7 @@ namespace LNF.Web.Scheduler.Models
                 else if (view == ViewType.ProcessTechView)
                 {
                     // When we come from ProcessTech.aspx the full path is used (to avoid a null object error). When returning we just want the ProcessTech path.
-                    ProcessTechItem pt = _context.GetCurrentProcessTech();
+                    IProcessTech pt = GetContextHelper().GetCurrentProcessTech();
                     PathInfo path = PathInfo.Create(pt);
                     redirectUrl = $"~/ProcessTech.aspx?Path={path.UrlEncode()}&Date={_context.Request.SelectedDate():yyyy-MM-dd}";
                 }
@@ -249,8 +249,8 @@ namespace LNF.Web.Scheduler.Models
 
         public ClientAuthLevel GetCurrentAuthLevel()
         {
-            var resourceClients = _context.GetResourceClients(Resource.ResourceID);
-            return ReservationUtility.GetAuthLevel(resourceClients, CurrentUser);
+            var resourceClients = GetContextHelper().GetResourceClients(Resource.ResourceID);
+            return Reservations.GetAuthLevel(resourceClients, CurrentUser);
         }
 
         public IActivity GetCurrentActivity()
@@ -259,9 +259,9 @@ namespace LNF.Web.Scheduler.Models
             return CacheManager.Current.GetActivity(ActivityID);
         }
 
-        public ReservationUtility GetReservationUtility()
+        public ContextHelper GetContextHelper()
         {
-            return new ReservationUtility(Now, Provider);
+            return new ContextHelper(_context, Provider);
         }
     }
 }

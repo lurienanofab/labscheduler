@@ -76,6 +76,23 @@
             .controls .save-button {
                 margin-right: 5px;
             }
+
+
+        .update-billing .well {
+            padding: 15px;
+        }
+
+            .update-billing .well .loader {
+                margin-left: 10px;
+            }
+
+        .update-billing .alert {
+            font-weight: bold;
+        }
+
+            .update-billing .alert .update-billing-status {
+                margin-left: 10px;
+            }
     </style>
 </asp:Content>
 
@@ -188,6 +205,20 @@
                 <div runat="server" id="divSaveAlert" class="alert alert-danger alert-dismissible" role="alert">
                     <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                     <asp:Literal runat="server" ID="litSaveAlertText"></asp:Literal>
+                </div>
+            </asp:PlaceHolder>
+
+            <asp:PlaceHolder runat="server" ID="phUpdateBilling" Visible="false">
+                <div runat="server" id="divUpdateBilling" class="update-billing" data-client-id="" data-period="" data-ajax-url="">
+                    <div class="well">
+                        Updating billing...
+                        <img src="//ssel-apps.eecs.umich.edu/static/images/ajax-loader-6.gif" class="loader" />
+                    </div>
+                    <div class="alert alert-danger alert-dismissible" role="alert" style="display: none;">
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        Updating billing...
+                        <span class="update-billing-status"></span>
+                    </div>
                 </div>
             </asp:PlaceHolder>
 
@@ -349,18 +380,23 @@
                     </td>
                 </tr>
             </table>
-        </div>
 
-        <div style="margin-top: 10px;">
-            <asp:CheckBox ID="chkEmailClient" runat="server" Text="Send email notification to user after update" Checked="true" CssClass="email-client" />
-        </div>
+            <div style="margin-top: 10px;">
+                <asp:CheckBox ID="chkEmailClient" runat="server" Text="Send email notification to user after update" Checked="true" CssClass="email-client" />
+            </div>
 
-        <div class="controls">
-            <asp:Button runat="server" ID="btnEditSave" Text="Save" Width="65" OnCommand="ReservationHistory_Command" CommandName="save" CssClass="lnf btn btn-default save-button" />
-            <asp:Button runat="server" ID="btnEditCancel" Text="Done" Width="65" OnCommand="ReservationHistory_Command" CommandName="cancel" CssClass="lnf btn btn-default done-button" />
-        </div>
+            <div class="alert alert-info" role="alert" style="margin-top: 10px;">
+                <strong>Please note: </strong>
+                <asp:Literal runat="server" ID="litForgiveChargeNote"></asp:Literal>
+            </div>
 
-        <asp:Literal runat="server" ID="litEditMessage"></asp:Literal>
+            <div class="controls">
+                <asp:Button runat="server" ID="btnEditSave" Text="Save" Width="65" OnCommand="ReservationHistory_Command" CommandName="save" CssClass="lnf btn btn-default save-button" />
+                <asp:Button runat="server" ID="btnEditCancel" Text="Done" Width="65" OnCommand="ReservationHistory_Command" CommandName="cancel" CssClass="lnf btn btn-default done-button" />
+            </div>
+
+            <asp:Literal runat="server" ID="litEditMessage"></asp:Literal>
+        </div>
     </asp:PlaceHolder>
 
     <asp:Literal runat="server" ID="litDebug"></asp:Literal>
@@ -401,9 +437,54 @@
             'language': {
                 'emptyTable': 'No past reservations were found'
             },
-            'initComplete': function (settings, json) {
+            'initComplete': function () {
                 $('.history-container').css({ 'visibility': 'visible' });
             }
+        });
+
+        $(".update-billing").each(function () {
+            var $this = $(this);
+            var $alert = $('.alert', $this);
+            var $well = $('.well', $this);
+            var clientId = $this.data('client-id');
+            var period = $this.data('period');
+
+            $.ajax({
+                "method": "GET",
+                "data": { "ClientID": clientId, "Period": period, "Command": "reservation-history-billing-update" },
+                "url": $this.data("ajax-url")
+            }).done(function (data) {
+                console.log(data);
+
+                $(".update-billing-status", $alert).html(data.Message);
+
+                if (data.Error) {
+                    $alert.addClass("alert-danger");
+                    $alert.removeClass("alert-success");
+                } else {
+                    $alert.addClass("alert-success");
+                    $alert.removeClass("alert-danger");
+                }
+            }).fail(function (jqXHR) {
+                console.log(jqXHR);
+
+                $alert.addClass("alert-danger");
+                $alert.removeClass("alert-success");
+
+                var doc = $.parseHTML(jqXHR.responseText);
+                var t = doc.find(function (x) { return x.nodeName === 'TITLE'; });
+                var errmsg;
+
+                if (t && t.innerText)
+                    errmsg = t.innerText;
+                else
+                    errmsg = "[" + jqXHR.status + "] " + jqXHR.statusText;
+
+                $(".update-billing-status", $alert).html(errmsg);
+            }).always(function () {
+                $alert.show();
+                $well.hide();
+            });
         });
     </script>
 </asp:Content>

@@ -1,12 +1,10 @@
 ﻿Imports LNF.Cache
-Imports LNF.Models.Scheduler
-Imports LNF.Repository
+Imports LNF.Data
 Imports LNF.Scheduler
 Imports LNF.Web
 Imports LNF.Web.Controls
 Imports LNF.Web.Scheduler
 Imports LNF.Web.Scheduler.Content
-Imports Data = LNF.Repository.Data
 
 Namespace UserControls
     Public Class ReservationView
@@ -24,6 +22,7 @@ Namespace UserControls
         Public Property Resource As IResource
         Public Property LabID As Integer
         Public Property ProcessTechID As Integer
+        Public Property LabLocationID As Integer
 
         ''' <summary>
         ''' Holds all the reservations in the current view.
@@ -48,13 +47,30 @@ Namespace UserControls
                 HelpdeskInfo1.MultiTool = False
             End If
 
+            Dim linkText As String
+            Dim linkUrl As String
+            Dim locationPath As LocationPathInfo
+
             If ContextBase.GetDisplayDefaultHours() Then
-                hypHourRange.Text = "Full<br>Day"
-                hypHourRange.NavigateUrl = $"~/ReservationController.ashx?Command=ChangeHourRange&Range=FullDay&Path={ContextBase.Request.SelectedPath().UrlEncode()}&Date={ContextBase.Request.SelectedDate():yyyy-MM-dd}"
+                linkText = "Full<br>Day"
+                If View = ViewType.LocationView Then
+                    locationPath = LocationPathInfo.Parse(ContextBase.Request.QueryString("LocationPath"))
+                    linkUrl = $"~/ReservationController.ashx?Command=ChangeHourRange&Range=FullDay&LocationPath={locationPath.UrlEncode()}&Date={ContextBase.Request.SelectedDate():yyyy-MM-dd}"
+                Else
+                    linkUrl = $"~/ReservationController.ashx?Command=ChangeHourRange&Range=FullDay&Path={ContextBase.Request.SelectedPath().UrlEncode()}&Date={ContextBase.Request.SelectedDate():yyyy-MM-dd}"
+                End If
             Else
-                hypHourRange.Text = "Default<br>Hours"
-                hypHourRange.NavigateUrl = $"~/ReservationController.ashx?Command=ChangeHourRange&Range=DefaultHours&Path={ContextBase.Request.SelectedPath().UrlEncode()}&Date={ContextBase.Request.SelectedDate():yyyy-MM-dd}"
+                linkText = "Default<br>Hours"
+                If View = ViewType.LocationView Then
+                    locationPath = LocationPathInfo.Parse(ContextBase.Request.QueryString("LocationPath"))
+                    linkUrl = $"~/ReservationController.ashx?Command=ChangeHourRange&Range=DefaultHours&LocationPath={locationPath.UrlEncode()}&Date={ContextBase.Request.SelectedDate():yyyy-MM-dd}"
+                Else
+                    linkUrl = $"~/ReservationController.ashx?Command=ChangeHourRange&Range=DefaultHours&Path={ContextBase.Request.SelectedPath().UrlEncode()}&Date={ContextBase.Request.SelectedDate():yyyy-MM-dd}"
+                End If
             End If
+
+            hypHourRange.Text = linkText
+            hypHourRange.NavigateUrl = linkUrl
 
             phErrorMessage.Visible = False
             litErrorMessage.Text = String.Empty
@@ -158,6 +174,10 @@ Namespace UserControls
                     ' We need all reservations, not just for current user, to check for conflicts
                     ' when recurring reservations are created. Also any tool is possible.
                     _reservations.SelectByDateRange(sd, ed)
+                Case ViewType.LocationView
+                    sd = ContextBase.Request.SelectedDate()
+                    ed = sd.AddDays(1)
+                    _reservations.SelectByLabLocation(LabLocationID, sd, ed)
             End Select
         End Sub
 
@@ -198,7 +218,7 @@ Namespace UserControls
                     Next
                     _minGran = Resource.Granularity
                 Case ViewType.ProcessTechView
-                    Dim query As IList(Of ResourceTreeItem) = ContextBase.ResourceTree().Resources().Where(Function(x) x.ProcessTechID = ProcessTechID AndAlso x.ResourceIsActive).OrderBy(Function(x) x.ResourceName).ToList()
+                    Dim query As IList(Of IResourceTree) = Helper.GetResourceTreeItemCollection().Resources().Where(Function(x) x.ProcessTechID = ProcessTechID AndAlso x.ResourceIsActive).OrderBy(Function(x) x.ResourceName).ToList()
 
                     Dim d As Date = ContextBase.Request.SelectedDate()
 
@@ -239,6 +259,22 @@ Namespace UserControls
 
                     _minGran = If(result = 0, 60, result)
                     _minGran = If(_minGran > 60, 60, _minGran)
+                Case ViewType.LocationView
+                    Dim query As IList(Of IResource) = Provider.Scheduler.LabLocation.GetResources(LabLocationID).OrderBy(Function(x) x.ResourceName).ToList()
+
+                    Dim d As Date = ContextBase.Request.SelectedDate()
+
+                    For Each r As IResource In query
+                        AddHeaderCell(r.ResourceID, r.ResourceName, d)
+                    Next
+
+                    If query.Count > 0 Then
+                        _minGran = query.Min(Function(x) x.Granularity)
+                    Else
+                        _minGran = 0
+                    End If
+
+                    _minGran = If(_minGran > 60, 60, _minGran)
             End Select
         End Sub
 
@@ -260,8 +296,8 @@ Namespace UserControls
                     link.Text = cellDate.ToString("dddd'<br>'MMMM d, yyyy")
                     link.NavigateUrl = String.Format("~/ResourceDayWeek.aspx?Path={0}&Date={1:yyyy-MM-dd}", ContextBase.Request.SelectedPath().UrlEncode(), cellDate)
                 Else
-                    Dim res As IResource = ContextBase.ResourceTree().GetResource(resourceId)
-                    link.Text = res.ResourceName
+                    Dim res As IResource = Helper.GetResourceTreeItemCollection().GetResource(resourceId)
+                    link.Text = Resources.CleanResourceName(res.ResourceName)
                     link.NavigateUrl = String.Format("~/ResourceDayWeek.aspx?Path={0}&Date={1:yyyy-MM-dd}", PathInfo.Create(res).UrlEncode(), cellDate)
                 End If
 
@@ -285,7 +321,11 @@ Namespace UserControls
                 offset = Resource.Offset
             End If
 
-            ResourceUtility.GetTimeSlotBoundary(TimeSpan.FromMinutes(_minGran), TimeSpan.FromHours(offset), startTime, endTime, ContextBase.GetDisplayDefaultHours(), ContextBase.GetClientSetting().GetBeginHourOrDefault(), ContextBase.GetClientSetting().GetEndHourOrDefault())
+            Dim cs As IClientSetting = Helper.GetClientSetting()
+            Dim beginHour As Double = cs.GetBeginHour()
+            Dim endHour As Double = cs.GetEndHour()
+
+            Resources.GetTimeSlotBoundary(TimeSpan.FromMinutes(_minGran), TimeSpan.FromHours(offset), startTime, endTime, ContextBase.GetDisplayDefaultHours(), beginHour, endHour)
             Dim currentTime As TimeSpan = startTime - weekStart
             Dim currentTimeEnd As TimeSpan = endTime - weekStart
 
@@ -324,7 +364,7 @@ Namespace UserControls
                         rsvCell.CellDate = weekStart.AddDays(i - 1).Add(currentTime)
 
                         SetReservationCell(rsvCell, Resource, authLevel)
-                    ElseIf View = ViewType.ProcessTechView Then
+                    ElseIf View = ViewType.ProcessTechView OrElse View = ViewType.LocationView Then
                         rsvCell.ResourceID = headerCell.ResourceID
                         rsvCell.CellDate = weekStart.Add(currentTime)
 
@@ -333,7 +373,7 @@ Namespace UserControls
                         'in this case, the uniqueness is defined by resource id + current hour and current minutes
                         rsvCell.ID = $"td_{rsvCell.ResourceID}_{currentTime.Ticks}"
 
-                        Dim res As IResource = ContextBase.ResourceTree().GetResource(rsvCell.ResourceID)
+                        Dim res As IResource = Helper.GetResourceTreeItemCollection().GetResource(rsvCell.ResourceID)
 
                         SetReservationCell(rsvCell, res, authLevel)
                     ElseIf View = ViewType.UserView Then
@@ -439,13 +479,15 @@ Namespace UserControls
                 Case ViewType.DayView, ViewType.WeekView
                     recurringRes = Provider.Scheduler.Reservation.GetReservationRecurrencesByResource(Resource.ResourceID).Where(Function(x) x.IsActive).OrderBy(Function(x) x.ResourceID).ToList()
                 Case ViewType.ProcessTechView
-                    recurringRes = Provider.Scheduler.Reservation.GetReservationRecurrencesByProcessTech(ContextBase.Request.SelectedPath().ProcessTechID).Where(Function(x) x.IsActive).OrderBy(Function(x) x.ResourceID).ToList()
+                    recurringRes = Provider.Scheduler.Reservation.GetReservationRecurrencesByProcessTech(ProcessTechID).Where(Function(x) x.IsActive).OrderBy(Function(x) x.ResourceID).ToList()
                 Case ViewType.UserView
                     recurringRes = Provider.Scheduler.Reservation.GetReservationRecurrencesByClient(CurrentUser.ClientID).Where(Function(x) x.IsActive).OrderBy(Function(x) x.ResourceID).ToList()
                     ' iter = 1 means today there is no reservation on any this tool at this time
                     ' iter is the number of columns, so 1 means there is only one column (index 0) which is the time.
                     ' Therefore when the table was built there were no columns to add for each tool in the My Reservations view. 
                     If iter = 1 Then iter = 2
+                Case ViewType.LocationView
+                    recurringRes = Provider.Scheduler.Reservation.GetReservationRecurrencesByLabLocation(LabLocationID).Where(Function(x) x.IsActive).OrderBy(Function(x) x.ResourceID).ToList()
             End Select
 
             'Since we want to mimize this code to execute, we first make sure if there is no any recurring for this tool, we quit immediately
@@ -475,7 +517,7 @@ Namespace UserControls
                     hasNewData = RecurringReservationTransform.AddRegularFromRecurring(Reservations, rr, startTime) OrElse hasNewData
                 Next
 
-                If View = ViewType.ProcessTechView Then
+                If View = ViewType.ProcessTechView OrElse View = ViewType.LocationView Then
                     Exit Sub
                 ElseIf View = ViewType.UserView Then
                     Exit For
@@ -493,11 +535,11 @@ Namespace UserControls
         Private Sub LoadReservationCells()
             Dim totalReservationCount As Integer = 0
 
-            Dim clientAccounts As List(Of Data.ClientAccountInfo) = DA.Current.Query(Of Data.ClientAccountInfo)().Where(Function(x) x.ClientAccountActive AndAlso x.ClientOrgActive).ToList()
+            Dim clientAccounts As IEnumerable(Of IClientAccount) = Provider.Data.Client.GetActiveClientAccounts()
 
             Dim displayDefaultHours As Boolean = ContextBase.GetDisplayDefaultHours()
-            Dim beginHour As Integer = ContextBase.GetClientSetting().GetBeginHourOrDefault()
-            Dim endHour As Integer = ContextBase.GetClientSetting().GetEndHourOrDefault()
+            Dim beginHour As Integer = Helper.GetClientSetting().GetBeginHour()
+            Dim endHour As Integer = Helper.GetClientSetting().GetEndHour()
 
             For i As Integer = 1 To tblSchedule.Rows(0).Cells.Count - 1
                 Dim columnCell As CustomTableCell = CType(tblSchedule.Rows(0).Cells(i), CustomTableCell)
@@ -509,7 +551,7 @@ Namespace UserControls
                     offset = Resource.Offset
                 End If
 
-                ResourceUtility.GetTimeSlotBoundary(TimeSpan.FromMinutes(_minGran), TimeSpan.FromHours(offset), currentStartTime, currentEndTime, displayDefaultHours, beginHour, endHour)
+                Resources.GetTimeSlotBoundary(TimeSpan.FromMinutes(_minGran), TimeSpan.FromHours(offset), currentStartTime, currentEndTime, displayDefaultHours, beginHour, endHour)
 
                 Dim mergeStartCell As Integer = 0
                 Dim lastReservationCount As Integer = 0
@@ -528,11 +570,11 @@ Namespace UserControls
 
                     Select Case View
                         Case ViewType.DayView, ViewType.WeekView
-                            filteredRsv = Reservations.Find(beginTime, endTime, True, False).OrderBy(Function(x) x.BeginDateTime).ToList()
-                        Case ViewType.ProcessTechView
-                            filteredRsv = Reservations.Find(beginTime, endTime, True, False).Where(Function(x) x.ResourceID = rsvCell.ResourceID).OrderBy(Function(x) x.BeginDateTime).ToList()
+                            filteredRsv = FilterReservations(beginTime, endTime, True, False)
+                        Case ViewType.ProcessTechView, ViewType.LocationView
+                            filteredRsv = FilterReservations(rsvCell.ResourceID, beginTime, endTime, True, False)
                         Case ViewType.UserView
-                            filteredRsv = Reservations.Find(beginTime, endTime, False, False).Where(Function(x) x.ResourceID = rsvCell.ResourceID).OrderBy(Function(x) x.BeginDateTime).ToList()
+                            filteredRsv = FilterReservations(rsvCell.ResourceID, beginTime, endTime, False, False)
                     End Select
 
                     Dim reservationCount As Integer = filteredRsv.Count
@@ -575,7 +617,7 @@ Namespace UserControls
                                 ' Reservation Cell Events
 
                                 ' Delete/modify buttons are added here if needed.
-                                Dim rci As ReservationClient = ContextBase.GetReservationClientItem(rsv)
+                                Dim rci As ReservationClient = Helper.GetReservationClientItem(rsv)
                                 Dim state As ReservationState = SchedulerUtility.GetReservationCell(rsvCell, rsv, rci, Date.Now)
 
                                 SetReservationCellAttributes(rsvCell, state, PathInfo.Create(rsv))
@@ -602,6 +644,10 @@ Namespace UserControls
                 If tblSchedule.Rows(0).Cells.Count = 1 Then
                     ShowNoDataMessage("There are no resources in this Process Technology.")
                 End If
+            ElseIf View = ViewType.LocationView Then
+                If tblSchedule.Rows(0).Cells.Count = 1 Then
+                    ShowNoDataMessage("There are no resources in this Location.")
+                End If
             ElseIf View = ViewType.UserView Then
                 If totalReservationCount = 0 Then
                     ShowNoDataMessage("You do not have any reservations made for this date.")
@@ -622,6 +668,14 @@ Namespace UserControls
 #End Region
 
 #Region "Utility"
+        Private Function FilterReservations(sd As Date, ed As Date, includeAllClients As Boolean, includeCancelled As Boolean) As IList(Of IReservation)
+            Return Reservations.Find(sd, ed, includeAllClients, includeCancelled).Where(Function(x) ReservationFilter(x, sd, ed)).OrderBy(Function(x) x.BeginDateTime).ToList()
+        End Function
+
+        Private Function FilterReservations(resourceId As Integer, sd As Date, ed As Date, includeAllClients As Boolean, includeCancelled As Boolean) As IList(Of IReservation)
+            Return Reservations.Find(sd, ed, includeAllClients, includeCancelled).Where(Function(x) x.ResourceID = resourceId AndAlso ReservationFilter(x, sd, ed)).OrderBy(Function(x) x.BeginDateTime).ToList()
+        End Function
+
         Private Function ReservationFilter(rsv As IReservation, beginTime As Date, endTime As Date) As Boolean
             If Not rsv.ActualEndDateTime.HasValue Then
                 Return rsv.BeginDateTime < endTime AndAlso rsv.EndDateTime > beginTime
@@ -645,8 +699,8 @@ Namespace UserControls
 
         Public Sub StartReservation(rsv As IReservationWithInvitees)
             Try
-                Dim rci As ReservationClient = ContextBase.GetReservationClientItem(rsv)
-                GetReservationUtility(Date.Now).Start(rsv, rci, CurrentUser.ClientID)
+                Dim rci As ReservationClient = Helper.GetReservationClientItem(rsv)
+                LNF.Scheduler.Reservations.Create(Provider, Date.Now).Start(rsv, rci, CurrentUser.ClientID)
             Catch ex As Exception
                 Session("ErrorMessage") = ex.Message
             End Try

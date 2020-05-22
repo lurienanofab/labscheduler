@@ -9,13 +9,13 @@
 <%@ Import Namespace="LNF.CommonTools" %>
 <%@ Import Namespace="LNF.PhysicalAccess" %>
 <%@ Import Namespace="LNF.Scheduler" %>
-<%@ Import Namespace="LNF.Models.Data" %>
-<%@ Import Namespace="LNF.Models.Billing" %>
-<%@ Import Namespace="LNF.Models.Billing.Process" %>
-<%@ Import Namespace="LNF.Models.Scheduler" %>
+<%@ Import Namespace="LNF.Data" %>
+<%@ Import Namespace="LNF.Billing" %>
+<%@ Import Namespace="LNF.Billing.Process" %>
+<%@ Import Namespace="LNF.Scheduler" %>
 <%@ Import Namespace="LNF.Repository" %>
-<%@ Import Namespace="LNF.Repository.Data" %>
-<%@ Import Namespace="LNF.Repository.Scheduler" %>
+<%@ Import Namespace="LNF.Impl.Repository.Data" %>
+<%@ Import Namespace="LNF.Impl.Repository.Scheduler" %>
 <%@ Import Namespace="LNF.Web" %>
 <%@ Import Namespace="LNF.Web.Scheduler" %>
 <%@ Import Namespace="LNF.Web.Scheduler.TreeView" %>
@@ -25,7 +25,7 @@
 <script runat="server">
     //note: this page does not have a separate CodeBehind file so that server side code can be edited in production
 
-    public IReservationManager ReservationManager { get { return ServiceProvider.Current.Scheduler.Reservation; } }
+    public IReservationRepository ReservationManager { get { return ServiceProvider.Current.Scheduler.Reservation; } }
 
     private HttpContextBase _contextBase;
 
@@ -161,7 +161,7 @@
     private ReservationProcessInfoItem GetReservationProcessInfoItem(ReservationProcessInfo rpi)
     {
         var pil = rpi.ProcessInfoLine;
-        var pi = DA.Current.Single<LNF.Repository.Scheduler.ProcessInfo>(pil.ProcessInfoID);
+        var pi = DA.Current.Single<LNF.Impl.Repository.Scheduler.ProcessInfo>(pil.ProcessInfoID);
         return new ReservationProcessInfoItem() { ReservationProcessInfo = rpi, ProcessInfoLine = pil, ProcessInfo = pi };
     }
 
@@ -231,8 +231,8 @@
 
         var ipaddr = Request.UserHostAddress;
         var paUtil = new PhysicalAccessUtility(ipaddr);
-        var isKiosk = KioskUtility.IsKiosk(ipaddr);
-        var onKiosk = KioskUtility.IsOnKiosk(ipaddr);
+        var isKiosk = Kiosks.IsKiosk(ipaddr);
+        var onKiosk = Kiosks.IsOnKiosk(ipaddr);
         var isInLab = paUtil.IsInLab(client.ClientID);
         var clientInLab = paUtil.ClientInLab(client.ClientID);
 
@@ -267,7 +267,7 @@
         {
             LabDisplayName = GetLabDisplayName(x.AltDescription),
             x.ClientID,
-            DisplayName = ClientItem.GetDisplayName(x.LastName, x.FirstName),
+            DisplayName = Clients.GetDisplayName(x.LastName, x.FirstName),
             AccessDateTime = x.CurrentAccessTime,
             HoursInLab = (DateTime.Now - x.CurrentAccessTime.Value).TotalHours
         }).OrderBy(x => x.LabDisplayName).ThenBy(x => x.DisplayName).ToList();
@@ -294,7 +294,7 @@
 
         txtReservationID.Text = reservationId.ToString();
 
-        ReservationItem rsv = DA.Current.Single<ReservationInfo>(reservationId).CreateModel<ReservationItem>();
+        IReservation rsv = DA.Current.Single<ReservationInfo>(reservationId);
 
         if (rsv != null)
         {
@@ -315,7 +315,7 @@
             }
             else if (command == "invitees")
             {
-                var invitees = DA.Current.Query<ReservationInviteeInfo>().Where(x => x.ReservationID == rsv.ReservationID).CreateModels<IReservationInvitee>();
+                IEnumerable<IReservationInvitee> invitees = DA.Current.Query<ReservationInviteeInfo>().Where(x => x.ReservationID == rsv.ReservationID).ToList();
 
                 if (invitees.Count() > 0)
                 {
@@ -479,7 +479,11 @@
 
     protected string GetModifiedByClientDisplayName(ReservationHistory rh)
     {
-        var c = rh.GetModifiedByClient();
+        IClient c = null;
+
+        if (rh.ModifiedByClientID.HasValue)
+            c = ServiceProvider.Current.Data.Client.GetClient(rh.ModifiedByClientID.Value);
+
         if (c == null)
             return "[unknown]";
         else
@@ -504,7 +508,7 @@
 
         if (command == "update")
         {
-            IEnumerable<string> response = ServiceProvider.Current.Billing.Process.UpdateBilling(new UpdateBillingArgs { StartDate = period, EndDate = period.AddMonths(1), ClientID = clientId, BillingCategory = BillingCategory.Tool | BillingCategory.Room });
+            IEnumerable<string> response = ServiceProvider.Current.Billing.Process.UpdateBilling(new UpdateBillingArgs { Periods = new[] { period }, ClientID = clientId, BillingCategory = BillingCategory.Tool | BillingCategory.Room });
             litBillingOutput.Text = string.Join("<br>", response);
 
             //var result = await ReservationHistoryUtility.UpdateBilling(sd, ed, clientId);
@@ -527,7 +531,7 @@
         }
     }
 
-    private void AppendBillingProcessResult(LNF.Models.ProcessResult result, string label)
+    private void AppendBillingProcessResult(ProcessResult result, string label)
     {
 
         litBillingOutput.Text += "<li>";
@@ -598,7 +602,7 @@
     {
         public ReservationProcessInfo ReservationProcessInfo { get; set; }
         public ProcessInfoLine ProcessInfoLine { get; set; }
-        public LNF.Repository.Scheduler.ProcessInfo ProcessInfo { get; set; }
+        public LNF.Impl.Repository.Scheduler.ProcessInfo ProcessInfo { get; set; }
     }
 </script>
 

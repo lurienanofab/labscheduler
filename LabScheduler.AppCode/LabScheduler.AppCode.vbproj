@@ -140,9 +140,9 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\lnf\LNF.Models\LNF.Models.csproj">
-      <Project>{98c7f73d-ef9d-4a87-8b79-a1208085cfbd}</Project>
-      <Name>LNF.Models</Name>
+    <ProjectReference Include="..\..\lnf\LNF.Impl\LNF.Impl.csproj">
+      <Project>{F490B789-B824-4A8C-90FC-AC447C3277F0}</Project>
+      <Name>LNF.Impl</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\lnf\LNF.Web\LNF.Web.csproj">
       <Project>{f79683ff-e524-4107-a6e1-29579ee544e1}</Project>

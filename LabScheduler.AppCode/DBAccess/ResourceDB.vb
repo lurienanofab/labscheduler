@@ -1,5 +1,5 @@
 ﻿Imports LNF
-Imports LNF.Models.Scheduler
+Imports LNF.Scheduler
 
 Namespace DBAccess
     Public Class ResourceDB

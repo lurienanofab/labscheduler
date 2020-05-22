@@ -1,4 +1,5 @@
 ﻿using LNF.Web.Content;
+using System;
 
 namespace LNF.Web.Scheduler.Content
 {
@@ -9,9 +10,21 @@ namespace LNF.Web.Scheduler.Content
             get { return true; }
         }
 
-        public new SchedulerPage Page
+        public SchedulerPage SchedulerPage
         {
-            get { return (SchedulerPage)base.Page; }
+            get
+            {
+                if (Page == null) return null;
+
+                if(typeof(SchedulerPage).IsAssignableFrom(Page.GetType()))
+                    return (SchedulerPage)Page;
+
+                throw new Exception($"Cannot convert {Page.GetType().Name} to SchedulerPage.");
+            }
         }
+
+        public ContextHelper Helper => SchedulerPage.Helper;
+
+        public IProvider Provider => Helper.Provider;
     }
 }

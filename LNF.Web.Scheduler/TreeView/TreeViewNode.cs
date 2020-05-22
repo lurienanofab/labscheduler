@@ -1,34 +1,32 @@
 ﻿using LNF.Scheduler;
 using System;
+using System.Web;
 
 namespace LNF.Web.Scheduler.TreeView
 {
     public abstract class TreeViewNode<T> : INode
     {
-        public IProvider Provider { get; }
         public INode Parent { get; }
-        public TreeViewItemCollection Children { get; protected set; }
-        public ResourceTreeItemCollection ResourceTree { get; }
-        public abstract NodeType Type { get; }
+        public TreeViewNodeCollection Children { get; protected set; }
+        public SchedulerResourceTreeView View { get; }
         public int ID { get; protected set; }
         public string Name { get; protected set; }
         public string Description { get; protected set; }
-        protected abstract void Load(T item);
+        public T Item { get; }
+        protected abstract void Load();
 
-        protected TreeViewNode(IProvider provider, ResourceTreeItemCollection resourceTree, T item)
+        protected TreeViewNode(SchedulerResourceTreeView view, T item)
         {
-            Provider = provider;
-            ResourceTree = resourceTree;
+            Item = item;
+            View = view;
             Parent = null;
-            Load(item);
         }
 
-        protected TreeViewNode(T item, INode parent)
+        protected TreeViewNode(SchedulerResourceTreeView view, T item, INode parent)
         {
-            Provider = parent.Provider;
-            ResourceTree = parent.ResourceTree;
+            Item = item;
+            View = view;
             Parent = parent ?? throw new ArgumentNullException("parent");
-            Load(item);
         }
 
         private string _Value;
@@ -52,9 +50,12 @@ namespace LNF.Web.Scheduler.TreeView
 
         public virtual string ToolTip { get { return TreeViewUtility.Coalesce(Description, Name); } }
 
-        public PathInfo GetPath()
-        {
-            return PathInfo.Parse(Value);
-        }
+        public abstract string GetUrl(HttpContextBase context);
+
+        public virtual string GetImageUrl(HttpContextBase context) => null;
+
+        public abstract bool IsExpanded(string path);
+
+        public virtual bool HasChildren() => Children != null && Children.Count > 0;
     }
 }

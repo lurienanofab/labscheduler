@@ -1,19 +1,26 @@
 ﻿Imports LabScheduler.AppCode
 Imports LNF.Cache
 Imports LNF.CommonTools
-Imports LNF.Models.Scheduler
 Imports LNF.Repository
 Imports LNF.Scheduler
 Imports LNF.Scheduler.Data
 Imports LNF.Web
 Imports LNF.Web.Scheduler.Content
-Imports Scheduler = LNF.Repository.Scheduler
+Imports Scheduler = LNF.Impl.Repository.Scheduler
 
 Namespace Pages
     Public Class ResourceConfig
         Inherits SchedulerPage
 
         Private Const MAX_OTF_SCHED_TIME As Integer = 60
+
+        Private _piinsert As IList(Of IProcessInfo) = New List(Of IProcessInfo)
+        Private _piUpdate As IList(Of IProcessInfo) = New List(Of IProcessInfo)
+        Private _piDelete As IList(Of IProcessInfo) = New List(Of IProcessInfo)
+
+        Private _pilInsert As IList(Of IProcessInfoLine) = New List(Of IProcessInfoLine)
+        Private _pilUpdate As IList(Of IProcessInfoLine) = New List(Of IProcessInfoLine)
+        Private _pilDelete As IList(Of IProcessInfoLine) = New List(Of IProcessInfoLine)
 
         Public Property ProcessInfoDataTable As DataTable
             Get
@@ -284,7 +291,7 @@ Namespace Pages
                 res.WikiPageUrl = txtWikiPageUrl.Text
                 If res.GracePeriod = 0 Then ServerJScript.JSAlert(Page, "Warning: You have set grace period to 0 for this resource.")
                 UploadFileUtility.UploadImage(fileIcon, "Resource", res.ResourceID.ToString().PadLeft(6, Char.Parse("0")))
-                ResourceUtility.EngineerUpdate(res)
+                Resources.EngineerUpdate(res)
 
                 ' If update was successful and
                 ' If Granularity changes to bigger number then, remove all future reservations
@@ -292,7 +299,7 @@ Namespace Pages
                     Dim query As IEnumerable(Of IReservation) = Provider.Scheduler.Reservation.SelectByResource(res.ResourceID, Date.Now, Date.Now.AddYears(100), False)
                     For Each rsv As IReservation In query
                         Provider.Scheduler.Reservation.CancelReservation(rsv.ReservationID, CurrentUser.ClientID)
-                        Provider.EmailManager.EmailOnCanceledByResource(rsv, CurrentUser.ClientID)
+                        Provider.Scheduler.Email.EmailOnCanceledByResource(rsv, CurrentUser.ClientID)
                     Next
                 End If
 
@@ -612,6 +619,8 @@ Namespace Pages
                         Dim prevOrder As Integer = Convert.ToInt32(drPrevPI("Order"))
                         drPrevPI("Order") = drCurPI("Order")
                         drCurPI("Order") = prevOrder
+                        _piUpdate.Add(ProcessInfoData.CreateProcessInfo(drPrevPI))
+                        _piUpdate.Add(ProcessInfoData.CreateProcessInfo(drCurPI))
                         UpdateProcessInfo()
                     Case "MoveDown" 'Move ProcessInfo down the list
                         If e.Item.ItemIndex = dgProcessInfo.Items.Count - 1 Then Exit Sub
@@ -620,6 +629,8 @@ Namespace Pages
                         Dim nextOrder As Integer = Convert.ToInt32(drNextPI("Order"))
                         drNextPI("Order") = drCurPI("Order")
                         drCurPI("Order") = nextOrder
+                        _piUpdate.Add(ProcessInfoData.CreateProcessInfo(drNextPI))
+                        _piUpdate.Add(ProcessInfoData.CreateProcessInfo(drCurPI))
                         UpdateProcessInfo()
                     Case "Insert" 'Add new ProcessInfo
                         ' Error Checking
@@ -661,6 +672,7 @@ Namespace Pages
                             drNewProcessInfo("Order") = Convert.ToInt32(ProcessInfoDataTable.Rows(ProcessInfoDataTable.Rows.Count - 1)("Order")) + 1
                         End If
                         drNewProcessInfo("MaxAllowed") = 1
+                        _piinsert.Add(ProcessInfoData.CreateProcessInfo(drNewProcessInfo))
                         ProcessInfoDataTable.Rows.Add(drNewProcessInfo)
                         UpdateProcessInfo()
                     Case "Edit"         ' Edit ProcessInfo
@@ -706,6 +718,7 @@ Namespace Pages
                         drProcessInfo("RequireValue") = chkRequireValue.Checked
                         drProcessInfo("RequireSelection") = chkRequireSelection.Checked
                         drProcessInfo("MaxAllowed") = 1
+                        _piUpdate.Add(ProcessInfoData.CreateProcessInfo(drProcessInfo))
                         dgProcessInfo.EditItemIndex = -1
                         dgProcessInfo.ShowFooter = True
                         UpdateProcessInfo()
@@ -718,6 +731,7 @@ Namespace Pages
                         dgProcessInfo.DataBind()
                     Case "Delete"       ' Delete ProcessInfo
                         Dim drProcessInfo As DataRow = ProcessInfoDataTable.Select(String.Format("ProcessInfoID = {0}", e.Item.Cells(1).Text))(0)
+                        _piDelete.Add(ProcessInfoData.CreateProcessInfo(drProcessInfo))
                         drProcessInfo.Delete()
 
                         Dim dr As DataRow = ProcessInfoDataTable.Rows.Find(-1)
@@ -748,8 +762,11 @@ Namespace Pages
         ' Updates Process Info 
         Private Sub UpdateProcessInfo()
             Try
-                ProcessInfoData.Update(ProcessInfoDataTable)
-
+                ProcessInfoData.Update(_piinsert, _piUpdate, _piDelete)
+                _piinsert = New List(Of IProcessInfo)
+                _piUpdate = New List(Of IProcessInfo)
+                _piDelete = New List(Of IProcessInfo)
+                ProcessInfoDataTable.AcceptChanges()
                 ProcessInfoDataTable.DefaultView.Sort = "Order ASC, ProcessInfoID DESC"
                 dgProcessInfo.DataSource = ProcessInfoDataTable
                 dgProcessInfo.DataBind()
@@ -860,6 +877,7 @@ Namespace Pages
                         dgProcessInfoLine.DataBind()
                     Case "Delete"       ' Delete ProcessInfoLine
                         Dim drPIL As DataRow = ProcessInfoLineDataTable.Select(String.Format("ProcessInfoLineID = {0}", e.Item.Cells(0).Text))(0)
+
                         drPIL.Delete()
                         UpdateProcessInfoLine(dgProcessInfoLine)
                 End Select
@@ -871,7 +889,8 @@ Namespace Pages
         ' Loads Process Info Line
         Private Sub LoadProcessInfoLine(ByVal processInfoId As Integer, ByRef dgProcessInfoLine As DataGrid)
             Try
-                ProcessInfoLineDataTable = ProcessInfoLineData.SelectByProcessInfo(processInfoId)
+                Dim pi As IProcessInfo = Provider.Scheduler.ProcessInfo.GetProcessInfo(processInfoId)
+                ProcessInfoLineDataTable = ProcessInfoLineData.SelectByProcessInfo(pi.ResourceID)
                 ProcessInfoLineDataTable.DefaultView.Sort = "Param"
                 dgProcessInfoLine.DataSource = ProcessInfoLineDataTable
                 dgProcessInfoLine.DataBind()
@@ -883,7 +902,11 @@ Namespace Pages
         ' Updates Process Info Line
         Private Sub UpdateProcessInfoLine(ByRef dgProcessInfoLine As DataGrid)
             Try
-                ProcessInfoLineData.Update(ProcessInfoLineDataTable)
+                ProcessInfoLineData.Update(_pilInsert, _pilUpdate, _pilDelete)
+                _pilInsert = New List(Of IProcessInfoLine)
+                _pilUpdate = New List(Of IProcessInfoLine)
+                _pilDelete = New List(Of IProcessInfoLine)
+                ProcessInfoLineDataTable.AcceptChanges()
                 ProcessInfoLineDataTable.DefaultView.Sort = "Param"
                 dgProcessInfoLine.DataSource = ProcessInfoLineDataTable
                 dgProcessInfoLine.DataBind()

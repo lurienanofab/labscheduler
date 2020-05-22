@@ -1,11 +1,12 @@
 ﻿Imports LNF
 Imports LNF.CommonTools
-Imports LNF.Models.Data
+Imports LNF.Data
 Imports LNF.Web
 
 Public Class _500
     Inherits Page
 
+    <Inject> Public Property Provider As IProvider
     Public Property ContextBase As HttpContextBase
 
     Private errors As IList(Of ErrorItem) = New List(Of ErrorItem)
@@ -45,7 +46,7 @@ Public Class _500
         Dim currentUser As IClient = Nothing
 
         Try
-            currentUser = ContextBase.CurrentUser()
+            currentUser = ContextBase.CurrentUser(Provider)
         Catch ex As Exception
             AddError(ex)
         End Try
@@ -55,7 +56,7 @@ Public Class _500
 
     Private Sub SendErrorEmail(err As Exception, currentUser As IClient)
         Try
-            Dim app As String = ServiceProvider.Current.Log.Name
+            Dim app As String = Provider.Log.Name
             SendEmail.SendErrorEmail(err, currentUser, app, ContextBase.CurrentIP(), ContextBase.Request.Url)
         Catch ex As Exception
             AddError(ex)

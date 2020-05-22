@@ -1,5 +1,4 @@
 ﻿Imports LabScheduler.AppCode
-Imports LNF.Models.Scheduler
 Imports LNF.Scheduler
 Imports LNF.Web.Scheduler
 Imports LNF.Web.Scheduler.Content
@@ -13,7 +12,7 @@ Namespace Pages
         End Sub
 
         Private Sub LoadLab(labId As Integer)
-            Dim lab As LabItem = ContextBase.ResourceTree().GetLab(labId)
+            Dim lab As ILab = Helper.GetResourceTreeItemCollection().GetLab(labId)
             If lab IsNot Nothing Then
                 litLabPath.Text = lab.BuildingName + " &gt; "
                 litLabName.Text = lab.LabDisplayName
@@ -21,7 +20,7 @@ Namespace Pages
                 UploadFileUtility.DisplayImage(imgPicture, "Lab", lab.LabID.ToString())
             End If
 
-            rptResources.DataSource = ContextBase.GetResourceTableItemList(lab.BuildingID).Where(Function(x) x.LabID = lab.LabID).OrderBy(Function(x) x.ProcessTechName)
+            rptResources.DataSource = Helper.GetResourceTableItemList(lab.BuildingID).Where(Function(x) x.LabID = lab.LabID).OrderBy(Function(x) x.ProcessTechName)
             rptResources.DataBind()
         End Sub
 

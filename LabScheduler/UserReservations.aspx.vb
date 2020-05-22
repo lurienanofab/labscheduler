@@ -1,7 +1,5 @@
-﻿Imports LNF.Cache
+﻿Imports LNF.Data
 Imports LNF.Feeds
-Imports LNF.Models.Data
-Imports LNF.Models.Scheduler
 Imports LNF.Scheduler
 Imports LNF.Web.Scheduler
 Imports LNF.Web.Scheduler.Content
@@ -11,12 +9,13 @@ Namespace Pages
         Inherits SchedulerPage
 
         Protected Sub Page_Load(sender As Object, e As EventArgs) Handles Me.Load
+            Dim sw As Stopwatch = Stopwatch.StartNew()
             If Not Page.IsPostBack Then
                 litDate.Text = ContextBase.Request.SelectedDate().ToLongDateString()
 
                 If CurrentUser IsNot Nothing Then
                     litCurrentUser.Text = CurrentUser.DisplayName
-                    txtCalendarURL.Text = FeedGenerator.Scheduler.Reservations.GetUrl(FeedFormats.Calendar, CurrentUser.UserName, "all", "user-reservations")
+                    txtCalendarURL.Text = FeedGenerator.Scheduler.Reservations.GetUrl(FeedFormats.Calendar, CurrentUser.UserName, "all", "user-reservations", Request.Url)
                     If CurrentUser.HasPriv(ClientPrivilege.Staff) Then
                         hypRecurringPage.Visible = True
                     End If
@@ -24,17 +23,19 @@ Namespace Pages
                     litCurrentUser.Text = "[unknown user]"
                 End If
 
-                Dim clientLab = ContextBase.ClientLab()
+                Dim clientLab = Helper.ClientLab()
                 Dim labDisplayName = If(clientLab Is Nothing, String.Empty, clientLab.LabDisplayName)
 
-                litLocation.Text = $"{If(ContextBase.ClientInLab(), "Inside " + labDisplayName, "Outside")}"
+                litLocation.Text = $"{If(Helper.ClientInLab(), "Inside " + labDisplayName, "Outside")}"
 
-                litComputer.Text = $"IP={Request.UserHostAddress}, Browser={GetBrowser()}, Kiosk={If(KioskUtility.IsKiosk(Request.UserHostAddress), "Yes", "No")}"
+                litComputer.Text = $"IP={Request.UserHostAddress}, Browser={GetBrowser()}, Kiosk={If(Kiosks.IsKiosk(Request.UserHostAddress), "Yes", "No")}"
 
                 hypRecurringPage.NavigateUrl = String.Format("~/UserRecurringReservation.aspx?Date={0:yyyy-MM-dd}", ContextBase.Request.SelectedDate())
             End If
 
             SetCurrentView(ViewType.UserView)
+            'litTimer.Text = $"<div>UserReservations.Page_Load: {sw.Elapsed.ToString()}</div>"
+            sw.Stop()
         End Sub
 
         Private Function GetBrowser() As String
