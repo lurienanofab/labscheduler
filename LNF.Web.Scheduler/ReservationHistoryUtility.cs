@@ -10,11 +10,11 @@ namespace LNF.Web.Scheduler
 {
     public static class ReservationHistoryUtility
     {
-        public static IList<ReservationHistoryItem> GetReservationHistoryData(IClient client, DateTime? sd, DateTime? ed, bool includeCanceledForModification)
+        public static IList<ReservationHistoryItem> GetReservationHistoryData(IProvider provider, IClient client, DateTime? sd, DateTime? ed, bool includeCanceledForModification)
         {
             // Select Past Reservations
-            var reservations = ServiceProvider.Current.Scheduler.Reservation.SelectHistory(client.ClientID, sd.GetValueOrDefault(Reservations.MinReservationBeginDate), ed.GetValueOrDefault(Reservations.MaxReservationEndDate));
-            var filtered = ServiceProvider.Current.Scheduler.Reservation.FilterCancelledReservations(reservations, includeCanceledForModification);
+            var reservations = provider.Scheduler.Reservation.SelectHistory(client.ClientID, sd.GetValueOrDefault(Reservations.MinReservationBeginDate), ed.GetValueOrDefault(Reservations.MaxReservationEndDate));
+            var filtered = provider.Scheduler.Reservation.FilterCancelledReservations(reservations, includeCanceledForModification);
             var result = ReservationHistoryItem.CreateList(filtered);
             return result;
         }

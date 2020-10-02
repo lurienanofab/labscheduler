@@ -19,7 +19,7 @@ namespace LNF.Web.Scheduler.Controllers
         public void ProcessRequest(HttpContext context)
         {
             HttpContextBase ctx = new HttpContextWrapper(context);
-            ContextHelper helper = GetContextHelper(ctx);
+            SchedulerContextHelper helper = GetContextHelper(ctx);
 
             string command = GetCommand(ctx);
 
@@ -27,6 +27,10 @@ namespace LNF.Web.Scheduler.Controllers
 
             var currentView = ctx.GetCurrentViewType();
             var currentUser = helper.CurrentUser();
+
+            var util = SchedulerUtility.Create(Provider);
+
+            helper.AppendLog($"ReservationController.ProcessRequest: command = {command}");
 
             try
             {
@@ -46,18 +50,24 @@ namespace LNF.Web.Scheduler.Controllers
                         case "ChangeHourRange":
                             string range = ctx.Request.QueryString["Range"];
 
+                            helper.AppendLog($"ReservationController.ProcessRequest: range = {range}");
+
                             if (range == "FullDay")
                                 ctx.SetDisplayDefaultHours(false);
                             else
                                 ctx.SetDisplayDefaultHours(true);
 
-                            redirectUrl = SchedulerUtility.GetReservationViewReturnUrl(currentView);
+                            redirectUrl = util.GetReservationViewReturnUrl(currentView);
                             break;
                         case "NewReservation":
-                            if (CanCreateNewReservation(ctx))
+                            var canCreate = CanCreateNewReservation(ctx);
+
+                            helper.AppendLog($"ReservationController.ProcessRequest: canCreate = {canCreate}");
+
+                            if (canCreate)
                                 redirectUrl = SchedulerUtility.GetReservationReturnUrl(ctx.Request.SelectedPath(), 0, ctx.Request.SelectedDate(), GetReservationTime(ctx));
                             else
-                                redirectUrl = SchedulerUtility.GetReservationViewReturnUrl(currentView);
+                                redirectUrl = util.GetReservationViewReturnUrl(currentView);
                             break;
                         case "ModifyReservation":
                             rsv = helper.GetReservationWithInvitees();
@@ -71,7 +81,7 @@ namespace LNF.Web.Scheduler.Controllers
                             rsv = helper.GetReservationWithInvitees();
                             Reservations.Create(Provider, DateTime.Now).Delete(rsv, currentUser.ClientID);
 
-                            redirectUrl = SchedulerUtility.GetReservationViewReturnUrl(currentView);
+                            redirectUrl = util.GetReservationViewReturnUrl(currentView);
                             break;
                         default:
                             throw new NotImplementedException($"Command not implemented: {command}");
@@ -80,11 +90,15 @@ namespace LNF.Web.Scheduler.Controllers
             }
             catch (Exception ex)
             {
-                ctx.Session["ErrorMessage"] = ex.Message;
+                string errmsg = ex.Message;
+
+                ctx.Session["ErrorMessage"] = errmsg;
+
+                helper.AppendLog($"ReservationController.ProcessRequest: errmsg = {errmsg}");
 
                 try
                 {
-                    redirectUrl = SchedulerUtility.GetReservationViewReturnUrl(currentView);
+                    redirectUrl = util.GetReservationViewReturnUrl(currentView);
                 }
                 catch
                 {
@@ -92,10 +106,12 @@ namespace LNF.Web.Scheduler.Controllers
                 }
             }
 
-            if (!string.IsNullOrEmpty(redirectUrl))
-                ctx.Response.Redirect(redirectUrl);
-            else
-                ctx.Response.Redirect("~");
+            if (string.IsNullOrEmpty(redirectUrl))
+                redirectUrl = "~";
+
+            helper.AppendLog($"ReservationController.ProcessRequest: redirectUrl = {redirectUrl}");
+
+            ctx.Response.Redirect(redirectUrl);
         }
 
         private string GetCommand(HttpContextBase context)
@@ -127,21 +143,25 @@ namespace LNF.Web.Scheduler.Controllers
 
         public string GetReservationAction(HttpContextBase context)
         {
-            ContextHelper helper = GetContextHelper(context);
+            SchedulerContextHelper helper = GetContextHelper(context);
 
             context.Session.Remove("ActiveReservationMessage");
             context.Session.Remove("ShowStartConfirmationDialog");
-            var util = Reservations.Create(Provider, DateTime.Now);
+
+            var now = DateTime.Now;
+            var util = Reservations.Create(Provider, now);
             var requestedState = GetReservationState(context);
             var rsv = helper.GetReservation();
             var client = helper.GetReservationClientItem(rsv);
-            var args = ReservationStateArgs.Create(rsv, client);
-            var state = util.GetReservationState(args);
+            var args = ReservationStateArgs.Create(rsv, client, now);
+            var state = ReservationStateUtility.Create(now).GetReservationState(args);
             var currentView = context.GetCurrentViewType();
             var currentUser = context.CurrentUser(Provider);
 
             bool confirm = false;
             int reservationId = 0;
+
+            helper.AppendLog($"ReservationController.GetReservationAction: reservationId = {rsv.ReservationID}, requestedState = {requestedState}, state = {state}, currentView = {currentView}");
 
             switch (requestedState)
             {
@@ -186,7 +206,7 @@ namespace LNF.Web.Scheduler.Controllers
                     throw new NotImplementedException($"ReservationState = {state} is not implemented");
             }
 
-            string result = SchedulerUtility.GetReservationViewReturnUrl(currentView, confirm, reservationId);
+            string result = SchedulerUtility.Create(Provider).GetReservationViewReturnUrl(currentView, confirm, reservationId);
 
             return result;
         }
@@ -257,9 +277,9 @@ namespace LNF.Web.Scheduler.Controllers
             return Convert.ToDateTime(context.Request.QueryString["Date"]);
         }
 
-        private ContextHelper GetContextHelper(HttpContextBase context)
+        private SchedulerContextHelper GetContextHelper(HttpContextBase context)
         {
-            return new ContextHelper(context, Provider);
+            return new SchedulerContextHelper(context, Provider);
         }
     }
 }

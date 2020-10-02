@@ -48,7 +48,7 @@ Namespace Pages
 
         Private Function GetReturnFromNotes() As String
             Dim view As ViewType = GetCurrentView()
-            Return SchedulerUtility.GetReservationViewReturnUrl(view)
+            Return SchedulerUtility.Create(Provider).GetReservationViewReturnUrl(view)
         End Function
     End Class
 End Namespace

@@ -11,9 +11,9 @@ Option Strict On
 Option Explicit On
 
 Namespace Pages
-
+    
     Partial Public Class Index
-
+        
         '''<summary>
         '''litDisplayName control.
         '''</summary>

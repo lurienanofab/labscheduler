@@ -1,4 +1,4 @@
-<%@ Page Title="Utility" Language="C#" Async="true" %>
+<%@ Page Title="Utility" Language="C#" Async="true" Inherits="LNF.Web.Content.LNFPage" %>
 
 <%@ Import Namespace="System.Linq" %>
 <%@ Import Namespace="System.Net" %>
@@ -25,13 +25,13 @@
 <script runat="server">
     //note: this page does not have a separate CodeBehind file so that server side code can be edited in production
 
-    public IReservationRepository ReservationManager { get { return ServiceProvider.Current.Scheduler.Reservation; } }
+    public IReservationRepository ReservationManager { get { return Provider.Scheduler.Reservation; } }
 
     private HttpContextBase _contextBase;
 
     public HttpContextBase ContextBase { get { return _contextBase; } }
 
-    public IClient CurrentUser { get { return ContextBase.CurrentUser(); } }
+    public IClient CurrentUser { get { return ContextBase.CurrentUser(Provider); } }
 
     public enum AlertType
     {
@@ -230,7 +230,8 @@
         if (listItem != null) listItem.Selected = true;
 
         var ipaddr = Request.UserHostAddress;
-        var paUtil = new PhysicalAccessUtility(ipaddr);
+        var inlab = Provider.PhysicalAccess.GetCurrentlyInArea("all");
+        var paUtil = new PhysicalAccessUtility(inlab, ipaddr);
         var isKiosk = Kiosks.IsKiosk(ipaddr);
         var onKiosk = Kiosks.IsOnKiosk(ipaddr);
         var isInLab = paUtil.IsInLab(client.ClientID);
@@ -261,7 +262,7 @@
 
     private void LoadInLabReport()
     {
-        var inlab = ContextBase.CurrentlyInLab();
+        var inlab = Provider.PhysicalAccess.GetCurrentlyInArea("all");
 
         rptInLabReport.DataSource = inlab.Select(x => new
         {
@@ -482,7 +483,7 @@
         IClient c = null;
 
         if (rh.ModifiedByClientID.HasValue)
-            c = ServiceProvider.Current.Data.Client.GetClient(rh.ModifiedByClientID.Value);
+            c = Provider.Data.Client.GetClient(rh.ModifiedByClientID.Value);
 
         if (c == null)
             return "[unknown]";
@@ -508,7 +509,7 @@
 
         if (command == "update")
         {
-            IEnumerable<string> response = ServiceProvider.Current.Billing.Process.UpdateBilling(new UpdateBillingArgs { Periods = new[] { period }, ClientID = clientId, BillingCategory = BillingCategory.Tool | BillingCategory.Room });
+            IEnumerable<string> response = Provider.Billing.Process.UpdateBilling(new UpdateBillingArgs { Periods = new[] { period }, ClientID = clientId, BillingCategory = BillingCategory.Tool | BillingCategory.Room });
             litBillingOutput.Text = string.Join("<br>", response);
 
             //var result = await ReservationHistoryUtility.UpdateBilling(sd, ed, clientId);

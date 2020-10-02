@@ -48,7 +48,7 @@ namespace LNF.Web.Scheduler.TreeView
 
             if (State == ResourceState.Online && !IsSchedulable)
             {
-                ReservationInProgress repair = Reservations.GetRepairReservationInProgress(Item);
+                RepairInProgress repair = Reservations.GetRepairInProgress(Item);
                 if (repair != null)
                 {
                     RepairEndDateTime = repair.EndDateTime;

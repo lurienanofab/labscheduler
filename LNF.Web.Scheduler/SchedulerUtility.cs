@@ -1,10 +1,10 @@
 ﻿using LNF.Data;
-using LNF.Impl.Repository.Data;
-using LNF.Repository;
 using LNF.Scheduler;
 using LNF.Web.Controls;
+using LNF.Web.Scheduler.Models;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Data;
 using System.Drawing;
 using System.Linq;
@@ -14,24 +14,28 @@ using System.Web.UI.WebControls;
 
 namespace LNF.Web.Scheduler
 {
-    public static class SchedulerUtility
+    public class SchedulerUtility
     {
-        // Fix this dependency
-        public static IProvider Provider => ServiceProvider.Current;
+        public IProvider Provider { get; }
 
-        public static ReservationState GetReservationCell(CustomTableCell rsvCell, IReservation rsv, ReservationClient client, DateTime now)
+        private SchedulerUtility(IProvider provider)
+        {
+            Provider = provider;
+        }
+
+        public static SchedulerUtility Create(IProvider provider)
+        {
+            return new SchedulerUtility(provider);
+        }
+
+        public ReservationState GetReservationCell(CustomTableCell rsvCell, IReservation rsv, ReservationClient client, DateTime now)
         {
             int reservationId = rsv.ReservationID;
             int resourceId = rsv.ResourceID;
 
             // Reservation State
-            var args = ReservationStateArgs.Create(rsv, client);
-            var util = Reservations.Create(Provider, now);
-            var state = util.GetReservationState(args);
-
-            // 2008-08-15 temp
-            if (reservationId == -1 && state == ReservationState.Repair)
-                state = ReservationState.Meeting;
+            var args = ReservationStateArgs.Create(rsv, client, now);
+            var state = ReservationStateUtility.Create(now).GetReservationState(args);
 
             // Tooltip Caption and Text
             string caption = Reservations.GetReservationCaption(state);
@@ -65,9 +69,10 @@ namespace LNF.Web.Scheduler
             // Delete Button
             // 2/11/05 - GPR: allow tool engineers to cancel any non-started, non-repair reservation in the future
             ClientAuthLevel userAuth = args.UserAuth;
-            //var res = CacheManager.Current.ResourceTree().GetResource(rsv.ResourceID);
 
-            if (state == ReservationState.Editable || state == ReservationState.StartOrDelete || state == ReservationState.StartOnly || (userAuth == ClientAuthLevel.ToolEngineer && DateTime.Now < rsv.BeginDateTime && rsv.ActualBeginDateTime == null && state != ReservationState.Repair))
+            //if (state == ReservationState.Editable || state == ReservationState.StartOrDelete || state == ReservationState.StartOnly || (userAuth == ClientAuthLevel.ToolEngineer && DateTime.Now < rsv.BeginDateTime && rsv.ActualBeginDateTime == null && state != ReservationState.Repair))
+            // [2020-09-18 jg] StartOnly should not allow delete and NotInLab should allow delete
+            if (CanDeleteReservation(state, args, now))
             {
                 var hypDelete = new HyperLink
                 {
@@ -86,7 +91,9 @@ namespace LNF.Web.Scheduler
             }
 
             // 2011/04/03 Modify button
-            if (state == ReservationState.Editable || state == ReservationState.StartOrDelete || state == ReservationState.StartOnly)
+            // [2020-09-18 jg] StartOnly should not allow modification (also NotInLab should not allow modification)
+            //if (state == ReservationState.Editable || state == ReservationState.StartOrDelete || state == ReservationState.StartOnly)
+            if (CanModifyReservation(state, args, now))
             {
                 var hypModify = new HyperLink
                 {
@@ -107,6 +114,46 @@ namespace LNF.Web.Scheduler
             rsvCell.Controls.Add(div);
 
             return state;
+        }
+
+        public static bool CanDeleteReservation(ReservationState state, ReservationStateArgs args, DateTime now)
+        {
+            if (state == ReservationState.StartOrDelete)
+                return true;
+
+            if (state == ReservationState.Editable) // [2020-09-29 jg] invitee can also delete
+                return true;
+
+            // tool engineer override
+            if (ToolEngineerCanOverride(state, args, now))
+                return true;
+
+            return false;
+        }
+
+        public static bool CanModifyReservation(ReservationState state, ReservationStateArgs args, DateTime now)
+        {
+            // [2020-09-29 jg] Editable means Delete or Modify so we must check here for isReserver.
+
+            if (state == ReservationState.StartOrDelete)
+                return true;
+
+            if (state == ReservationState.Editable && args.IsReserver) // [2020-09-29 jg] only reserver can modify
+                return true;
+
+            // tool engineer override
+            if (ToolEngineerCanOverride(state, args, now))
+                return true;
+
+            return false;
+        }
+
+        public static bool ToolEngineerCanOverride(ReservationState state, ReservationStateArgs args, DateTime now)
+        {
+            return args.IsToolEngineer
+                && now < args.BeginDateTime
+                && args.ActualBeginDateTime == null
+                && state != ReservationState.Repair;
         }
 
         public static void GetMultipleReservationCell(CustomTableCell rsvCell, IEnumerable<IReservation> reservs)
@@ -137,16 +184,16 @@ namespace LNF.Web.Scheduler
         /// <summary>
         /// Loads Reservation Billing Account Dropdownlist
         /// </summary>
-        public static bool LoadAccounts(List<ClientAccountInfo> accts, ActivityAccountType acctType, IClient client, IEnumerable<IReservationInvitee> invitees, string username)
+        public bool LoadAccounts(List<IClientAccount> accts, ActivityAccountType acctType, IClient client, IEnumerable<Invitee> invitees, string username)
         {
             bool mustAddInvitee = false;
 
             //IList<ClientAccountItem> activeAccounts = new List<ClientAccountItem>();
-            IEnumerable<ClientAccountInfo> activeAccounts = new List<ClientAccountInfo>();
+            IEnumerable<IClientAccount> activeAccounts = new List<IClientAccount>();
 
             if (acctType == ActivityAccountType.Reserver || acctType == ActivityAccountType.Both)
                 /// Loads reserver's accounts
-                activeAccounts = DA.Current.Query<ClientAccountInfo>().Where(x => x.ClientAccountActive && x.ClientOrgActive && x.UserName == username).ToList(); //CacheManager.Current.GetClientAccounts(clientId).ToList();
+                activeAccounts = Provider.Data.Client.GetActiveClientAccounts(username);
 
             if (acctType == ActivityAccountType.Invitee || acctType == ActivityAccountType.Both)
             {
@@ -159,7 +206,7 @@ namespace LNF.Web.Scheduler
                     if (invited.Count > 0)
                     {
                         var inviteeClientIds = invited.Select(x => x.InviteeID).ToArray();
-                        activeAccounts = DA.Current.Query<ClientAccountInfo>().Where(x => x.ClientAccountActive && x.ClientOrgActive && inviteeClientIds.Contains(x.ClientID)).ToList();
+                        activeAccounts = Provider.Data.Client.GetActiveClientAccounts(inviteeClientIds);
                     }
                     else
                         mustAddInvitee = true;
@@ -173,7 +220,7 @@ namespace LNF.Web.Scheduler
             return mustAddInvitee;
         }
 
-        public static string GetReservationViewReturnUrl(ViewType view, bool confirm = false, int reservationId = 0)
+        public string GetReservationViewReturnUrl(ViewType view, bool confirm = false, int reservationId = 0)
         {
             string result;
             string separator;
@@ -213,7 +260,7 @@ namespace LNF.Web.Scheduler
             return result;
         }
 
-        public static LocationPathInfo GetLocationPath(HttpContextBase context)
+        public LocationPathInfo GetLocationPath(HttpContextBase context)
         {
             LocationPathInfo result;
 
@@ -230,7 +277,7 @@ namespace LNF.Web.Scheduler
                     result = LocationPathInfo.Create(labId, loc.LabLocationID);
             }
             else
-            { 
+            {
                 result = LocationPathInfo.Parse(context.Request.QueryString["LocationPath"]);
             }
 
@@ -266,6 +313,72 @@ namespace LNF.Web.Scheduler
             separator = "&";
 
             return result;
+        }
+
+        public bool ShowLabCleanWarning(DateTime beginDateTime, DateTime endDateTime)
+        {
+            bool showWarning;
+
+            string setting = ConfigurationManager.AppSettings["ShowLabCleanWarning"];
+
+            if (string.IsNullOrEmpty(setting))
+                showWarning = true;
+            else
+                bool.TryParse(setting, out showWarning);
+
+            if (showWarning)
+            {
+                LabCleanConfiguration config = LabCleanConfiguration.GetCurrentConfiguration();
+
+                DateTime sdate = beginDateTime.Date;
+                DateTime edate = endDateTime.Date.AddDays(1);
+                DateTime currentDate = sdate;
+
+                while (currentDate < edate)
+                {
+                    DateTime yesterday = currentDate.AddDays(-1); //need this to determine lab clean days that are moved by holidays
+
+                    DateTime labCleanBegin;
+                    DateTime labCleanEnd;
+
+                    foreach (var item in config.Items)
+                    {
+                        if (item.Active)
+                        {
+                            // current day is not a holiday and is included
+                            // or previous day is a holiday and is included
+                            bool isLabCleanDay =
+                                (!Provider.Data.Holiday.IsHoliday(currentDate) && item.Days.Contains((int)currentDate.DayOfWeek)) //we have a standard non-holiday lab clean day
+                                || (Provider.Data.Holiday.IsHoliday(yesterday) && item.Days.Contains((int)yesterday.DayOfWeek)); //we have a non standard lab clean day due to holiday
+
+                            if (isLabCleanDay)
+                            {
+                                // Sandrine wants a 45 minute padding after the labclean end time as of 2018-10-22 - jg
+
+                                var sPad = TimeSpan.FromMinutes(item.StartPadding);
+                                var ePad = TimeSpan.FromMinutes(item.EndPadding);
+
+                                labCleanBegin = currentDate
+                                    .Add(item.StartTime) //e.g. 08:30
+                                    .Subtract(sPad); //e.g. 10 (minutes)
+
+                                labCleanEnd = currentDate
+                                    .Add(item.EndTime) //e.g. 09:30
+                                    .Add(ePad); //e.g. 45 (minutes)
+
+                                if (beginDateTime < labCleanEnd && endDateTime > labCleanBegin)
+                                {
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+
+                    currentDate = currentDate.AddDays(1);
+                }
+            }
+
+            return false;
         }
     }
 }

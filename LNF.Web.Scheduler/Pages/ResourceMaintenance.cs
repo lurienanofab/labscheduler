@@ -1,6 +1,4 @@
-﻿using LNF.Impl.Repository.Scheduler;
-using LNF.Repository;
-using LNF.Scheduler;
+﻿using LNF.Scheduler;
 using LNF.Web.Scheduler.Content;
 using System;
 using System.Web.UI.HtmlControls;
@@ -54,13 +52,13 @@ namespace LNF.Web.Scheduler.Pages
             litRepairEndMessage.Text = string.Empty;
         }
 
-        private TimeSpan GetDuration(Reservation rsv)
+        private TimeSpan GetDuration(IReservation rip)
         {
-            TimeSpan result = new TimeSpan(0, 0, Convert.ToInt32(rsv.EndDateTime.Subtract(DateTime.Now).TotalSeconds));
+            TimeSpan result = new TimeSpan(0, 0, Convert.ToInt32(rip.EndDateTime.Subtract(DateTime.Now).TotalSeconds));
             return result;
         }
 
-        private void SetRepairBeginDateTime(Reservation rsv)
+        private void SetRepairBeginDateTime(IReservation rsv)
         {
             divRepairBeginDateTime.Visible = true;
             litRepairBeginMessage.Text = string.Format("<div>This repair activity started at <b>{0}</b>.</div>", rsv.ActualBeginDateTime);
@@ -89,12 +87,13 @@ namespace LNF.Web.Scheduler.Pages
             else if (res.HasState(ResourceState.Offline))
             {
                 // Tool state is offline
-                var rip = Reservations.GetRepairReservationInProgress(Helper.GetResourceTreeItemCollection().GetResourceTree(res.ResourceID));
+                var resource = Helper.GetResourceTreeItemCollection().GetResourceTree(res.ResourceID);
+                var rip = Reservations.GetRepairInProgress(resource);
 
-                Reservation rsv = null;
+                IReservation rsv = null;
 
                 if (rip != null)
-                    rsv = DA.Current.Single<Reservation>(rip.ReservationID);
+                    rsv = Provider.Scheduler.Reservation.GetReservation(rip.ReservationID);
 
                 if (rsv != null)
                 {
@@ -180,7 +179,7 @@ namespace LNF.Web.Scheduler.Pages
                 {
                     case "start":
                         var state = GetSelectedState();
-                        repair = util.StartRepair(ContextBase, GetSelectedState(), GetRepairActualBeginDateTime(state), GetRepairActualEndDateTime(state), txtNotes.Text);
+                        repair = util.StartRepair(ContextBase, state, GetRepairActualBeginDateTime(state), GetRepairActualEndDateTime(state), txtNotes.Text);
                         break;
                     case "update":
                         repair = util.UpdateRepair(GetRepairActualBeginDateTime(res.State), GetRepairActualEndDateTime(res.State), txtNotes.Text);

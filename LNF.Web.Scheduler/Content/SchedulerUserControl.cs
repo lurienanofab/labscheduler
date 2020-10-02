@@ -6,7 +6,7 @@ namespace LNF.Web.Scheduler.Content
 {
     public class SchedulerUserControl : LNFUserControl
     {
-        public ContextHelper Helper => SchedulerPage.Helper;
+        public SchedulerContextHelper Helper => SchedulerPage.Helper;
         public SchedulerMasterPage SchedulerMaster => SchedulerPage.SchedulerMaster;
         
         public SchedulerPage SchedulerPage

@@ -42,7 +42,7 @@ namespace LNF.Web.Scheduler.Pages
                 Response.Redirect("~/CacheUtility.aspx");
             }
 
-            lblClientCount.Text = ServiceProvider.Current.Data.Client.GetActiveClients().Count().ToString();
+            lblClientCount.Text = Provider.Data.Client.GetActiveClients().Count().ToString();
             lblOrgCount.Text = CacheManager.Current.Orgs().Count().ToString();
             lblAccountCount.Text = CacheManager.Current.Accounts().Count().ToString();
             lblClientAccountCount.Text = "n/a"; //CacheManager.Current.ClientAccounts().Count().ToString();
@@ -190,7 +190,7 @@ namespace LNF.Web.Scheduler.Pages
                     {
                         case "Clients":
                             CacheManager.Current.RemoveValue("Clients");
-                            Response.Write(JsonConvert.SerializeObject(new { command, key, count = ServiceProvider.Current.Data.Client.GetActiveClients().Count() }));
+                            Response.Write(JsonConvert.SerializeObject(new { command, key, count = Provider.Data.Client.GetActiveClients().Count() }));
                             break;
                         case "Orgs":
                             CacheManager.Current.RemoveValue("Orgs");
@@ -238,7 +238,7 @@ namespace LNF.Web.Scheduler.Pages
                 {
                     Response.Write(JsonConvert.SerializeObject(new
                     {
-                        clients = ServiceProvider.Current.Data.Client.GetActiveClients().Count(),
+                        clients = Provider.Data.Client.GetActiveClients().Count(),
                         orgs = CacheManager.Current.Orgs().Count(),
                         accounts = CacheManager.Current.Accounts().Count(),
                         clientAccounts = -1, //CacheManager.Current.ClientAccounts().Count(),

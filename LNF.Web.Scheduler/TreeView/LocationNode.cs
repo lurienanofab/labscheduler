@@ -1,13 +1,18 @@
 ﻿using LNF.Scheduler;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Web;
 
 namespace LNF.Web.Scheduler.TreeView
 {
+    public static class LocationNodeUtility
+    {
+        public static string GetLocationNodeUrl(int labId, int labLocationId, DateTime selectedDate)
+        {
+            var locationPath = LocationPathInfo.Create(labId, labLocationId);
+            return $"~/LabLocation.aspx?LocationPath={locationPath.UrlEncode()}&Date={selectedDate:yyyy-MM-dd}";
+        }
+    }
+
     public class LocationNode : TreeViewNode<ILabLocation>
     {
         public LocationNode(SchedulerResourceTreeView view, ILabLocation item, INode parent) : base(view, item, parent)
@@ -17,8 +22,7 @@ namespace LNF.Web.Scheduler.TreeView
 
         public override string GetUrl(HttpContextBase context)
         {
-            var locationPath = LocationPathInfo.Create(Parent.ID, ID);
-            return $"~/LabLocation.aspx?LocationPath={locationPath.UrlEncode()}";
+            return LocationNodeUtility.GetLocationNodeUrl(Parent.ID, ID, context.Request.SelectedDate());
         }
 
         public override bool IsExpanded(string path)

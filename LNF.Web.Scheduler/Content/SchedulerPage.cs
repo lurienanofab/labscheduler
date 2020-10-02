@@ -7,7 +7,7 @@ namespace LNF.Web.Scheduler.Content
 {
     public abstract class SchedulerPage : LNFPage
     {
-        public ContextHelper Helper => NewHelper();
+        public SchedulerContextHelper Helper => NewHelper();
 
         public SchedulerMasterPage SchedulerMaster
         {
@@ -74,9 +74,9 @@ namespace LNF.Web.Scheduler.Content
             Response.Redirect(string.Format("~/{0}?Date={1:yyyy-MM-dd}&ReservationID={2}", page, ContextBase.Request.SelectedDate(), reservationId));
         }
 
-        private ContextHelper NewHelper()
+        private SchedulerContextHelper NewHelper()
         {
-            return new ContextHelper(ContextBase, Provider);
+            return new SchedulerContextHelper(ContextBase, Provider);
         }
     }
 }

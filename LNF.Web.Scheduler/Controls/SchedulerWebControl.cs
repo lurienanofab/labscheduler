@@ -24,7 +24,7 @@ namespace LNF.Web.Scheduler.Controls
             }
         }
 
-        public ContextHelper Helper => SchedulerPage.Helper;
+        public SchedulerContextHelper Helper => SchedulerPage.Helper;
 
         public IProvider Provider => Helper.Provider;
 

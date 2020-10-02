@@ -18,6 +18,15 @@ namespace LNF.Web.Scheduler.Controls
 
         public SchedulerResourceTreeView View { get; set; }
 
+        private PathInfo _currentPath = PathInfo.Empty;
+
+        public PathInfo GetCurrentPath()
+        {
+            if (_currentPath.IsEmpty() && !string.IsNullOrEmpty(SelectedPath))
+                _currentPath = PathInfo.Parse(SelectedPath);
+            return _currentPath;
+        }
+
         public override string SelectedPath
         {
             get
@@ -304,7 +313,7 @@ namespace LNF.Web.Scheduler.Controls
             int procTechId = 0;
             int resourceId = 0;
 
-            var sp = PathInfo.Parse(SelectedPath);
+            var sp = GetCurrentPath();
 
             if (sp.IsEmpty())
             {

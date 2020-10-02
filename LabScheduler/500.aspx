@@ -21,6 +21,7 @@
             <div class="mb-3">
                 [<asp:HyperLink runat="server" NavigateUrl="~/">Home</asp:HyperLink>] [<a href="/login">Logout</a>]
             </div>
+
             <asp:Repeater runat="server" ID="rptErrors">
                 <ItemTemplate>
                     <div class="alert alert-danger" role="alert">
@@ -29,6 +30,17 @@
                             <hr />
                             <pre><%#Eval("StackTrace")%></pre>
                         </asp:PlaceHolder>
+                    </div>
+                </ItemTemplate>
+            </asp:Repeater>
+
+            <asp:Repeater runat="server" ID="rptSessionLog">
+                <HeaderTemplate>
+                    <hr />
+                </HeaderTemplate>
+                <ItemTemplate>
+                    <div class="log-message">
+                        <%#Eval("Message")%>
                     </div>
                 </ItemTemplate>
             </asp:Repeater>

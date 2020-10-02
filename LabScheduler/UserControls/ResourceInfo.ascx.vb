@@ -8,11 +8,15 @@ Namespace UserControls
     Public Class ResourceInfo
         Inherits SchedulerUserControl
 
+        Private _selectedPath As PathInfo
+
         Protected Sub Page_Load(sender As Object, e As EventArgs) Handles Me.Load
             Dim startTime As Date = Date.Now
 
+            _selectedPath = ContextBase.Request.SelectedPath()
+
             If Not Page.IsPostBack Then
-                If ContextBase.Request.SelectedPath().ResourceID = 0 Then
+                If _selectedPath.ResourceID = 0 Then
                     Visible = False
                     Return
                 End If
@@ -21,7 +25,7 @@ Namespace UserControls
                 Dim res As IResource = Nothing
 
                 Try
-                    res = Helper.GetCurrentResource()
+                    res = Helper.GetResource(_selectedPath)
                     If res Is Nothing Then
                         Return
                     End If
@@ -67,8 +71,10 @@ Namespace UserControls
         End Sub
 
         Private Function GetToolEngineers() As List(Of ToolEngineerItem)
+            Dim selectedDate As Date = ContextBase.Request.SelectedDate()
+
             Dim result As List(Of ToolEngineerItem) = New List(Of ToolEngineerItem)()
-            Dim toolEngineers As IList(Of IResourceClient) = CacheManager.Current.ToolEngineers(ContextBase.Request.SelectedPath().ResourceID).ToList()
+            Dim toolEngineers As IList(Of IResourceClient) = CacheManager.Current.ToolEngineers(_selectedPath.ResourceID).ToList()
 
             If String.IsNullOrEmpty(hidResourceID.Value) OrElse toolEngineers Is Nothing OrElse toolEngineers.Count = 0 Then
                 'tdEngineers.InnerText = "Unknown"
@@ -76,8 +82,9 @@ Namespace UserControls
                 'Sometimes dtEngineers contains every tool engineer. This happens when we are in the
                 'Resources Administration tab. This means we should always select the engineers for
                 'the current resource.
+
                 For Each te As IResourceClient In toolEngineers
-                    Dim item As New ToolEngineerItem(ContextBase) With {
+                    Dim item As New ToolEngineerItem(_selectedPath, selectedDate) With {
                         .ClientID = te.ClientID,
                         .DisplayName = te.DisplayName,
                         .Email = te.Email
@@ -112,19 +119,20 @@ Namespace UserControls
     End Class
 
     Public Class ToolEngineerItem
-        Private _context As HttpContextBase
-
         Public Property ClientID As Integer
         Public Property DisplayName As String
         Public Property Email As String
+        Public Property SelectedPath As PathInfo
+        Public Property SelectedDate As Date
 
-        Public Sub New(context As HttpContextBase)
-            _context = context
+        Public Sub New(selectedPath As PathInfo, selectedDate As Date)
+            Me.SelectedPath = selectedPath
+            Me.SelectedDate = selectedDate
         End Sub
 
         Public ReadOnly Property Url As String
             Get
-                Return VirtualPathUtility.ToAbsolute(String.Format("~/Contact.aspx?ClientID={0}&Path={1}&Date={2:yyyy-MM-dd}", ClientID, _context.Request.SelectedPath(), _context.Request.SelectedDate()))
+                Return VirtualPathUtility.ToAbsolute(String.Format("~/Contact.aspx?ClientID={0}&Path={1}&Date={2:yyyy-MM-dd}", ClientID, SelectedPath, SelectedDate))
             End Get
         End Property
     End Class

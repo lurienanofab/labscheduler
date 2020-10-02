@@ -51,12 +51,39 @@ Namespace Pages
         Protected WithEvents imgPicture As Global.System.Web.UI.WebControls.Image
         
         '''<summary>
-        '''rptResources control.
+        '''phResourcesByProcTech control.
         '''</summary>
         '''<remarks>
         '''Auto-generated field.
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
-        Protected WithEvents rptResources As Global.System.Web.UI.WebControls.Repeater
+        Protected WithEvents phResourcesByProcTech As Global.System.Web.UI.WebControls.PlaceHolder
+        
+        '''<summary>
+        '''rptResourcesByProcTech control.
+        '''</summary>
+        '''<remarks>
+        '''Auto-generated field.
+        '''To modify move field declaration from designer file to code-behind file.
+        '''</remarks>
+        Protected WithEvents rptResourcesByProcTech As Global.System.Web.UI.WebControls.Repeater
+        
+        '''<summary>
+        '''phResourcesByLocation control.
+        '''</summary>
+        '''<remarks>
+        '''Auto-generated field.
+        '''To modify move field declaration from designer file to code-behind file.
+        '''</remarks>
+        Protected WithEvents phResourcesByLocation As Global.System.Web.UI.WebControls.PlaceHolder
+        
+        '''<summary>
+        '''rptResourcesByLocation control.
+        '''</summary>
+        '''<remarks>
+        '''Auto-generated field.
+        '''To modify move field declaration from designer file to code-behind file.
+        '''</remarks>
+        Protected WithEvents rptResourcesByLocation As Global.System.Web.UI.WebControls.Repeater
     End Class
 End Namespace

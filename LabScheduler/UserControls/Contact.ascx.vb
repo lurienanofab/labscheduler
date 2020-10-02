@@ -190,11 +190,11 @@ Namespace UserControls
         Private Sub LoadReservations()
             Dim recentRsv As IEnumerable(Of IReservation) = GetRecentReservations(GetResourceID())
             ddlReservations.Items.Clear()
-            ddlReservations.Items.Add(New WebControls.ListItem("None"))
-            For Each rsv As Scheduler.Reservation In recentRsv
-                Dim newItem As New WebControls.ListItem With {
+            ddlReservations.Items.Add(New ListItem("None"))
+            For Each rsv As IReservation In recentRsv
+                Dim newItem As New ListItem With {
                     .Value = rsv.ReservationID.ToString(),
-                    .Text = rsv.BeginDateTime.ToString() + " - " + rsv.EndDateTime.ToString() + " Reserved by " + rsv.Client.DisplayName
+                    .Text = rsv.BeginDateTime.ToString() + " - " + rsv.EndDateTime.ToString() + " Reserved by " + rsv.DisplayName
                 }
 
                 ddlReservations.Items.Add(newItem)

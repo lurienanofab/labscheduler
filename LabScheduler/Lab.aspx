@@ -22,28 +22,54 @@
     </div>
 
     <div class="table-container" style="margin-top: 10px; visibility: hidden;">
-        <table class="resources datatable table table-striped">
-            <thead>
-                <tr>
-                    <th>Process Tech</th>
-                    <th>Resource</th>
-                </tr>
-            </thead>
-            <tbody>
-                <asp:Repeater runat="server" ID="rptResources">
-                    <ItemTemplate>
-                        <tr>
-                            <td>
-                                <a href='<%#Eval("ProcessTechUrl")%>'><%#Eval("ProcessTechName")%></a>
-                            </td>
-                            <td>
-                                <a href='<%#Eval("ResourceUrl")%>'><%#String.Format("[{0}] {1}", Convert.ToInt32(Eval("ResourceID")).ToString("000000"), Eval("ResourceName"))%></a>
-                            </td>
-                        </tr>
-                    </ItemTemplate>
-                </asp:Repeater>
-            </tbody>
-        </table>
+        <asp:PlaceHolder runat="server" ID="phResourcesByProcTech">
+            <table class="resources datatable table table-striped">
+                <thead>
+                    <tr>
+                        <th>Process Tech</th>
+                        <th>Resource</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <asp:Repeater runat="server" ID="rptResourcesByProcTech">
+                        <ItemTemplate>
+                            <tr>
+                                <td>
+                                    <a href='<%#Eval("ProcessTechUrl")%>'><%#Eval("ProcessTechName")%></a>
+                                </td>
+                                <td>
+                                    <a href='<%#Eval("ResourceUrl")%>'><%#String.Format("[{0}] {1}", Convert.ToInt32(Eval("ResourceID")).ToString("000000"), Eval("ResourceName"))%></a>
+                                </td>
+                            </tr>
+                        </ItemTemplate>
+                    </asp:Repeater>
+                </tbody>
+            </table>
+        </asp:PlaceHolder>
+        <asp:PlaceHolder runat="server" ID="phResourcesByLocation" Visible="false">
+            <table class="resources datatable table table-striped">
+                <thead>
+                    <tr>
+                        <th>Location</th>
+                        <th>Resource</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <asp:Repeater runat="server" ID="rptResourcesByLocation">
+                        <ItemTemplate>
+                            <tr>
+                                <td>
+                                    <a href='<%#Eval("LocationUrl")%>'><%#Eval("LocationName")%></a>
+                                </td>
+                                <td>
+                                    <a href='<%#Eval("ResourceUrl")%>'><%#String.Format("[{0}] {1}", Convert.ToInt32(Eval("ResourceID")).ToString("000000"), Eval("ResourceName"))%></a>
+                                </td>
+                            </tr>
+                        </ItemTemplate>
+                    </asp:Repeater>
+                </tbody>
+            </table>
+        </asp:PlaceHolder>
     </div>
 </asp:Content>
 

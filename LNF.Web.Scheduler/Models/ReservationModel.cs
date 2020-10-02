@@ -13,12 +13,11 @@ namespace LNF.Web.Scheduler.Models
 {
     public class ReservationModel
     {
-        private readonly HttpContextBase _context;
         private IEnumerable<IReservation> _overwriteReservations;
 
         public DateTime Now { get; }
-        public IProvider Provider { get; }
-        public IClient CurrentUser => GetContextHelper().CurrentUser();
+        public SchedulerContextHelper Helper { get; }
+        public IClient CurrentUser => Helper.CurrentUser();
         public IReservation Reservation { get; }
         public IResource Resource { get; }
 
@@ -34,29 +33,34 @@ namespace LNF.Web.Scheduler.Models
         public string StartTimeHourSelectedValue { get; set; }
         public string StartTimeMinuteSelectedValue { get; set; }
 
-        public ReservationModel(HttpContextBase context, IProvider provider, DateTime now)
+        public ReservationModel(SchedulerContextHelper helper, DateTime now)
         {
-            _context = context;
-            Provider = provider;
+            Helper = helper;
             Now = now;
 
-            if (!string.IsNullOrEmpty(context.Request.QueryString["ReservationID"]))
+            if (!string.IsNullOrEmpty(helper.Context.Request.QueryString["ReservationID"]))
             {
-                if (int.TryParse(context.Request.QueryString["ReservationID"], out int reservationId))
+                if (int.TryParse(helper.Context.Request.QueryString["ReservationID"], out int reservationId))
                 {
-                    Reservation = provider.Scheduler.Reservation.GetReservation(reservationId);
-                    ActivityID = Reservation.ActivityID;
-                    AccountID = Reservation.AccountID;
-                    RecurrenceID = Reservation.RecurrenceID;
-                    Notes = Reservation.Notes;
-                    AutoEnd = Reservation.AutoEnd;
-                    KeepAlive = Reservation.KeepAlive;
-                    Resource = provider.Scheduler.Resource.GetResource(Reservation.ResourceID);
+                    var rsv = helper.Provider.Scheduler.Reservation.GetReservation(reservationId);
+                    var res = helper.Provider.Scheduler.Resource.GetResource(rsv.ResourceID);
+
+                    Reservation = rsv;
+                    ActivityID = rsv.ActivityID;
+                    AccountID = rsv.AccountID;
+                    RecurrenceID = rsv.RecurrenceID;
+                    Notes = rsv.Notes;
+                    AutoEnd = rsv.AutoEnd;
+                    KeepAlive = rsv.KeepAlive;
+                    Resource = res;
                 }
             }
 
             if (Resource == null)
-                Resource = provider.Scheduler.Resource.GetResource(context.Request.SelectedPath().ResourceID);                
+            {
+                var resourceId = helper.Context.Request.SelectedPath().ResourceID;
+                Resource = helper.Provider.Scheduler.Resource.GetResource(resourceId);
+            }
         }
 
         public IReservation CreateOrModifyReservation()
@@ -67,14 +71,18 @@ namespace LNF.Web.Scheduler.Models
 
         public IReservation CreateOrModifyReservation(ReservationDuration duration)
         {
-            _context.Session.Remove("ReservationProcessInfoJsonData");
+            var isCreating = IsCreating();
 
-            if (IsThereAlreadyAnotherReservation(duration))
+            Helper.AppendLog($"ReservationModel.CreateOrModifyReservation: isCreating = {isCreating}");
+
+            Helper.Context.Session.Remove("ReservationProcessInfoJsonData");
+
+            if (IsThereAlreadyAnotherReservation(duration, out string alert))
             {
-                throw new Exception("Another reservation has already been made for this time.");
+                throw new Exception(alert);
             }
 
-            _context.Session["ReservationProcessInfoJsonData"] = ReservationProcessInfoJson;
+            Helper.Context.Session["ReservationProcessInfoJsonData"] = ReservationProcessInfoJson;
 
             // this will be the result reservation - either a true new reservation when creating, a new reservation for modification, or the existing rsv when modifying non-duration data
             IReservation result = null;
@@ -83,17 +91,26 @@ namespace LNF.Web.Scheduler.Models
             OverwriteReservations();
 
             var data = GetReservationData(duration);
-            var util = Reservations.Create(Provider, Now);
+            var util = Reservations.Create(Helper.Provider, Now);
 
-            if (Reservation == null)
+            if (isCreating)
                 result = util.CreateReservation(data);
             else
-                result = util.Modify(Reservation, data);
+                result = util.ModifyReservation(Reservation, data);
+
+            // Remove session data to avoid accidently reusing on another reservation. It also gets removed when Reservation.aspx loads
+            // but there have been cases where ReservationProcessInfo from one reservation mysteriously shows up on another reservation.
+            // Note that the session data is retrieved when GetReservationData is called above.
+            Helper.Context.Session.Remove("ReservationProcessInfos");
+            Helper.Context.Session.Remove("ReservationInvitees");
+            Helper.Context.Session.Remove("AvailableInvitees");
+
+            Helper.AppendLog($"ReservationModel.CreateOrModifyReservation: result.ReservationID = {result.ReservationID}");
 
             return result;
         }
 
-        public bool IsThereAlreadyAnotherReservation(ReservationDuration rd)
+        public bool IsThereAlreadyAnotherReservation(ReservationDuration rd, out string alert)
         {
             // This is called twice: once after btnSubmit is clicked (before the confirmation message is shown) and again 
             // after btnConfirmYes is clicked (immediately before creating the reservation).
@@ -101,42 +118,86 @@ namespace LNF.Web.Scheduler.Models
             // Check for other reservations made during this time
             // Select all reservations for this resource during the time of current reservation
 
+            if (Helper.Provider == null)
+                throw new Exception("Provider is null.");
+
+            if (Resource == null)
+                throw new Exception("Resource is null.");
+
+            int reservationId = 0;
+
+            if (Reservation != null)
+                reservationId = Reservation.ReservationID;
+
+            Helper.AppendLog($"ReservationModel.IsThereAlreadyAnotherReservation: Reservation is {(Reservation == null ? "null" : "not null")}, reservationId = {reservationId}");
+
             var authLevel = GetCurrentAuthLevel();
 
-            var otherReservations = Provider.Scheduler.Reservation.SelectOverwritable(Resource.ResourceID, rd.BeginDateTime, rd.EndDateTime);
+            var otherReservations = Helper.Provider.Scheduler.Reservation.SelectOverwritable(Resource.ResourceID, rd.BeginDateTime, rd.EndDateTime) ?? new List<IReservation>();
 
-            if (otherReservations.Count() > 0)
+            var count = otherReservations.Count();
+
+            Helper.AppendLog($"ReservationModel.IsThereAlreadyAnotherReservation: count = {count}");
+
+            if (count > 0)
             {
-                if (!(otherReservations.Count() == 1 && otherReservations.ElementAt(0).ReservationID == Reservation.ReservationID))
+                bool isSameReservation;
+
+                if (count == 1)
+                {
+                    var other = otherReservations.First();
+                    isSameReservation = other.ReservationID == reservationId;
+                }
+                else
+                {
+                    isSameReservation = false;
+                }
+
+                Helper.AppendLog($"ReservationModel.IsThereAlreadyAnotherReservation: isSameReservation = {isSameReservation}, authLevel = {authLevel}");
+
+                if (!isSameReservation)
                 {
                     if (authLevel == ClientAuthLevel.ToolEngineer)
+                    {
                         _overwriteReservations = otherReservations;
+                    }
                     else
+                    {
+                        int[] ids = otherReservations.Select(x => x.ReservationID).ToArray();
+                        string idList = string.Join(", ", ids);
+                        alert = $"Cannot {(IsCreating() ? "create" : "modify")}. Another reservation has already been made for this time. [ReservationID: {reservationId}, Conflicts: {idList}]";
                         return true;
+                    }
                 }
             }
 
+            alert = string.Empty;
             return false;
         }
 
         public void OverwriteReservations()
         {
+            var reservationId = Reservation == null ? 0 : Reservation.ReservationID;
+
             if (_overwriteReservations != null)
             {
                 foreach (var rsv in _overwriteReservations)
                 {
-                    // Delete Reservation
-                    Provider.Scheduler.Reservation.CancelReservation(rsv.ReservationID, CurrentUser.ClientID);
+                    if (rsv.ReservationID != reservationId)
+                    {
+                        // Delete Reservation
+                        Helper.Provider.Scheduler.Reservation.CancelReservation(rsv.ReservationID, CurrentUser.ClientID);
 
-                    // Send email to reserver informing them that their reservation has been canceled
-                    Provider.Scheduler.Email.EmailOnToolEngDelete(rsv, CurrentUser, CurrentUser.ClientID);
+                        // Send email to reserver informing them that their reservation has been canceled
+                        Helper.Provider.Scheduler.Email.EmailOnToolEngDelete(rsv, CurrentUser, CurrentUser.ClientID);
+                    }
                 }
             }
         }
 
         public ReservationData GetReservationData(ReservationDuration rd)
         {
-            return new ReservationData(GetReservationProcessInfos(), GetReservationInvitees())
+            return new ReservationData(GetReservationProcessInfos(), GetInvitees())
             {
                 ClientID = CurrentUser.ClientID,
                 ResourceID = Resource.ResourceID,
@@ -150,37 +211,92 @@ namespace LNF.Web.Scheduler.Models
             };
         }
 
-        public IEnumerable<IReservationInvitee> GetReservationInvitees()
+        public List<Invitee> GetInvitees()
         {
-            if (_context.Session["ReservationInvitees"] == null)
+            List<Invitee> result;
+
+            if (Helper.Context.Session["ReservationInvitees"] == null)
             {
                 var reservationId = Reservation == null ? 0 : Reservation.ReservationID;
-                var query = DA.Current.Query<ReservationInviteeInfo>().Where(x => x.ReservationID == reservationId);
-                _context.Session["ReservationInvitees"] = query.CreateModels<IReservationInvitee>().ToList();
-            }
 
-            var result = (List<IReservationInvitee>)_context.Session["ReservationInvitees"];
+                if (reservationId > 0)
+                    result = ReservationInvitees.Create(Helper.Provider).SelectInvitees(reservationId);
+                else
+                    result = new List<Invitee>();
+
+                Helper.Context.Session["ReservationInvitees"] = result;
+            }
+            else
+            {
+                result = (List<Invitee>)Helper.Context.Session["ReservationInvitees"];
+            }
 
             return result;
         }
 
-        public IEnumerable<IReservationProcessInfo> GetReservationProcessInfos()
+        public List<AvailableInvitee> GetAvailableInvitees()
         {
-            if (_context.Session["ReservationProcessInfos"] == null)
+            int reservationId;
+            int resourceId;
+            int clientId;
+            int activityId;
+            
+            if (Reservation != null)
             {
-                var reservationId = Reservation == null ? 0 : Reservation.ReservationID;
-                var query = DA.Current.Query<ReservationProcessInfo>().Where(x => x.Reservation.ReservationID == reservationId);
-                _context.Session["ReservationProcessInfos"] = query.CreateModels<IReservationProcessInfo>().ToList();
+                reservationId = Reservation.ReservationID;
+                resourceId = Reservation.ResourceID;
+                clientId = Reservation.ClientID;
+                activityId = Reservation.ActivityID;
+            }
+            else
+            {
+                reservationId = 0;
+                resourceId = Resource.ResourceID;
+                clientId = CurrentUser.ClientID;
+                activityId = Convert.ToInt32(ActivityID);
             }
 
-            var result = (List<IReservationProcessInfo>)_context.Session["ReservationProcessInfos"];
+            List<AvailableInvitee> result;
+
+            if (Helper.Context.Session["AvailableInvitees"] == null)
+            {
+                result = ReservationInvitees.Create(Helper.Provider).SelectAvailable(reservationId, resourceId, activityId, clientId);
+                Helper.Context.Session["AvailableInvitees"] = result;
+            }
+            else
+            {
+                result = (List<AvailableInvitee>)Helper.Context.Session["AvailableInvitees"];
+            }
+
+            return result;
+        }
+
+        public List<IReservationProcessInfo> GetReservationProcessInfos()
+        {
+            List<IReservationProcessInfo> result;
+
+            if (Helper.Context.Session["ReservationProcessInfos"] == null)
+            {
+                var reservationId = Reservation == null ? 0 : Reservation.ReservationID;
+
+                if (reservationId > 0)
+                    result = Helper.Provider.Scheduler.ProcessInfo.GetReservationProcessInfos(reservationId).ToList();
+                else
+                    result = new List<IReservationProcessInfo>();
+
+                Helper.Context.Session["ReservationProcessInfos"] = result;
+            }
+            else
+            {
+                result = (List<IReservationProcessInfo>)Helper.Context.Session["ReservationProcessInfos"];
+            }
 
             return result;
         }
 
         public ReservationDuration GetReservationDuration()
         {
-            var beginDateTime = _context.Request.SelectedDate().AddHours(Convert.ToInt32(StartTimeHourSelectedValue)).AddMinutes(Convert.ToInt32(StartTimeMinuteSelectedValue));
+            var beginDateTime = Helper.Context.Request.SelectedDate().AddHours(Convert.ToInt32(StartTimeHourSelectedValue)).AddMinutes(Convert.ToInt32(StartTimeMinuteSelectedValue));
             var duration = GetCurrentDurationMinutes();
             var result = new ReservationDuration(beginDateTime, TimeSpan.FromMinutes(duration));
             return result;
@@ -190,23 +306,23 @@ namespace LNF.Web.Scheduler.Models
         {
             string redirectUrl;
 
-            if (_context.Session["ReturnTo"] != null && !string.IsNullOrEmpty(_context.Session["ReturnTo"].ToString()))
-                redirectUrl = _context.Session["ReturnTo"].ToString();
+            if (Helper.Context.Session["ReturnTo"] != null && !string.IsNullOrEmpty(Helper.Context.Session["ReturnTo"].ToString()))
+                redirectUrl = Helper.Context.Session["ReturnTo"].ToString();
             else
             {
-                ViewType view = _context.GetCurrentViewType();
+                ViewType view = Helper.Context.GetCurrentViewType();
 
                 if (view == ViewType.UserView)
-                    redirectUrl = $"~/UserReservations.aspx?Date={_context.Request.SelectedDate():yyyy-MM-dd}";
+                    redirectUrl = $"~/UserReservations.aspx?Date={Helper.Context.Request.SelectedDate():yyyy-MM-dd}";
                 else if (view == ViewType.ProcessTechView)
                 {
                     // When we come from ProcessTech.aspx the full path is used (to avoid a null object error). When returning we just want the ProcessTech path.
-                    IProcessTech pt = GetContextHelper().GetCurrentProcessTech();
+                    IProcessTech pt = Helper.GetCurrentProcessTech();
                     PathInfo path = PathInfo.Create(pt);
-                    redirectUrl = $"~/ProcessTech.aspx?Path={path.UrlEncode()}&Date={_context.Request.SelectedDate():yyyy-MM-dd}";
+                    redirectUrl = $"~/ProcessTech.aspx?Path={path.UrlEncode()}&Date={Helper.Context.Request.SelectedDate():yyyy-MM-dd}";
                 }
                 else //ViewType.DayView OrElse Scheduler.ViewType.WeekView
-                    redirectUrl = $"~/ResourceDayWeek.aspx?Path={_context.Request.SelectedPath().UrlEncode()}&Date={_context.Request.SelectedDate():yyyy-MM-dd}";
+                    redirectUrl = $"~/ResourceDayWeek.aspx?Path={Helper.Context.Request.SelectedPath().UrlEncode()}&Date={Helper.Context.Request.SelectedDate():yyyy-MM-dd}";
             }
 
             //_context.Response.Redirect(redirectUrl, false);
@@ -249,7 +365,7 @@ namespace LNF.Web.Scheduler.Models
 
         public ClientAuthLevel GetCurrentAuthLevel()
         {
-            var resourceClients = GetContextHelper().GetResourceClients(Resource.ResourceID);
+            var resourceClients = Helper.GetResourceClients(Resource.ResourceID);
             return Reservations.GetAuthLevel(resourceClients, CurrentUser);
         }
 
@@ -259,9 +375,9 @@ namespace LNF.Web.Scheduler.Models
             return CacheManager.Current.GetActivity(ActivityID);
         }
 
-        public ContextHelper GetContextHelper()
+        private bool IsCreating()
         {
-            return new ContextHelper(_context, Provider);
+            return Reservation == null;
         }
     }
 }

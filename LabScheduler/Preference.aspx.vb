@@ -95,7 +95,7 @@ Namespace Pages
         Private Sub InitSettings()
             Dim clientId As Integer = CurrentUser.ClientID
 
-            Dim cs As IClientSetting = ServiceProvider.Current.Scheduler.ClientSetting.GetClientSettingOrDefault(clientId)
+            Dim cs As IClientSetting = Provider.Scheduler.ClientSetting.GetClientSettingOrDefault(clientId)
 
             ddlBuilding.ClearSelection()
             ddlLab.ClearSelection()
@@ -158,7 +158,7 @@ Namespace Pages
         End Sub
 
         Protected Sub SetAccountOrdering()
-            ServiceProvider.Current.Scheduler.ClientSetting.SetAccountOrdering(CurrentUser.ClientID, hidAccountsResult.Value)
+            Provider.Scheduler.ClientSetting.SetAccountOrdering(CurrentUser.ClientID, hidAccountsResult.Value)
         End Sub
 
         Protected Sub GetShowTreeviewImages()

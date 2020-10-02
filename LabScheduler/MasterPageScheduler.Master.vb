@@ -39,6 +39,8 @@ Namespace Pages
         Protected Sub Page_Load(ByVal sender As Object, ByVal e As EventArgs) Handles Me.Load
             Dim sw As Stopwatch = Stopwatch.StartNew()
 
+            CheckSession()
+
             If Not String.IsNullOrEmpty(Request.QueryString("error")) Then
                 Throw New Exception(Request.QueryString("error"))
             End If
@@ -96,5 +98,16 @@ Namespace Pages
 
             Return False
         End Function
+
+        Private Sub CheckSession()
+            If Session("UserName") IsNot Nothing Then
+                If Session("UserName").ToString() <> Page.User.Identity.Name Then
+                    Session.Clear()
+                    Session("UserName") = Page.User.Identity.Name
+                End If
+            Else
+                Session("UserName") = Page.User.Identity.Name
+            End If
+        End Sub
     End Class
 End Namespace

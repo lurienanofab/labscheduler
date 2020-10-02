@@ -2,6 +2,7 @@
 using LNF.Data;
 using LNF.PhysicalAccess;
 using LNF.Scheduler;
+using LNF.Web.Scheduler.Models;
 using LNF.Web.Scheduler.TreeView;
 using System;
 using System.Collections.Generic;
@@ -10,18 +11,9 @@ using System.Web;
 
 namespace LNF.Web.Scheduler
 {
-    public class ContextHelper
+    public class SchedulerContextHelper : ContextHelper
     {
-        public HttpContextBase Context { get; }
-        public IProvider Provider { get; }
-
-        public ContextHelper(HttpContextBase context, IProvider provider)
-        {
-            Context = context ?? throw new ArgumentNullException("context");
-            Provider = provider ?? throw new ArgumentNullException("provider");
-        }
-
-        public IClient CurrentUser() => Context.CurrentUser(Provider);
+        public SchedulerContextHelper(HttpContextBase context, IProvider provider) : base(context, provider) { }
 
         public IEnumerable<Badge> CurrentlyInLab()
         {
@@ -399,9 +391,18 @@ namespace LNF.Web.Scheduler
         public IResource GetCurrentResource()
         {
             var pathInfo = Context.Request.SelectedPath();
+            return GetResource(pathInfo);
+        }
 
-            if (pathInfo.ResourceID > 0)
-                return GetResourceTreeItemCollection().GetResource(pathInfo.ResourceID);
+        public IResource GetResource(PathInfo path)
+        {
+            return GetResource(path.ResourceID);
+        }
+
+        public IResource GetResource(int resourceId)
+        {
+            if (resourceId > 0)
+                return GetResourceTreeItemCollection().GetResource(resourceId);
             else
                 return null;
         }
@@ -434,9 +435,9 @@ namespace LNF.Web.Scheduler
 
     public static class Extensions
     {
-        public static ContextHelper ContextHelper(this HttpContextBase context, IProvider provider)
+        public static SchedulerContextHelper ContextHelper(this HttpContextBase context, IProvider provider)
         {
-            return new ContextHelper(context, provider);
+            return new SchedulerContextHelper(context, provider);
         }
 
         public static DateTime SelectedDate(this HttpRequestBase request)
@@ -484,37 +485,6 @@ namespace LNF.Web.Scheduler
         public static void SetWeekStartDate(this HttpContextBase context, DateTime value)
         {
             context.Session["WeekStartDate"] = value;
-        }
-
-        public static DateTime GetWeekStartDate(this HttpContextBase context)
-        {
-            if (context.Session["WeekStartDate"] == null)
-                context.Session["WeekStartDate"] = DateTime.Now.Date;
-
-            var result = Convert.ToDateTime(context.Session["WeekStartDate"]);
-
-            if (result < Reservations.MinReservationBeginDate)
-            {
-                if (!DateTime.TryParse(context.Request.QueryString["Date"], out result))
-                    result = DateTime.Now.Date;
-
-                context.Session["WeekStartDate"] = result;
-            }
-
-            return result;
-        }
-
-        public static IEnumerable<IReservationProcessInfo> ReservationProcessInfos(this HttpContextBase context)
-        {
-            if (context.Session["ReservationProcessInfos"] == null)
-                context.Session["ReservationProcessInfos"] = new List<IReservationProcessInfo>();
-
-            return (List<IReservationProcessInfo>)context.Session["ReservationProcessInfos"];
-        }
-
-        public static void ReservationProcessInfos(this HttpContextBase context, IEnumerable<IReservationProcessInfo> value)
-        {
-            context.Session["ReservationProcessInfos"] = value.ToList();
         }
     }
 }

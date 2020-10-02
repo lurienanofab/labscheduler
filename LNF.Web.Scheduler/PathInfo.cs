@@ -163,9 +163,9 @@ namespace LNF.Web.Scheduler
             return result;
         }
 
-        public static PathInfo Create(int resourceId)
+        public static PathInfo Create(IProvider provider, int resourceId)
         {
-            var res = ServiceProvider.Current.Scheduler.Resource.GetResource(resourceId);
+            var res = provider.Scheduler.Resource.GetResource(resourceId);
             return Create(res);
         }
 
@@ -203,7 +203,7 @@ namespace LNF.Web.Scheduler
             return result;
         }
 
-        public static PathInfo Create(ProcessTechItem pt)
+        public static PathInfo Create(IProcessTech pt)
         {
             PathInfo result = new PathInfo();
 
@@ -269,17 +269,17 @@ namespace LNF.Web.Scheduler
             string pathDelimiter = PathDelimiter;
             string result = string.Empty;
 
-            if (BuildingID == 0)
+            if (BuildingID == 0 && ResourceID == 0)
                 return result;
             else
                 result += BuildingID.ToString();
 
-            if (LabID == 0)
+            if (LabID == 0 && ResourceID == 0)
                 return result;
             else
                 result += pathDelimiter + LabID.ToString();
 
-            if (ProcessTechID == 0)
+            if (ProcessTechID == 0 && ResourceID == 0)
                 return result;
             else
                 result += pathDelimiter + ProcessTechID.ToString();

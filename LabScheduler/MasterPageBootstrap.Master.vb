@@ -25,7 +25,7 @@ Public Class MasterPageBootstrap
         If Not Page.IsPostBack Then
             If ShowMenu Then
                 ' load the page menu
-                _menu = New SiteMenu(CurrentUser, Nothing, ServiceProvider.Current.LoginUrl(), Request.IsSecureConnection)
+                _menu = New SiteMenu(CurrentUser, Nothing, Provider.LoginUrl(), Request.IsSecureConnection)
                 Dim parents As IList(Of IMenu) = _menu.Where(Function(x) x.MenuParentID = 0).ToList()
                 rptMenu.DataSource = parents
                 rptMenu.DataBind()

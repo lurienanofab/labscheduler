@@ -5,7 +5,7 @@
 <html>
 <head runat="server">
     <title>Resource - Client List</title>
-    <link rel="stylesheet" href="styles/main.css?v=20161220" />
+    <link rel="stylesheet" href="styles/main.css?v=20200708" />
     <style>
         .tbl {
             border-collapse: collapse;

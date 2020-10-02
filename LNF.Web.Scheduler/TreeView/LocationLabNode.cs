@@ -1,9 +1,6 @@
 ﻿using LNF.Scheduler;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Web;
 
 namespace LNF.Web.Scheduler.TreeView
@@ -20,8 +17,9 @@ namespace LNF.Web.Scheduler.TreeView
 
         public override string GetUrl(HttpContextBase context)
         {
-            PathInfo pathInfo = PathInfo.Create(Item.BuildingID, Item.LabID, 0, 0);
-            return $"~/Lab.aspx?View=locations&Path={context.Server.UrlEncode(Value)}&Date={context.Request.SelectedDate():yyyy-MM-dd}";
+            PathInfo path = PathInfo.Create(Item.BuildingID, ID, 0, 0);
+            LocationPathInfo locationPath = LocationPathInfo.Create(Item.LabID, 0);
+            return $"~/Lab.aspx?View=locations&LocationPath={locationPath.UrlEncode()}&Path={path.UrlEncode()}&Date={context.Request.SelectedDate():yyyy-MM-dd}";
         }
 
         public override bool IsExpanded(string path)

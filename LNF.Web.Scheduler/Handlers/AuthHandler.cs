@@ -7,6 +7,8 @@ namespace LNF.Web.Scheduler.Handlers
 {
     public class AuthHandler : IHttpHandler
     {
+        [Inject] public IProvider Provider { get; set; }
+
         public bool IsReusable => false;
 
         public void ProcessRequest(HttpContext context)
@@ -26,7 +28,7 @@ namespace LNF.Web.Scheduler.Handlers
 
         private IAuthorizationAccess Authorize(HttpContext context)
         {
-            var auth = ServiceProvider.Current.Authorization.Authorize(new Authorization.Credentials.ClientCredentials());
+            var auth = Provider.Authorization.Authorize(new Authorization.Credentials.ClientCredentials());
 
             var cookie = new HttpCookie("lnf_api_token")
             {

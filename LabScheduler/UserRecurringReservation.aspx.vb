@@ -56,6 +56,14 @@ Namespace Pages
         Protected Function GetEditUrl(item As RecurrenceItem) As String
             Return String.Format("~/UserRecurringReservationEdit.aspx?Date={0:yyyy-MM-dd}&RecurrenceID={1}", ContextBase.Request.SelectedDate(), item.RecurrenceID)
         End Function
+
+        Protected Function GetResourceUrl(item As RecurrenceItem) As String
+            Return item.GetResourceUrl(ContextBase, Provider)
+        End Function
+
+        Protected Function GetEndDateString(item As RecurrenceItem) As String
+            Return item.GetEndDateString()
+        End Function
     End Class
 
     Public Class RecurrenceItem
@@ -79,7 +87,7 @@ Namespace Pages
         End Function
 
         Public Function GetResourceUrl(context As HttpContextBase, provider As IProvider) As String
-            Dim helper As New ContextHelper(context, provider)
+            Dim helper As New SchedulerContextHelper(context, provider)
             Dim model As IResourceTree = helper.GetResourceTreeItemCollection().GetResourceTree(ResourceID)
             Return String.Format("~/ResourceDayWeek.aspx?Path={0}&Date={1:yyyy-MM-dd}", PathInfo.Create(model), context.Request.SelectedDate())
         End Function

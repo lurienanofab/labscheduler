@@ -11,7 +11,7 @@ Option Strict On
 Option Explicit On
 
 
-Partial Public Class _500
+Partial Public Class SessionLog
     
     '''<summary>
     '''form1 control.
@@ -21,15 +21,6 @@ Partial Public Class _500
     '''To modify move field declaration from designer file to code-behind file.
     '''</remarks>
     Protected WithEvents form1 As Global.System.Web.UI.HtmlControls.HtmlForm
-    
-    '''<summary>
-    '''rptErrors control.
-    '''</summary>
-    '''<remarks>
-    '''Auto-generated field.
-    '''To modify move field declaration from designer file to code-behind file.
-    '''</remarks>
-    Protected WithEvents rptErrors As Global.System.Web.UI.WebControls.Repeater
     
     '''<summary>
     '''rptSessionLog control.

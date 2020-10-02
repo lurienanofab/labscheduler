@@ -72,7 +72,7 @@ namespace LNF.Web.Scheduler
                 // Determine BeginDateTime for repair reservation
                 DateTime endDateTime;
 
-                var rip = Reservations.GetRepairReservationInProgress(Resource);
+                var rip = Reservations.GetRepairInProgress(Resource);
 
                 if (rip != null)
                 {
@@ -104,7 +104,7 @@ namespace LNF.Web.Scheduler
 
             if (Resource.HasState(ResourceState.Offline))
             {
-                var rip = Reservations.GetRepairReservationInProgress(Resource);
+                var rip = Reservations.GetRepairInProgress(Resource);
 
                 if (rip != null)
                 {

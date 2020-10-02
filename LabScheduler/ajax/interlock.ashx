@@ -5,15 +5,16 @@ using LNF.Control;
 using Newtonsoft.Json;
 using System;
 using System.ServiceModel;
-using System.Threading.Tasks;
 using System.Web;
 using System.Web.SessionState;
 
 namespace LabScheduler.Api
 {
-    public class Interlock : HttpTaskAsyncHandler, IReadOnlySessionState
+    public class Interlock : IHttpHandler, IReadOnlySessionState
     {
-        public override async Task ProcessRequestAsync(HttpContext context)
+        [Inject] public IProvider Provider { get; set; }
+
+        public void ProcessRequest(HttpContext context)
         {
             context.Response.ContentType = "text/plain";
 
@@ -21,13 +22,15 @@ namespace LabScheduler.Api
 
             object result = null;
 
+            var mgr = new InterlockManager(Provider);
+
             switch (command)
             {
                 case "get-state":
-                    result = await InterlockManager.GetState(int.Parse(context.Request["id"]));
+                    result = mgr.GetState(int.Parse(context.Request["id"]));
                     break;
                 case "set-state":
-                    result = await InterlockManager.SetState(int.Parse(context.Request["id"]), bool.Parse(context.Request["state"]));
+                    result = mgr.SetState(int.Parse(context.Request["id"]), bool.Parse(context.Request["state"]));
                     break;
                 case "":
                     throw new Exception("Missing parameter: command");
@@ -37,23 +40,33 @@ namespace LabScheduler.Api
 
             context.Response.Write(JsonConvert.SerializeObject(result));
         }
+
+        public bool IsReusable { get { return false; } }
     }
 
-    public static class InterlockManager
+    public class InterlockManager
     {
-        public static async Task<object> SetState(int resourceId, bool state)
+        private readonly IProvider _provider;
+
+        public IProvider Provider { get { return _provider; } }
+
+        public InterlockManager(IProvider provider)
+        {
+            _provider = provider;
+        }
+
+        public object SetState(int resourceId, bool state)
         {
             try
             {
-                var inst = ActionInstanceUtility.Find(ActionType.Interlock, resourceId);
+                var inst = ActionInstances.Find(ActionType.Interlock, resourceId);
                 var point = inst.GetPoint();
-                var block = point.Block;
-                var pointResponse = (await ServiceProvider.Current.Control.SetPointState(point, state, 0)).EnsureSuccess();
+                var pointResponse = Provider.Control.SetPointState(point.PointID, state, 0).EnsureSuccess();
 
                 return new
                 {
-                    block.BlockID,
-                    block.BlockName,
+                    point.BlockID,
+                    point.BlockName,
                     point.PointID,
                     InstanceName = inst.Name,
                     inst.ActionID,
@@ -70,20 +83,19 @@ namespace LabScheduler.Api
             }
         }
 
-        public static async Task<object> GetState(int resourceId)
+        public object GetState(int resourceId)
         {
             try
             {
-                var inst = ActionInstanceUtility.Find(ActionType.Interlock, resourceId);
+                var inst = ActionInstances.Find(ActionType.Interlock, resourceId);
                 var point = inst.GetPoint();
-                var block = point.Block;
-                var blockResponse = (await ServiceProvider.Current.Control.GetBlockState(block)).EnsureSuccess();
+                var blockResponse = Provider.Control.GetBlockState(point.BlockID).EnsureSuccess();
 
                 return new
                 {
                     State = blockResponse.BlockState.GetPointState(point.PointID),
-                    block.BlockID,
-                    block.BlockName,
+                    point.BlockID,
+                    point.BlockName,
                     point.PointID,
                     InstanceName = inst.Name,
                     inst.ActionID,

@@ -144,7 +144,7 @@ Namespace Pages
             Session("SelectedStartDate") = If(String.IsNullOrEmpty(txtStartDate.Text), Nothing, Date.Parse(txtStartDate.Text))
             Session("SelectedEndDate") = If(String.IsNullOrEmpty(txtEndDate.Text), Nothing, Date.Parse(txtEndDate.Text))
 
-            rptHistory.DataSource = ReservationHistoryUtility.GetReservationHistoryData(client, sd, ed, includeCanceledForModification).OrderByDescending(Function(x) x.BeginDateTime).ToList()
+            rptHistory.DataSource = ReservationHistoryUtility.GetReservationHistoryData(Provider, client, sd, ed, includeCanceledForModification).OrderByDescending(Function(x) x.BeginDateTime).ToList()
             rptHistory.DataBind()
 
             ' Display datagrid
@@ -313,7 +313,7 @@ Namespace Pages
 
             If EditReservationID > 0 Then
                 Dim accountId As Integer = Integer.Parse(ddlEditReservationAccount.SelectedValue)
-                Dim forgivenPct As Double = GetForgiveAmount()
+                Dim forgivenPct As Double? = GetForgiveAmount()
                 Dim period As Date = EditReservation.ChargeBeginDateTime.FirstOfMonth()
                 Dim temp As Boolean = Utility.IsCurrentPeriod(period)
                 Dim clientId As Integer = EditReservation.ClientID
@@ -392,16 +392,19 @@ Namespace Pages
             divSaveAlert.Attributes("class") = $"alert alert-{type} alert-dismissible"
         End Sub
 
-        Private Function GetForgiveAmount() As Double
-            Dim result As Double = 0
+        Private Function GetForgiveAmount() As Double?
+            Dim result As Double? = Nothing
 
             If Not String.IsNullOrEmpty(txtForgiveAmount.Text) Then
-                If Double.TryParse(txtForgiveAmount.Text, result) Then
-                    Return result
+                Dim d As Double
+                If Double.TryParse(txtForgiveAmount.Text, d) Then
+                    result = d
+                Else
+                    result = 0
                 End If
             End If
 
-            Return 0
+            Return result
         End Function
 
         Private Function GetHolidays() As IEnumerable(Of IHoliday)
@@ -431,7 +434,10 @@ Namespace Pages
 
             Dim priv As ClientPrivilege = ClientPrivilege.LabUser Or ClientPrivilege.Staff
 
-            Dim result As IEnumerable(Of IClient) = Provider.Data.Client.GetActiveClients(priv) _
+            Dim sd As Date = ReservationHistoryUtility.GetStartDate(txtStartDate.Text)
+            Dim ed As Date = ReservationHistoryUtility.GetEndDate(txtEndDate.Text)
+
+            Dim result As IEnumerable(Of IClient) = Provider.Data.Client.GetActiveClients(sd, ed, priv:=priv) _
                 .Where(Function(x) canViewEveryone OrElse x.ClientID = CurrentUser.ClientID) _
                 .OrderBy(Function(x) x.DisplayName) _
                 .ToList()

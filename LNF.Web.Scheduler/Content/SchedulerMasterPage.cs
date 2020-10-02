@@ -23,7 +23,7 @@ namespace LNF.Web.Scheduler.Content
             }
         }
 
-        public ContextHelper Helper => SchedulerPage.Helper;
+        public SchedulerContextHelper Helper => SchedulerPage.Helper;
 
         public IProvider Provider => Helper.Provider;
     }

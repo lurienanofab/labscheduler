@@ -3,7 +3,7 @@
 <%@ Register TagName="NumericBox" TagPrefix="uc" Src="~/UserControls/NumericBox.ascx" %>
 
 <asp:Content ID="Content1" ContentPlaceHolderID="head" runat="server">
-    <link rel="stylesheet" href="styles/main.css?v=20161220" />
+    <link rel="stylesheet" href="styles/main.css?v=20200708" />
     <style>
         .tbl td {
             padding: 10px;

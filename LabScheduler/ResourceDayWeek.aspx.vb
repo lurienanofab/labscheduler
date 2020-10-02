@@ -8,7 +8,18 @@ Namespace Pages
         Inherits SchedulerPage
 
         Protected Sub Page_Load(ByVal sender As Object, ByVal e As EventArgs) Handles Me.Load
+            Dim sw As Stopwatch = Stopwatch.StartNew()
+
+            Helper.AppendLog($"ResourceDayWeek.Page_Load: Started...")
+
             Dim res As IResource = GetCurrentResource()
+
+            Dim resourceId As Integer
+            If res IsNot Nothing Then
+                resourceId = res.ResourceID
+            End If
+
+            Helper.AppendLog($"ResourceDayWeek.Page_Load: res is {If(res Is Nothing, "null", "not null")}, resourceId = {resourceId}")
 
             If Not IsPostBack Then
                 If res IsNot Nothing Then
@@ -24,6 +35,9 @@ Namespace Pages
                     Response.Redirect("~")
                 End If
             End If
+
+            Helper.AppendLog($"ResourceDayWeek.Page_Load: Completed in {sw.Elapsed.TotalSeconds:0.0000} seconds")
+            sw.Stop()
         End Sub
 
         Private Sub LoadReservationView(res As IResource)

@@ -143,7 +143,7 @@ namespace LNF.Web.Scheduler.Handlers
         {
             try
             {
-                var helper = new ContextHelper(context, provider);
+                var helper = new SchedulerContextHelper(context, provider);
                 var util = Reservations.Create(provider, DateTime.Now);
                 var rsv = provider.Scheduler.Reservation.GetReservationWithInvitees(reservationId);
                 var client = provider.Data.Client.GetClient(clientId);
@@ -177,7 +177,8 @@ namespace LNF.Web.Scheduler.Handlers
 
         public static StartReservationItem CreateStartReservationItem(HttpContextBase context, IProvider provider, IReservation rsv, IClient client)
         {
-            var util = Reservations.Create(provider, DateTime.Now);
+            var now = DateTime.Now;
+            var util = Reservations.Create(provider, now);
 
             var item = new StartReservationItem
             {
@@ -211,11 +212,12 @@ namespace LNF.Web.Scheduler.Handlers
             }
 
             var reservationItem = provider.Scheduler.Reservation.GetReservationWithInvitees(rsv.ReservationID);
-            var helper = new ContextHelper(context, provider);
-            var args = ReservationStateArgs.Create(reservationItem, helper.GetReservationClientItem(reservationItem));
-            ReservationState state = util.GetReservationState(args);
+            var helper = new SchedulerContextHelper(context, provider);
+            var args = ReservationStateArgs.Create(reservationItem, helper.GetReservationClientItem(reservationItem), now);
+            var stateUtil = ReservationStateUtility.Create(now);
+            ReservationState state = stateUtil.GetReservationState(args);
 
-            item.Startable = Reservations.IsStartable(state);
+            item.Startable = stateUtil.IsStartable(state);
             item.NotStartableMessage = GetNotStartableMessage(state);
 
             var inst = ActionInstances.Find(ActionType.Interlock, rsv.ResourceID);

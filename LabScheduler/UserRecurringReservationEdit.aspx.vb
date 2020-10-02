@@ -54,7 +54,7 @@ Namespace Pages
 
                 Dim hypResource As HyperLink = CType(e.Item.FindControl("hypResource"), HyperLink)
                 hypResource.Text = String.Format("{0} [{1}]", rr.ResourceName, rr.ResourceID)
-                hypResource.NavigateUrl = String.Format("~/ResourceDayWeek.aspx?Path={0}&Date={1:yyyy-MM-dd}", PathInfo.Create(rr.ResourceID).UrlEncode(), ContextBase.Request.SelectedDate())
+                hypResource.NavigateUrl = String.Format("~/ResourceDayWeek.aspx?Path={0}&Date={1:yyyy-MM-dd}", PathInfo.Create(Provider, rr.ResourceID).UrlEncode(), ContextBase.Request.SelectedDate())
 
                 Dim ddlStartTimeHour As DropDownList = CType(e.Item.FindControl("ddlStartTimeHour"), DropDownList)
                 Dim ddlStartTimeMin As DropDownList = CType(e.Item.FindControl("ddlStartTimeMin"), DropDownList)

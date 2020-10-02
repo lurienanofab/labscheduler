@@ -1,4 +1,5 @@
 ﻿using LNF;
+using LNF.Web.Scheduler;
 using LNF.Web.Scheduler.Models;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
@@ -22,7 +23,9 @@ namespace LabScheduler.Tests
             {
                 DateTime now = DateTime.Parse("2019-03-25 13:00");
 
-                ReservationModel model = new ReservationModel(test.ContextBase, ServiceProvider.Current, now)
+                var helper = new SchedulerContextHelper(test.ContextBase, ServiceProvider.Current);
+
+                ReservationModel model = new ReservationModel(helper, now)
                 {
                     ActivityID = 6, //ddlActivity.SelectedValue
                     AccountID = 67, //ddlAccount.SelectedValue

@@ -1,9 +1,10 @@
 ﻿Imports LNF
 Imports LNF.Scheduler
+Imports LNF.Web
 
 Namespace DBAccess
     Public Class ResourceDB
-        Public Shared Function SelectByLab(labId As Integer) As IList(Of IResource)
+        Public Shared Function SelectByLab(provider As IProvider, labId As Integer) As IList(Of IResource)
 
             ' This method is called from ReservationFacilityDownTime.aspx when the lab select changes.
             ' when labId is -1 use "default labs" (must convert to null)
@@ -22,13 +23,16 @@ Namespace DBAccess
                 labIdParam = labId
             End If
 
-            Dim result As IList(Of IResource) = ServiceProvider.Current.Scheduler.Resource.SelectByLab(labIdParam).ToList()
+            Dim result As IList(Of IResource) = provider.Scheduler.Resource.SelectByLab(labIdParam).ToList()
 
             Return result
         End Function
 
         Public Shared Function SelectResourceListItemsByLab(labId As Integer) As IList(Of ResourceListItem)
-            Dim resources As IList(Of IResource) = SelectByLab(labId)
+            ' Cannot pass IProvider as a parameter because this is used by an ObjectDataSource (odsTool) in ReservationFacilityDownTime.aspx
+
+            Dim provider As IProvider = WebApp.Current.GetInstance(Of IProvider)()
+            Dim resources As IList(Of IResource) = SelectByLab(provider, labId)
 
             Dim result As New List(Of ResourceListItem)()
 

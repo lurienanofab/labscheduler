@@ -61,7 +61,7 @@
     <link rel="stylesheet" href="//ssel-apps.eecs.umich.edu/static/styles/common.css" />
     <link rel="stylesheet" href="styles/admin.css" />
     <link rel="stylesheet" href="styles/helpdesk.css" />
-    <link rel="stylesheet" href="styles/main.css?v=20170717" />
+    <link rel="stylesheet" href="styles/main.css?v=20200708" />
     <link rel="stylesheet" href="styles/resource.css" />
     <link rel="stylesheet" href="styles/schedule.css" />
     <link rel="stylesheet" href="styles/splitter.css" />

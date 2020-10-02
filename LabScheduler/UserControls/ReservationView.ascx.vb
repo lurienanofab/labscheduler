@@ -81,7 +81,7 @@ Namespace UserControls
 
             HandleStartConfirmation()
 
-            Session("ReturnFromEmail") = SchedulerUtility.GetReservationViewReturnUrl(View)
+            Session("ReturnFromEmail") = SchedulerUtility.Create(Provider).GetReservationViewReturnUrl(View)
 
             RequestLog.Append("ReservationView.Page_load: {0}", Date.Now - startTime)
         End Sub
@@ -491,7 +491,7 @@ Namespace UserControls
             End Select
 
             'Since we want to mimize this code to execute, we first make sure if there is no any recurring for this tool, we quit immediately
-            Dim hasData As Boolean = recurringRes.Count() > 0
+            Dim hasData As Boolean = recurringRes.Count > 0
 
             If Not hasData Then Exit Sub
 
@@ -514,7 +514,7 @@ Namespace UserControls
                 'Populate the temporary regular reservation table from recurring reservation for this period of time
                 'Check if the recurrence res is already existing in reservation table
                 For Each rr As IReservationRecurrence In recurringRes
-                    hasNewData = RecurringReservationTransform.AddRegularFromRecurring(Reservations, rr, startTime) OrElse hasNewData
+                    hasNewData = RecurringReservationTransform.Create(Provider).AddRegularFromRecurring(Reservations, rr, startTime) OrElse hasNewData
                 Next
 
                 If View = ViewType.ProcessTechView OrElse View = ViewType.LocationView Then
@@ -618,7 +618,7 @@ Namespace UserControls
 
                                 ' Delete/modify buttons are added here if needed.
                                 Dim rci As ReservationClient = Helper.GetReservationClientItem(rsv)
-                                Dim state As ReservationState = SchedulerUtility.GetReservationCell(rsvCell, rsv, rci, Date.Now)
+                                Dim state As ReservationState = SchedulerUtility.Create(Provider).GetReservationCell(rsvCell, rsv, rci, Date.Now)
 
                                 SetReservationCellAttributes(rsvCell, state, PathInfo.Create(rsv))
 

@@ -55,20 +55,20 @@ namespace LNF.Web.Scheduler
             return result;
         }
 
-        public static InsertFacilityDownTimeResult InsertFacilityDownTime(int resourceId, int groupId, int clientId, DateTime beginDateTime, DateTime endDateTime, string notes, int modifiedByClientId)
+        public static InsertFacilityDownTimeResult InsertFacilityDownTime(IProvider provider, int resourceId, int groupId, int clientId, DateTime beginDateTime, DateTime endDateTime, string notes, int modifiedByClientId)
         {
             IList<CanceledReservation> canceled = new List<CanceledReservation>();
 
             // Find and Remove any un-started reservations made during time of repair
-            var query = ServiceProvider.Current.Scheduler.Reservation.SelectByResource(resourceId, beginDateTime, endDateTime, false);
+            var query = provider.Scheduler.Reservation.SelectByResource(resourceId, beginDateTime, endDateTime, false);
 
             foreach (var existing in query)
             {
                 // Only if the reservation has not begun
                 if (existing.ActualBeginDateTime == null)
                 {
-                    ServiceProvider.Current.Scheduler.Reservation.CancelReservation(existing.ReservationID, modifiedByClientId);
-                    ServiceProvider.Current.Scheduler.Email.EmailOnCanceledByRepair(existing, true, "LNF Facility Down", "Facility is down, thus we have to disable the tool.", endDateTime, modifiedByClientId);
+                    provider.Scheduler.Reservation.CancelReservation(existing.ReservationID, modifiedByClientId);
+                    provider.Scheduler.Email.EmailOnCanceledByRepair(existing, true, "LNF Facility Down", "Facility is down, thus we have to disable the tool.", endDateTime, modifiedByClientId);
                     canceled.Add(new CanceledReservation(existing.ReservationID));
                 }
                 else
@@ -79,7 +79,7 @@ namespace LNF.Web.Scheduler
                 }
             }
 
-            var rsv = ServiceProvider.Current.Scheduler.Reservation.InsertFacilityDownTime(resourceId, clientId, groupId, beginDateTime, endDateTime, notes, modifiedByClientId);
+            var rsv = provider.Scheduler.Reservation.InsertFacilityDownTime(resourceId, clientId, groupId, beginDateTime, endDateTime, notes, modifiedByClientId);
 
             var result = new InsertFacilityDownTimeResult(rsv.ReservationID, canceled);
 

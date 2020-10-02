@@ -1,5 +1,4 @@
-﻿Imports LNF.Web.Scheduler
-Imports LNF.Web.Scheduler.Content
+﻿Imports LNF.Web.Scheduler.Content
 
 Namespace Pages
     Public Class Index
