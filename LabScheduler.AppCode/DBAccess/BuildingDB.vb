@@ -13,7 +13,7 @@ Namespace DBAccess
 
         ' Returns specified Building
         Public Sub New(ByVal id As Integer)
-            Using reader As ExecuteReaderResult = DA.Command().Param(New With {.Action = "Select", .BuildingID = id}).ExecuteReader("sselScheduler.dbo.procBuildingSelect")
+            Using reader As ExecuteReaderResult = DataCommand.Create().Param(New With {.Action = "Select", .BuildingID = id}).ExecuteReader("sselScheduler.dbo.procBuildingSelect")
                 If reader.Read() Then
                     IsValid = True
                     BuildingID = Convert.ToInt32(reader("BuildingID"))
@@ -26,35 +26,37 @@ Namespace DBAccess
 
         ' Returns all Buildings
         Public Function SelectAllDataReader() As ExecuteReaderResult
-            Return DA.Command().Param(New With {.Action = "SelectAll"}).ExecuteReader("sselScheduler.dbo.procBuildingSelect")
+            Return DataCommand.Create().Param(New With {.Action = "SelectAll"}).ExecuteReader("sselScheduler.dbo.procBuildingSelect")
         End Function
 
         ' Returns all Buildings
         Public Shared Function SelectAllDataTable() As DataTable
-            Return DA.Command().MapSchema().Param(New With {.Action = "SelectAll"}).FillDataTable("sselScheduler.dbo.procBuildingSelect")
+            Return DataCommand.Create().MapSchema().Param(New With {.Action = "SelectAll"}).FillDataTable("sselScheduler.dbo.procBuildingSelect")
         End Function
 
         Public Shared Function HasLabs(ByVal BuildingID As Integer) As Boolean
-            Dim count As Integer = DA.Command().Param(New With {.Action = "HasLabs", BuildingID}).ExecuteScalar(Of Integer)("sselScheduler.dbo.procBuildingSelect").Value
+            Dim count As Integer = DataCommand.Create().Param(New With {.Action = "HasLabs", BuildingID}).ExecuteScalar(Of Integer)("sselScheduler.dbo.procBuildingSelect").Value
             Return count > 0
         End Function
 
         ' Insert/Update/Delete Buildings
         Public Shared Sub Update(ByRef dt As DataTable)
-            DA.Command.Update(dt, Sub(x)
-                                      x.Insert.SetCommandText("sselScheduler.dbo.procBuildingInsert")
-                                      x.Insert.AddParameter("BuildingID", SqlDbType.Int, ParameterDirection.Output)
-                                      x.Insert.AddParameter("BuildingName", SqlDbType.NVarChar, 50)
-                                      x.Insert.AddParameter("Description", SqlDbType.NVarChar, 200)
+            DataCommand.Create().Update(dt, AddressOf UpdateAction)
+        End Sub
 
-                                      x.Update.SetCommandText("sselScheduler.dbo.procBuildingUpdate")
-                                      x.Update.AddParameter("BuildingID", SqlDbType.Int)
-                                      x.Update.AddParameter("BuildingName", SqlDbType.NVarChar, 50)
-                                      x.Update.AddParameter("Description", SqlDbType.NVarChar, 200)
+        Private Shared Sub UpdateAction(x As UpdateConfiguration)
+            x.Insert.SetCommandText("sselScheduler.dbo.procBuildingInsert")
+            x.Insert.AddParameter("BuildingID", SqlDbType.Int, ParameterDirection.Output)
+            x.Insert.AddParameter("BuildingName", SqlDbType.NVarChar, 50)
+            x.Insert.AddParameter("Description", SqlDbType.NVarChar, 200)
 
-                                      x.Delete.SetCommandText("sselScheduler.dbo.procBuildingDelete")
-                                      x.Delete.AddParameter("BuildingID", SqlDbType.Int)
-                                  End Sub)
+            x.Update.SetCommandText("sselScheduler.dbo.procBuildingUpdate")
+            x.Update.AddParameter("BuildingID", SqlDbType.Int)
+            x.Update.AddParameter("BuildingName", SqlDbType.NVarChar, 50)
+            x.Update.AddParameter("Description", SqlDbType.NVarChar, 200)
+
+            x.Delete.SetCommandText("sselScheduler.dbo.procBuildingDelete")
+            x.Delete.AddParameter("BuildingID", SqlDbType.Int)
         End Sub
     End Class
 End Namespace

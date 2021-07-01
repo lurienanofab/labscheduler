@@ -1,0 +1,158 @@
+﻿.process-info-table {
+    border-collapse: collapse;
+}
+
+    .process-info-table th,
+    .process-info-table td {
+        font-size: 9pt;
+        font-family: Tahoma, Sans-Serif;
+        padding: 5px;
+        border: solid 1px SteelBlue;
+    }
+
+    .process-info-table > thead > tr > th {
+        color: white;
+        background-color: #336699;
+        font-weight: bold;
+        text-align: center;
+    }
+
+    .process-info-table > tbody > tr.process-info-line-parent > .row-lines > .process-info-table {
+        margin: 0 auto;
+    }
+
+    .process-info-table > tfoot > tr > td {
+        background-color: mistyrose;
+        padding: 5px;
+        text-align: center;
+    }
+
+        .process-info-table > tfoot > tr > td input,
+        .process-info-table > tfoot > tr > td button {
+            font-size: 12px;
+            font-family: Tahoma, Sans-Serif;
+        }
+
+.process-info-name,
+.param-name,
+.value-name,
+.special {
+    text-align: left;
+}
+
+.expand,
+.allow-none,
+.require-value,
+.require-selection,
+.edit-delete {
+    text-align: center;
+}
+
+.editing .process-info-name,
+.editing .param-name,
+.editing .value-name,
+.editing .special,
+.editing .allow-none,
+.editing .require-value,
+.editing .require-selection {
+    text-align: center;
+}
+
+.expand .move-up-button {
+    background-image: url('images/move-up.gif');
+    display: inline-block;
+    width: 13px;
+    height: 9px;
+    margin-right: 3px;
+}
+
+.expand .move-down-button {
+    background-image: url('images/move-down.gif');
+    display: inline-block;
+    width: 13px;
+    height: 9px;
+}
+
+.edit-delete .edit-button {
+    background-image: url('images/edit.gif');
+    background-repeat: no-repeat;
+    background-position: center;
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    margin-right: 3px;
+}
+
+.edit-delete .delete-button {
+    background-image: url('images/delete.gif');
+    background-repeat: no-repeat;
+    background-position: center;
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+}
+
+.edit-delete .save-button {
+    background-image: url('images/update.gif');
+    background-repeat: no-repeat;
+    background-position: center;
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    margin-right: 3px;
+}
+
+.edit-delete .cancel-button {
+    background-image: url('images/cancel.gif');
+    background-repeat: no-repeat;
+    background-position: center;
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+}
+
+.edit-delete .edit-button,
+.edit-delete .delete-button,
+.editing .edit-delete .save-button,
+.editing .edit-delete .cancel-button {
+    display: inline-block;
+}
+
+.edit-delete .save-button,
+.edit-delete .cancel-button,
+.editing .edit-delete .edit-button,
+.editing .edit-delete .delete-button {
+    display: none;
+}
+
+.process-info .expand .expand-button {
+    background-image: url('images/expand.gif');
+    display: inline-block;
+    width: 11px;
+    height: 11px;
+    margin-right: 3px;
+}
+
+.process-info .expand .collapse-button {
+    background-image: url('images/collapse.gif');
+    display: none;
+    width: 11px;
+    height: 11px;
+    margin-right: 3px;
+}
+
+.process-info.expanded .expand .expand-button {
+    display: none;
+}
+
+.process-info.expanded .expand .collapse-button {
+    display: inline-block;
+}
+
+.process-info-line-parent {
+    display: none;
+}
+
+    .process-info-line-parent.expanded {
+        display: table-row;
+    }

@@ -17,7 +17,7 @@ namespace LabScheduler.Tests
             {
                 int reservationId = 994204;
                 var Session = ThreadStaticSession.Current.GetNHibernateSession();
-                Session.DeleteMany(Session.Query<ReservationProcessInfo>().Where(x => x.Reservation.ReservationID == reservationId));
+                Session.DeleteMany(Session.Query<ReservationProcessInfo>().Where(x => x.ReservationID == reservationId));
             }
         }
     }

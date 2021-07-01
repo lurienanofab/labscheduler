@@ -27,7 +27,7 @@ namespace LNF.Web.Scheduler
             return dt;
         }
 
-        public static DataTable ConvertToReservationTable(IEnumerable<IReservation> collection)
+        public static DataTable ConvertToReservationTable(IEnumerable<IReservationItem> collection)
         {
             DataTable dt = new DataTable();
             dt.Columns.Add("ReservationID", typeof(int));
@@ -52,18 +52,18 @@ namespace LNF.Web.Scheduler
             dt.Columns.Add("HasInvitees", typeof(bool));
             dt.Columns.Add("IsActive", typeof(bool));
             dt.Columns.Add("IsStarted", typeof(bool));
-            dt.Columns.Add("IsUnloaded", typeof(bool));
+            //dt.Columns.Add("IsUnloaded", typeof(bool));
             dt.Columns.Add("RecurrenceID", typeof(int));
             dt.Columns.Add("GroupID", typeof(int));
-            dt.Columns.Add("MaxReservationDuration", typeof(double));
+            //dt.Columns.Add("MaxReservationDuration", typeof(double));
             dt.Columns.Add("CancelledDateTime", typeof(DateTime));
             dt.Columns.Add("KeepAlive", typeof(bool));
-            dt.Columns.Add("OriginalBeginDateTime", typeof(DateTime));
-            dt.Columns.Add("OriginalEndDateTime", typeof(DateTime));
-            dt.Columns.Add("OriginalModifiedOn", typeof(DateTime));
+            //dt.Columns.Add("OriginalBeginDateTime", typeof(DateTime));
+            //dt.Columns.Add("OriginalEndDateTime", typeof(DateTime));
+            //dt.Columns.Add("OriginalModifiedOn", typeof(DateTime));
             dt.Columns.Add("ResourceName", typeof(string));
             dt.Columns.Add("Granularity", typeof(int));
-            dt.Columns.Add("IsSchedulable", typeof(bool));
+            //dt.Columns.Add("IsSchedulable", typeof(bool));
             dt.Columns.Add("Editable", typeof(bool));
             dt.Columns.Add("DisplayName", typeof(string));
 
@@ -87,25 +87,25 @@ namespace LNF.Web.Scheduler
                 nr["Notes"] = rsv.Notes;
                 nr["ChargeMultiplier"] = rsv.ChargeMultiplier;
                 nr["ApplyLateChargePenalty"] = rsv.ApplyLateChargePenalty;
-                nr["AutoEnd"] = rsv.AutoEnd;
+                nr["AutoEnd"] = rsv.ReservationAutoEnd;
                 nr["HasProcessInfo"] = rsv.HasProcessInfo;
                 nr["HasInvitees"] = rsv.HasInvitees;
                 nr["IsActive"] = rsv.IsActive;
                 nr["IsStarted"] = rsv.IsStarted;
-                nr["IsUnloaded"] = rsv.IsUnloaded;
+                //nr["IsUnloaded"] = rsv.IsUnloaded;
                 nr["RecurrenceID"] = Utility.DBNullIf(rsv.RecurrenceID);
                 nr["GroupID"] = Utility.DBNullIf(rsv.GroupID);
-                nr["MaxReservationDuration"] = rsv.MaxReservedDuration;
+                //nr["MaxReservationDuration"] = rsv.MaxReservedDuration;
                 nr["CancelledDateTime"] = Utility.DBNullIf(rsv.CancelledDateTime);
                 nr["KeepAlive"] = rsv.KeepAlive;
-                nr["OriginalBeginDateTime"] = Utility.DBNullIf(rsv.OriginalBeginDateTime);
-                nr["OriginalEndDateTime"] = Utility.DBNullIf(rsv.OriginalEndDateTime);
-                nr["OriginalModifiedOn"] = Utility.DBNullIf(rsv.OriginalModifiedOn);
+                //nr["OriginalBeginDateTime"] = Utility.DBNullIf(rsv.OriginalBeginDateTime);
+                //nr["OriginalEndDateTime"] = Utility.DBNullIf(rsv.OriginalEndDateTime);
+                //nr["OriginalModifiedOn"] = Utility.DBNullIf(rsv.OriginalModifiedOn);
                 nr["ResourceName"] = rsv.ResourceName;
                 nr["Granularity"] = rsv.Granularity;
-                nr["IsSchedulable"] = rsv.IsSchedulable;
+                //nr["IsSchedulable"] = rsv.IsSchedulable;
                 nr["Editable"] = rsv.Editable;
-                nr["DisplayName"] = Clients.GetDisplayName(rsv.LName, rsv.FName);
+                nr["DisplayName"] = rsv.DisplayName;
                 dt.Rows.Add(nr);
             }
 

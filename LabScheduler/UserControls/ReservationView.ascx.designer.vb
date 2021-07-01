@@ -24,6 +24,15 @@ Namespace UserControls
         Protected WithEvents HelpdeskInfo1 As Global.LabScheduler.UserControls.HelpdeskInfo
         
         '''<summary>
+        '''divReservationView control.
+        '''</summary>
+        '''<remarks>
+        '''Auto-generated field.
+        '''To modify move field declaration from designer file to code-behind file.
+        '''</remarks>
+        Protected WithEvents divReservationView As Global.System.Web.UI.HtmlControls.HtmlGenericControl
+        
+        '''<summary>
         '''phErrorMessage control.
         '''</summary>
         '''<remarks>

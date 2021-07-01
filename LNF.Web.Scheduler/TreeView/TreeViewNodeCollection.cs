@@ -1,4 +1,5 @@
-﻿using System;
+﻿using LNF.CommonTools;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,12 +10,7 @@ namespace LNF.Web.Scheduler.TreeView
     {
         private List<INode> _items = new List<INode>();
 
-        public int Count
-        {
-            get { return _items.Count; }
-        }
-
-        public TreeViewNodeCollection() { }
+        public int Count => _items.Count;
 
         public TreeViewNodeCollection(IEnumerable<INode> items)
         {
@@ -24,7 +20,7 @@ namespace LNF.Web.Scheduler.TreeView
         public void Load(IEnumerable<INode> items)
         {
             INode prevItem = null;
-
+            var count = items.Count();
             foreach (var item in items.OrderBy(x => x.Name))
             {
                 if (prevItem == null || item.Name != prevItem.Name)
@@ -33,7 +29,25 @@ namespace LNF.Web.Scheduler.TreeView
                     Add(item);
                 }
                 else
-                    throw new Exception(string.Format("duplicate detected: {0}, value = {1}", item.Name, item.Value));
+                {
+                    var currentUser = item.Helper.CurrentUser();
+                    int clientId = currentUser.ClientID;
+                    string username = currentUser.UserName;
+                    string url = item.Helper.Context.Request.Url.ToString();
+                    string logText = item.Helper.GetLogText();
+
+                    string body = string.Empty;
+                    body += $"duplicate detected: name = {item.Name}, value = {item.Value}";
+                    body += $"{Environment.NewLine}username: {username}";
+                    body += $"{Environment.NewLine}url: {url}";
+                    body += $"{Environment.NewLine}type: {GetType().FullName}";
+                    body += $"{Environment.NewLine}this: {item.Name} [{item.ID}]";
+                    body += $"{Environment.NewLine}prev: {prevItem.Name} [{prevItem.ID}]";
+                    body += $"{Environment.NewLine}count: {count}";
+                    body += $"{Environment.NewLine}--------------------------------------------------";
+                    body += $"{Environment.NewLine}{logText}";
+                    SendEmail.Send(clientId, "LNF.Web.Scheduler.TreeViewNodeCollection.Load", $"Duplicate treeview node detected [{DateTime.Now:yyyy-MM-dd HH:mm:ss}]", body, SendEmail.SystemEmail, new[] { "lnf-debug@umich.edu" }, isHtml: false);
+                }
             }
         }
 

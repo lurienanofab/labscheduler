@@ -25,7 +25,7 @@ Public Class MasterPageBootstrap
         If Not Page.IsPostBack Then
             If ShowMenu Then
                 ' load the page menu
-                _menu = New SiteMenu(CurrentUser, Nothing, Provider.LoginUrl(), Request.IsSecureConnection)
+                _menu = New SiteMenu(CurrentUser, Nothing, Provider.LoginUrl(), Request.IsSecureConnection, Nothing)
                 Dim parents As IList(Of IMenu) = _menu.Where(Function(x) x.MenuParentID = 0).ToList()
                 rptMenu.DataSource = parents
                 rptMenu.DataBind()
@@ -83,9 +83,9 @@ Public Class MasterPageBootstrap
         Dim appServer As String = String.Empty
 
         If Request.IsSecureConnection Then
-            appServer = "https://" + ConfigurationManager.AppSettings("AppServer")
+            appServer = "//" + ConfigurationManager.AppSettings("AppServer")
         Else
-            appServer = "http://" + ConfigurationManager.AppSettings("AppServer")
+            appServer = "//" + ConfigurationManager.AppSettings("AppServer")
         End If
 
         Dim url As String = item.MenuURL.Replace("{AppServer}/", appServer)

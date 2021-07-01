@@ -50,7 +50,7 @@ Namespace Pages
         End Function
 
         Private Function GetErrorData(err As Integer()) As ErrorLog()
-            Dim query As ErrorLog() = DA.Current.Query(Of ErrorLog)().Where(Function(x) err.Contains(x.ErrorLogID)).ToArray()
+            Dim query As ErrorLog() = DataSession.Query(Of ErrorLog)().Where(Function(x) err.Contains(x.ErrorLogID)).ToArray()
             Return query
         End Function
     End Class

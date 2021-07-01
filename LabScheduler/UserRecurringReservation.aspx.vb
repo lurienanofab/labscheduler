@@ -1,7 +1,6 @@
 ﻿Imports LabScheduler.AppCode.DBAccess
 Imports LNF
 Imports LNF.Impl.Repository.Scheduler
-Imports LNF.Repository
 Imports LNF.Scheduler
 Imports LNF.Web.Scheduler
 Imports LNF.Web.Scheduler.Content
@@ -36,7 +35,7 @@ Namespace Pages
 
         Private Sub GridDataBind()
             Dim clientId As Integer = CurrentUser.ClientID
-            Dim rre As IQueryable(Of ReservationRecurrence) = DA.Current.Query(Of ReservationRecurrence)()
+            Dim rre As IQueryable(Of ReservationRecurrence) = DataSession.Query(Of ReservationRecurrence)()
 
             Dim reservations As IList(Of RecurrenceItem) = rre.Where(Function(x) x.IsActive AndAlso x.Client.ClientID = clientId).Select(Function(x) RecurrenceItem.Create(x)).ToList()
 
@@ -123,7 +122,7 @@ Namespace Pages
                 .BeginDate = source.BeginDate,
                 .EndDate = source.EndDate,
                 .BeginTime = source.BeginTime,
-                .EndTime = source.EndTime,
+                .EndTime = source.BeginTime.AddMinutes(source.Duration),
                 .ActivityID = source.Activity.ActivityID,
                 .ActivityName = source.Activity.ActivityName,
                 .ResourceID = source.Resource.ResourceID,

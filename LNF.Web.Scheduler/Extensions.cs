@@ -1,4 +1,5 @@
 ﻿using LNF.Cache;
+using LNF.CommonTools;
 using LNF.Data;
 using LNF.PhysicalAccess;
 using LNF.Scheduler;
@@ -25,8 +26,6 @@ namespace LNF.Web.Scheduler
             return result;
         }
 
-        public bool IsInLab() => GetPhysicalAccessUtility().IsInLab(CurrentUser().ClientID);
-
         public PhysicalAccessUtility GetPhysicalAccessUtility()
         {
             PhysicalAccessUtility util;
@@ -34,7 +33,9 @@ namespace LNF.Web.Scheduler
             if (!Context.Items.Contains("PhysicalAccessUtility"))
             {
                 var inlab = Provider.PhysicalAccess.GetCurrentlyInArea("all");
-                util = new PhysicalAccessUtility(inlab, Context.Request.UserHostAddress);
+                var isOnKiosk = IsOnKiosk() ;
+                util = new PhysicalAccessUtility(inlab, isOnKiosk);
+               
                 Context.Items["PhysicalAccessUtility"] = util;
             }
             else
@@ -45,6 +46,14 @@ namespace LNF.Web.Scheduler
             return util;
         }
 
+        /// <summary>
+        /// Checks if the client is physically in the lab.
+        /// </summary>
+        public bool IsInLab() => GetPhysicalAccessUtility().IsInLab(CurrentUser().ClientID);
+
+        /// <summary>
+        /// Checks if the current user is currently in any lab or on a kiosk.
+        /// </summary>
         public bool ClientInLab()
         {
             if (!Context.Items.Contains("ClientInLab"))
@@ -95,22 +104,38 @@ namespace LNF.Web.Scheduler
             return result;
         }
 
-        public IReservation GetReservation()
+        public int GetReservationID()
         {
-            if (int.TryParse(Context.Request.QueryString["ReservationID"], out int reservationId))
+            if (!string.IsNullOrEmpty(Context.Request.QueryString["ReservationID"]))
             {
-                var result = Provider.Scheduler.Reservation.GetReservation(reservationId);
-
-                if (result == null)
-                    throw new InvalidOperationException($"Cannot find a Reservation with ReservationID = {reservationId}");
-
-                return result;
+                if (int.TryParse(Context.Request.QueryString["ReservationID"], out int reservationId))
+                {
+                    return reservationId;
+                }
+                else
+                {
+                    throw new InvalidOperationException($"Invalid value for ReservationID [{Context.Request.QueryString["ReservationID"]}]. Integer expected.");
+                }
             }
             else
-                throw new InvalidOperationException("Missing query string parameter: ReservationID");
+            {
+                return 0;
+            }
         }
 
-        public IReservationWithInvitees GetReservationWithInvitees()
+        public IReservationItem GetReservation()
+        {
+            int reservationId = GetReservationID();
+
+            var result = Provider.Scheduler.Reservation.GetReservation(reservationId);
+
+            if (result == null)
+                throw new InvalidOperationException($"Cannot find a Reservation with ReservationID = {reservationId}");
+
+            return result;
+        }
+
+        public IReservationWithInviteesItem GetReservationWithInvitees()
         {
             if (int.TryParse(Context.Request.QueryString["ReservationID"], out int reservationId))
             {
@@ -125,9 +150,9 @@ namespace LNF.Web.Scheduler
                 throw new InvalidOperationException("Missing query string parameter: ReservationID");
         }
 
-        public ReservationClient GetReservationClientItem(IReservationWithInvitees rsv) => GetReservationClientItem(rsv, CurrentUser());
+        public ReservationClient GetReservationClient(IReservationItem rsv, IEnumerable<IReservationInviteeItem> invitees) => GetReservationClient(rsv, CurrentUser());
 
-        public ReservationClient GetReservationClientItem(IReservationWithInvitees rsv, IClient client)
+        public ReservationClient GetReservationClient(IReservationItem rsv, IEnumerable<IReservationInviteeItem> invitees, IClient client)
         {
             var resourceClients = Provider.Scheduler.Reservation.GetResourceClients(rsv.ResourceID);
             var userAuth = Reservations.GetAuthLevel(resourceClients, client);
@@ -138,7 +163,7 @@ namespace LNF.Web.Scheduler
                 ReservationID = rsv.ReservationID,
                 ResourceID = rsv.ResourceID,
                 IsReserver = rsv.ClientID == client.ClientID,
-                IsInvited = rsv.Invitees.Any(x => x.InviteeID == client.ClientID),
+                IsInvited = invitees.Any(x => x.InviteeID == client.ClientID),
                 InLab = ClientInLab(rsv.LabID),
                 UserAuth = userAuth
             };
@@ -146,31 +171,25 @@ namespace LNF.Web.Scheduler
             return result;
         }
 
-        public ReservationClient GetReservationClientItem(IReservation rsv) => GetReservationClientItem(rsv, CurrentUser());
+        public ReservationClient GetReservationClient(IReservationItem rsv) => GetReservationClient(rsv, CurrentUser());
 
-        public ReservationClient GetReservationClientItem(IReservation rsv, IClient client)
+        public ReservationClient GetReservationClient(IReservationItem rsv, IClient client)
         {
             var resourceClients = Provider.Scheduler.Reservation.GetResourceClients(rsv.ResourceID);
-            var userAuth = Reservations.GetAuthLevel(resourceClients, client);
+            return GetReservationClient(rsv, client, resourceClients);
+        }
+
+        public ReservationClient GetReservationClient(IReservationItem rsv, IClient client, IEnumerable<IResourceClient> resourceClients)
+        {
             var invitees = Provider.Scheduler.Reservation.GetInvitees(rsv.ReservationID);
-            var isReserver = rsv.ClientID == client.ClientID;
-            var isInvited = invitees.Any(x => x.InviteeID == client.ClientID);
+            return GetReservationClient(rsv, client, resourceClients, invitees);
+        }
 
+        public ReservationClient GetReservationClient(IReservationItem rsv, IClient client, IEnumerable<IResourceClient> resourceClients, IEnumerable<IReservationInviteeItem> invitees)
+        {
             var physicalAccessUtil = GetPhysicalAccessUtility();
-            var inLab = physicalAccessUtil.ClientInLab(client.ClientID, rsv.LabID);
-
-            var result = new ReservationClient
-            {
-                ClientID = client.ClientID,
-                ReservationID = rsv.ReservationID,
-                ResourceID = rsv.ResourceID,
-                IsReserver = isReserver,
-                IsInvited = isInvited,
-                InLab = inLab,
-                UserAuth = userAuth
-            };
-
-            return result;
+            var inlab = physicalAccessUtil.ClientInLab(client.ClientID, rsv.LabID);
+            return ReservationClient.Create(rsv, client, resourceClients, invitees, inlab);
         }
 
         public IEnumerable<IResourceClient> GetResourceClients(int resourceId)
@@ -237,7 +256,7 @@ namespace LNF.Web.Scheduler
             {
                 labLocations = (IEnumerable<ILabLocation>)Context.Session["LabLocations"];
             }
-
+            
             return labLocations;
         }
 
@@ -279,6 +298,44 @@ namespace LNF.Web.Scheduler
             return tree;
         }
 
+        public void SendDebugEmail(string caller, string subject, string body, IDictionary<string, object> vars)
+        {
+            var currentUser = CurrentUser();
+
+            subject += $" [{DateTime.Now:yyyy-MM-dd HH:mm:ss}]";
+
+            var dict = new Dictionary<string, object>
+            {
+                ["username"] = currentUser.UserName,
+                ["url"] = Context.Request.Url,
+                ["view"] = Context.GetCurrentViewType()
+            };
+
+            if (vars != null && vars.Count > 0)
+            {
+                foreach(var kvp in vars)
+                {
+                    if (!dict.ContainsKey(kvp.Key))
+                        dict.Add(kvp.Key, kvp.Value);
+                }
+            }
+
+            foreach (var kvp in dict)
+            {
+                body += $"{Environment.NewLine}{kvp.Key}: {kvp.Value}";
+            }
+
+            var logText = GetLogText();
+
+            if (!string.IsNullOrEmpty(logText))
+            {
+                body += $"{Environment.NewLine}--------------------------------------------------";
+                body += $"{Environment.NewLine}{logText}";
+            }
+
+            SendEmail.Send(currentUser.ClientID, caller, subject, body, SendEmail.SystemEmail, new[] { "lnf-debug@umich.edu" }, isHtml: false);
+        }
+
         /// <summary>
         /// The current resource treeview for this request.
         /// </summary>
@@ -303,7 +360,7 @@ namespace LNF.Web.Scheduler
         {
             var result = new SchedulerResourceTreeView(GetResourceTreeItemCollection());
             var buildings = result.ResourceTree.Buildings().Where(x => x.BuildingIsActive).OrderBy(x => x.BuildingName).ToArray();
-            result.Root = new TreeViewNodeCollection(buildings.Select(x => new BuildingNode(result, x)).ToArray());
+            result.Root = new TreeViewNodeCollection(buildings.Select(x => new BuildingNode(this, result, x)).ToArray());
             return result;
         }
 
@@ -333,7 +390,7 @@ namespace LNF.Web.Scheduler
             var include = locationTree.GetLabLocations().Select(x => x.LabID).Distinct().ToArray();
             var result = new SchedulerResourceTreeView(locationTree);
             var labs = result.ResourceTree.Labs().Where(x => x.BuildingIsActive && x.LabIsActive && include.Contains(x.LabID)).OrderBy(x => x.BuildingName).ThenBy(x => x.LabDisplayName).ToArray();
-            result.Root = new TreeViewNodeCollection(labs.Select(x => new LocationLabNode(result, locationTree, x)).ToArray());
+            result.Root = new TreeViewNodeCollection(labs.Select(x => new LocationLabNode(this, result, locationTree, x)).ToArray());
             return result;
         }
 
@@ -429,7 +486,18 @@ namespace LNF.Web.Scheduler
 
         public ClientAuthLevel GetCurrentAuthLevel(int resourceId)
         {
-            return CacheManager.Current.GetAuthLevel(resourceId, CurrentUser().ClientID);
+            return CacheManager.Current.GetAuthLevel(resourceId, CurrentUser());
+        }
+
+        public ILabLocation GetLabLocation(IResource res)
+        {
+            ILabLocation result = null;
+            var rll = ResourceLabLocations().FirstOrDefault(x => x.ResourceID == res.ResourceID);
+            if (rll != null)
+            {
+                result = LabLocations().FirstOrDefault(x => x.LabLocationID == rll.LabLocationID);
+            }
+            return result;
         }
     }
 
@@ -452,6 +520,8 @@ namespace LNF.Web.Scheduler
         }
 
         public static PathInfo SelectedPath(this HttpRequestBase request) => PathInfo.Parse(request.QueryString["Path"]);
+
+        public static LocationPathInfo SelectedLocationPath(this HttpRequestBase request) => LocationPathInfo.Parse(request.QueryString["LocationPath"]);
 
         public static bool GetDisplayDefaultHours(this HttpContextBase context)
         {

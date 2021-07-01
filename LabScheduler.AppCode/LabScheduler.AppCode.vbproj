@@ -91,6 +91,7 @@
     <Compile Include="DBAccess\ActivityDB.vb" />
     <Compile Include="DBAccess\BuildingDB.vb" />
     <Compile Include="DBAccess\ClientSettingDB.vb" />
+    <Compile Include="DBAccess\DB.vb" />
     <Compile Include="DBAccess\FacilityDownTimeDB.vb" />
     <Compile Include="DBAccess\KioskDB.vb" />
     <Compile Include="DBAccess\KioskLabDB.vb" />

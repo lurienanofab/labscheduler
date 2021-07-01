@@ -24,6 +24,33 @@ Namespace Pages
         Protected WithEvents ResourceTabMenu1 As Global.LNF.Web.Scheduler.Controls.ResourceTabMenu
         
         '''<summary>
+        '''phResourceToolTip control.
+        '''</summary>
+        '''<remarks>
+        '''Auto-generated field.
+        '''To modify move field declaration from designer file to code-behind file.
+        '''</remarks>
+        Protected WithEvents phResourceToolTip As Global.System.Web.UI.WebControls.PlaceHolder
+        
+        '''<summary>
+        '''panResourceToolTip control.
+        '''</summary>
+        '''<remarks>
+        '''Auto-generated field.
+        '''To modify move field declaration from designer file to code-behind file.
+        '''</remarks>
+        Protected WithEvents panResourceToolTip As Global.System.Web.UI.WebControls.Panel
+        
+        '''<summary>
+        '''litResourceToolTip control.
+        '''</summary>
+        '''<remarks>
+        '''Auto-generated field.
+        '''To modify move field declaration from designer file to code-behind file.
+        '''</remarks>
+        Protected WithEvents litResourceToolTip As Global.System.Web.UI.WebControls.Literal
+        
+        '''<summary>
         '''ReservationView1 control.
         '''</summary>
         '''<remarks>

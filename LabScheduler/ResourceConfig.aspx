@@ -4,6 +4,7 @@
 <%@ Register TagPrefix="uc" TagName="NumericBox" Src="~/UserControls/NumericBox.ascx" %>
 
 <asp:Content ID="Content1" ContentPlaceHolderID="head" runat="server">
+    <link rel="stylesheet" type="text/css" href="scripts/process-info/process-info.css" />
     <style>
         .process-info-table td {
             padding: 5px;
@@ -232,192 +233,22 @@
             <h3 class="panel-title">Process Info</h3>
         </div>
         <div class="panel-body">
-            <asp:DataGrid runat="server" ID="dgProcessInfo" BorderColor="#4682B4" CellPadding="3" AutoGenerateColumns="False" ShowFooter="True" CssClass="process-info-table">
-                <HeaderStyle Font-Bold="True" HorizontalAlign="Center" ForeColor="White" BackColor="#336699"></HeaderStyle>
-                <FooterStyle BackColor="MistyRose" HorizontalAlign="Center"></FooterStyle>
-                <AlternatingItemStyle BackColor="AliceBlue"></AlternatingItemStyle>
-                <EditItemStyle HorizontalAlign="Center"></EditItemStyle>
-                <Columns>
-                    <asp:TemplateColumn ItemStyle-HorizontalAlign="Center">
-                        <ItemTemplate>
-                            <asp:ImageButton ID="ibtnExpand" ImageUrl="~/images/expand.gif" CommandName="Expand" CommandArgument="Expand" runat="server"></asp:ImageButton>
-                            <asp:ImageButton ID="ibtnUp" ImageUrl="~/images/MoveUp.gif" CommandName="MoveUp" runat="server"></asp:ImageButton>
-                            <asp:ImageButton ID="ibtnDown" ImageUrl="~/images/MoveDown.gif" CommandName="MoveDown" runat="server"></asp:ImageButton>
-                            <asp:DataGrid ID="dgProcessInfoLine" AutoGenerateColumns="False" runat="server" BorderColor="#4682B4" ShowFooter="True" CellPadding="3" DataKeyField="ProcessInfoLineID" OnItemDataBound="DgProcessInfoLine_ItemDataBound" OnItemCommand="DgProcessInfoLine_ItemCommand">
-                                <HeaderStyle Font-Bold="True" HorizontalAlign="Center" ForeColor="White" BackColor="#336699"></HeaderStyle>
-                                <FooterStyle HorizontalAlign="Center" BackColor="MistyRose"></FooterStyle>
-                                <AlternatingItemStyle BackColor="AliceBlue"></AlternatingItemStyle>
-                                <EditItemStyle HorizontalAlign="Center"></EditItemStyle>
-                                <Columns>
-                                    <asp:BoundColumn DataField="ProcessInfoLineID" ReadOnly="True" Visible="False"></asp:BoundColumn>
-                                    <asp:TemplateColumn HeaderText="Param">
-                                        <ItemTemplate>
-                                            <asp:Label ID="lblParam" runat="server"></asp:Label>
-                                        </ItemTemplate>
-                                        <EditItemTemplate>
-                                            <asp:TextBox ID="txtParam" Columns="20" MaxLength="50" runat="server" CssClass="parameter-name"></asp:TextBox>
-                                        </EditItemTemplate>
-                                        <FooterTemplate>
-                                            <asp:TextBox ID="txtNewParam" Columns="20" MaxLength="50" runat="server" CssClass="parameter-name"></asp:TextBox>
-                                        </FooterTemplate>
-                                    </asp:TemplateColumn>
-                                    <asp:TemplateColumn HeaderText="Min Value">
-                                        <ItemTemplate>
-                                            <asp:Label ID="lblMinVal" runat="server"></asp:Label>
-                                        </ItemTemplate>
-                                        <EditItemTemplate>
-                                            <asp:TextBox ID="txtMinVal" Columns="10" MaxLength="50" runat="server"></asp:TextBox>
-                                        </EditItemTemplate>
-                                        <FooterTemplate>
-                                            <asp:TextBox ID="txtNewMinVal" Columns="10" MaxLength="50" runat="server"></asp:TextBox>
-                                        </FooterTemplate>
-                                    </asp:TemplateColumn>
-                                    <asp:TemplateColumn HeaderText="Max Value">
-                                        <ItemTemplate>
-                                            <asp:Label ID="lblMaxVal" runat="server"></asp:Label>
-                                        </ItemTemplate>
-                                        <EditItemTemplate>
-                                            <asp:TextBox ID="txtMaxVal" Columns="10" MaxLength="50" runat="server"></asp:TextBox>
-                                        </EditItemTemplate>
-                                        <FooterTemplate>
-                                            <asp:TextBox ID="txtNewMaxVal" Columns="10" MaxLength="50" runat="server"></asp:TextBox>
-                                        </FooterTemplate>
-                                    </asp:TemplateColumn>
-                                    <asp:TemplateColumn>
-                                        <ItemTemplate>
-                                            <asp:ImageButton ID="ibtnPILEdit" ImageUrl="~/images/edit.gif" CommandName="Edit" runat="server"></asp:ImageButton>
-                                            <asp:ImageButton ID="ibtnPILDelete" ImageUrl="~/images/delete.gif" CommandName="Delete" runat="server"></asp:ImageButton>
-                                        </ItemTemplate>
-                                        <EditItemTemplate>
-                                            <asp:ImageButton ID="ibtnPILUpdate" CommandName="Update" ImageUrl="~/images/update.gif" runat="server"></asp:ImageButton>
-                                            <asp:ImageButton ID="ibtnPILCancel" CommandName="Cancel" ImageUrl="~/images/cancel.gif" runat="server"></asp:ImageButton>
-                                        </EditItemTemplate>
-                                        <FooterTemplate>
-                                            <asp:Button ID="btnPILInsert" Text="Add" CommandName="Insert" runat="server"></asp:Button>
-                                        </FooterTemplate>
-                                    </asp:TemplateColumn>
-                                </Columns>
-                            </asp:DataGrid>
-                        </ItemTemplate>
-                    </asp:TemplateColumn>
-                    <asp:BoundColumn DataField="ProcessInfoID" Visible="False" ReadOnly="True"></asp:BoundColumn>
-                    <asp:BoundColumn DataField="Order" Visible="False" ReadOnly="True"></asp:BoundColumn>
-                    <asp:TemplateColumn HeaderText="Process Info Name">
-                        <ItemTemplate>
-                            <asp:Label ID="lblPIName" runat="server"></asp:Label>
-                        </ItemTemplate>
-                        <EditItemTemplate>
-                            <asp:TextBox ID="txtPIName" Columns="10" MaxLength="50" runat="server"></asp:TextBox>
-                        </EditItemTemplate>
-                        <FooterTemplate>
-                            <asp:TextBox ID="txtNewPIName" Columns="10" MaxLength="50" runat="server"></asp:TextBox>
-                        </FooterTemplate>
-                    </asp:TemplateColumn>
-                    <asp:TemplateColumn HeaderText="Param Name">
-                        <ItemTemplate>
-                            <asp:Label ID="lblParamName" runat="server"></asp:Label>
-                        </ItemTemplate>
-                        <EditItemTemplate>
-                            <asp:TextBox ID="txtParamName" Columns="10" MaxLength="50" runat="server"></asp:TextBox>
-                        </EditItemTemplate>
-                        <FooterTemplate>
-                            <asp:TextBox ID="txtNewParamName" Columns="10" MaxLength="50" runat="server"></asp:TextBox>
-                        </FooterTemplate>
-                    </asp:TemplateColumn>
-                    <asp:TemplateColumn HeaderText="Value Name">
-                        <ItemTemplate>
-                            <asp:Label ID="lblValueName" runat="server"></asp:Label>
-                        </ItemTemplate>
-                        <EditItemTemplate>
-                            <asp:TextBox ID="txtValueName" Columns="10" MaxLength="50" runat="server"></asp:TextBox>
-                        </EditItemTemplate>
-                        <FooterTemplate>
-                            <asp:TextBox ID="txtNewValueName" Columns="10" MaxLength="50" runat="server"></asp:TextBox>
-                        </FooterTemplate>
-                    </asp:TemplateColumn>
-                    <asp:TemplateColumn HeaderText="Special">
-                        <ItemTemplate>
-                            <asp:Label ID="lblSpecial" runat="server"></asp:Label>
-                        </ItemTemplate>
-                        <EditItemTemplate>
-                            <asp:TextBox ID="txtSpecial" Columns="10" MaxLength="50" runat="server"></asp:TextBox>
-                        </EditItemTemplate>
-                        <FooterTemplate>
-                            <asp:TextBox ID="txtNewSpecial" Columns="10" MaxLength="50" runat="server"></asp:TextBox>
-                        </FooterTemplate>
-                    </asp:TemplateColumn>
-                    <asp:TemplateColumn HeaderText="Allow None">
-                        <ItemTemplate>
-                            <asp:Label ID="lblAllowNone" runat="server"></asp:Label>
-                        </ItemTemplate>
-                        <EditItemTemplate>
-                            <asp:CheckBox ID="chkAllowNone" runat="server"></asp:CheckBox>
-                        </EditItemTemplate>
-                        <FooterTemplate>
-                            <asp:CheckBox ID="chkNewAllowNone" runat="server"></asp:CheckBox>
-                        </FooterTemplate>
-                    </asp:TemplateColumn>
-                    <asp:TemplateColumn HeaderText="Require Value">
-                        <ItemTemplate>
-                            <asp:Label ID="lblRequireValue" runat="server"></asp:Label>
-                        </ItemTemplate>
-                        <EditItemTemplate>
-                            <asp:CheckBox ID="chkRequireValue" runat="server"></asp:CheckBox>
-                        </EditItemTemplate>
-                        <FooterTemplate>
-                            <asp:CheckBox ID="chkNewRequireValue" runat="server"></asp:CheckBox>
-                        </FooterTemplate>
-                    </asp:TemplateColumn>
-                    <asp:TemplateColumn HeaderText="Require Selection">
-                        <ItemTemplate>
-                            <asp:Label ID="lblRequireSelection" runat="server"></asp:Label>
-                        </ItemTemplate>
-                        <EditItemTemplate>
-                            <asp:CheckBox ID="chkRequireSelection" runat="server"></asp:CheckBox>
-                        </EditItemTemplate>
-                        <FooterTemplate>
-                            <asp:CheckBox ID="chkNewRequireSelection" runat="server"></asp:CheckBox>
-                        </FooterTemplate>
-                    </asp:TemplateColumn>
-                    <asp:TemplateColumn ItemStyle-HorizontalAlign="Center">
-                        <ItemTemplate>
-                            <asp:ImageButton ID="ibtnEdit" ImageUrl="~/images/edit.gif" CommandName="Edit" runat="server"></asp:ImageButton>
-                            <asp:ImageButton ID="ibtnDelete" ImageUrl="~/images/delete.gif" CommandName="Delete" runat="server"></asp:ImageButton>
-                        </ItemTemplate>
-                        <EditItemTemplate>
-                            <asp:ImageButton ID="ibtnUpdate" ImageUrl="~/images/update.gif" Height="15" Width="15" CommandName="Update" runat="server"></asp:ImageButton>
-                            <asp:ImageButton ID="ibtnCancel" ImageUrl="~/images/cancel.gif" CommandName="Cancel" runat="server"></asp:ImageButton>
-                        </EditItemTemplate>
-                        <FooterTemplate>
-                            <asp:Button ID="btnInsert" Text="Add" CommandName="Insert" runat="server"></asp:Button>
-                        </FooterTemplate>
-                    </asp:TemplateColumn>
-                </Columns>
-            </asp:DataGrid>
+            <div class="alert alert-warning"><strong>Please Note:</strong> Changes to process info take effect immediately.</div>
+            <div runat="server" id="divProcessInfo" class="process-info-config">
+                <img src="//ssel-apps.eecs.umich.edu/static/images/ajax-loader-4.gif" /> Loading...
+            </div>
         </div>
     </div>
 </asp:Content>
 
 <asp:Content ID="Content3" ContentPlaceHolderID="scripts" runat="server">
-    <script src="scripts/typeahead.bundle.min.js"></script>
+    <script src="//ssel-apps.eecs.umich.edu/static/lib/handlebars/handlebars.runtime.min-v4.7.7.js"></script>
+    <script src="scripts/process-info/templates/processinfo.precompiled.js"></script>
+    <script src="scripts/process-info/templates/processinfoline.precompiled.js"></script>
+    <script src="scripts/process-info/process-info.js"></script>
     <script src="scripts/bootstrap-file.js"></script>
     <script>
         $(".modify-resource-modal").modal("show");
-
-        var resourceId = $(".resource-id").val();
-
-        var pilps = new Bloodhound({
-            datumTokenizer: Bloodhound.tokenizers.whitespace,
-            queryTokenizer: Bloodhound.tokenizers.whitespace,
-            prefetch: "ajax/resource.ashx?Command=GetProcessInfoLineParams&ResourceID=" + resourceId
-        });
-
-        $(".parameter-name").typeahead({
-            "minLength": 1,
-            "highlight": true
-        }, {
-            "name": "pilp-dataset",
-            "source": pilps
-        });
+        var pinfoConfig = $(".process-info-config").processInfo();
     </script>
 </asp:Content>

@@ -109,6 +109,8 @@ Namespace Pages
                 Exit Sub
             End If
 
+            Dim reservations As IEnumerable(Of IReservationItem) = Provider.Scheduler.Reservation.SelectByDateRange(beginDateTime, endDateTime, False)
+
             '2009-07-19 make a reservation group
             Dim clientId As Integer = CurrentUser.ClientID
             Dim groupId As Integer = FacilityDownTimeDB.CreateNew(clientId, beginDateTime, endDateTime)
@@ -119,13 +121,13 @@ Namespace Pages
             'Loop through each selected tool and make reservation and delete other people's reservation
             For Each resourceId As Integer In toolIdList
                 ' Find and Remove any un-started reservations made during time of repair
-                Dim query As IEnumerable(Of IReservation) = Provider.Scheduler.Reservation.SelectByResource(resourceId, beginDateTime, endDateTime, False)
+                Dim query As IEnumerable(Of IReservationItem) = reservations.Where(Function(x) x.ReservationID = resourceId).ToList()
 
-                For Each existing As IReservation In query
+                For Each existing As IReservationItem In query
                     If existing.ActualBeginDateTime Is Nothing Then
                         ' handle unstarted reservations
-                        Provider.Scheduler.Reservation.CancelAndForgive(existing.ReservationID, CurrentUser.ClientID)
-                        Provider.Scheduler.Email.EmailOnCanceledByRepair(existing, True, "LNF Facility Down", "Facility is down, thus we have to disable the tool.", endDateTime, CurrentUser.ClientID)
+                        Provider.Scheduler.Reservation.CancelAndForgive(existing.ReservationID, "Cancelled and forgiven for facility down time.", CurrentUser.ClientID)
+                        Provider.Scheduler.Email.EmailOnCanceledByRepair(existing.ReservationID, True, "LNF Facility Down", "Facility is down, thus we have to disable the tool.", endDateTime, CurrentUser.ClientID)
                     Else
                         ' handle started reservations
 
@@ -158,7 +160,7 @@ Namespace Pages
             ShowAlert("success", String.Format("You've created Facility Down Time reservation from {0} to {1} on {2} tools. User's reservations have been deleted as well.", beginDateTime, endDateTime, toolIdList.Count))
         End Sub
 
-        Private Sub EndRepairForFacilityDownTime(repair As IReservation)
+        Private Sub EndRepairForFacilityDownTime(repair As IReservationItem)
             Dim ed As Date = repair.GetNextGranularity(Date.Now, GranularityDirection.Next)
             Dim notes As String = (repair.Notes + $" Ended for Facility Down Time at {Date.Now:yyyy-MM-dd HH:mm:ss}.").Trim()
             Provider.Scheduler.Reservation.UpdateRepair(repair.ReservationID, ed, notes, CurrentUser.ClientID)
@@ -323,12 +325,12 @@ Namespace Pages
             'Delete all the reservations in this period
             For Each res As ListItem In lboxModify.Items
                 ' Find and Remove any un-started reservations made during time of repair
-                Dim query As IEnumerable(Of IReservation) = Provider.Scheduler.Reservation.SelectByResource(Convert.ToInt32(res.Value), beginDateTime, endDateTime, False)
+                Dim query As IEnumerable(Of IReservationItem) = Provider.Scheduler.Reservation.SelectByResource(Convert.ToInt32(res.Value), beginDateTime, endDateTime, False)
                 For Each existing As IReservation In query
                     ' Only if the reservation has not begun
                     If existing.ActualBeginDateTime Is Nothing Then
-                        Provider.Scheduler.Reservation.CancelReservation(existing.ReservationID, CurrentUser.ClientID)
-                        Provider.Scheduler.Email.EmailOnCanceledByRepair(existing, True, "LNF Facility Down", "Facility is down, thus we have to disable the tool. Notes:", endDateTime, CurrentUser.ClientID)
+                        Provider.Scheduler.Reservation.CancelAndForgive(existing.ReservationID, "Cancelled and forgiven for facility down time modification.", CurrentUser.ClientID)
+                        Provider.Scheduler.Email.EmailOnCanceledByRepair(existing.ReservationID, True, "LNF Facility Down", "Facility is down, thus we have to disable the tool. Notes:", endDateTime, CurrentUser.ClientID)
                     Else
                         'We have to disable all those reservations that have been activated by setting isActive to 0.  
                         'The catch here is that we must compare the "Actual" usage time with the repair time because if the user ends the reservation before the repair starts, we still 

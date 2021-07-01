@@ -1,0 +1,14 @@
+﻿.delete-labloc,
+.delete-labloc:active,
+.delete-labloc:visited,
+.delete-reslabloc,
+.delete-reslabloc:active,
+.delete-reslabloc:visited {
+    color: red;
+}
+
+.resource-lab-locations {
+    margin: 5px 0 5px 30px;
+    border: solid 1px #ccc;
+    padding: 10px;
+}

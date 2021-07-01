@@ -223,11 +223,12 @@ Namespace Pages
         End Sub
 
         Protected Function GetReservationLink(rsv As IReservation) As String
+            ' using LocationPathInfo.Empty here because we are not on a location page
             If Not rsv.ActualBeginDateTime.HasValue AndAlso rsv.BeginDateTime > Date.Now Then
-                Dim url As String = SchedulerUtility.GetReservationReturnUrl(PathInfo.Create(rsv), rsv.ReservationID, rsv.BeginDateTime, rsv.BeginDateTime.TimeOfDay)
+                Dim url As String = SchedulerUtility.GetReservationReturnUrl(PathInfo.Create(rsv), LocationPathInfo.Empty, rsv.ReservationID, rsv.BeginDateTime, rsv.BeginDateTime.TimeOfDay, GetCurrentView())
                 Return String.Format("<a href=""{0}"">{1}</a>", VirtualPathUtility.ToAbsolute(url), rsv.ReservationID)
             Else
-                Dim url As String = SchedulerUtility.GetReturnUrl("ReservationHistory.aspx", PathInfo.Create(rsv), rsv.ReservationID, ContextBase.Request.SelectedDate())
+                Dim url As String = SchedulerUtility.GetReturnUrl("ReservationHistory.aspx", PathInfo.Create(rsv), LocationPathInfo.Empty, rsv.ReservationID, ContextBase.Request.SelectedDate())
                 Return String.Format("<a href=""{0}"">{1}</a>", VirtualPathUtility.ToAbsolute(url), rsv.ReservationID)
             End If
         End Function
@@ -312,7 +313,7 @@ Namespace Pages
 
                 If rsv IsNot Nothing Then
                     rsv.IsActive = False
-                    Provider.Scheduler.Reservation.CancelReservation(rsv.ReservationID, CurrentUser.ClientID)
+                    Provider.Scheduler.Reservation.CancelReservation(rsv.ReservationID, "Cancelled by tool engineer (reservation recurrence).", CurrentUser.ClientID)
                     rptExistingReservations.DataSource = existing
                     rptExistingReservations.DataBind()
                 End If

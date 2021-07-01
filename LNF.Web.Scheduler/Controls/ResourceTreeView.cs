@@ -2,6 +2,7 @@
 using LNF.Web.Scheduler.TreeView;
 using System;
 using System.Configuration;
+using System.Diagnostics;
 using System.Linq;
 using System.Web.UI;
 using System.Web.UI.HtmlControls;
@@ -50,9 +51,10 @@ namespace LNF.Web.Scheduler.Controls
 
         protected override void CreateChildControls()
         {
-            DateTime startTime = DateTime.Now;
+            var sw = Stopwatch.StartNew();
             LoadTree();
-            RequestLog.Append("ResourceTreeView.CreateChildControls: {0}", DateTime.Now - startTime);
+            Helper.AppendLog($"ResourceTreeView.CreateChildControls: completed in {sw.Elapsed.TotalSeconds:0.0000} seconds");
+            sw.Stop();
         }
 
         private void LoadTree()

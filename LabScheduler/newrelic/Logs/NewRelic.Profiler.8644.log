@@ -1,0 +1,5 @@
+[Info ] 2020-11-07 21:52:34 Logger initialized.
+[Trace] 2020-11-07 21:52:34 New Relic .NET Agent
+[Info ] 2020-11-07 21:52:34 Initializing ThreadProfiler
+[Error] 2020-11-07 21:52:34 The global newrelic.config file was not found at: G:\dev\github\lurienanofab\labscheduler\LabScheduler\newrelic
+[Error] 2020-11-07 21:52:34 An exception was thrown while initializing the profiler.

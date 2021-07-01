@@ -14,7 +14,7 @@ Namespace Pages
             Dim labId As Integer
 
             If locations Then
-                Dim locationPath As LocationPathInfo = LocationPathInfo.Parse(Request.QueryString("LocationPath"))
+                Dim locationPath As LocationPathInfo = ContextBase.Request.SelectedLocationPath()
                 labId = locationPath.LabID
             Else
                 labId = ContextBase.Request.SelectedPath().LabID

@@ -1,9 +1,11 @@
 ﻿using LNF.Cache;
+using LNF.CommonTools;
 using LNF.Data;
 using LNF.Impl.Repository.Data;
 using LNF.Repository;
 using LNF.Scheduler;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using System.Web.SessionState;
@@ -42,7 +44,7 @@ namespace LNF.Web.Scheduler.Controllers
                 }
                 else
                 {
-                    IReservation rsv;
+                    IReservationItem rsv;
                     IResource res;
 
                     switch (command)
@@ -65,7 +67,7 @@ namespace LNF.Web.Scheduler.Controllers
                             helper.AppendLog($"ReservationController.ProcessRequest: canCreate = {canCreate}");
 
                             if (canCreate)
-                                redirectUrl = SchedulerUtility.GetReservationReturnUrl(ctx.Request.SelectedPath(), 0, ctx.Request.SelectedDate(), GetReservationTime(ctx));
+                                redirectUrl = SchedulerUtility.GetReservationReturnUrl(ctx.Request.SelectedPath(), ctx.Request.SelectedLocationPath(), 0, ctx.Request.SelectedDate(), GetReservationTime(ctx), currentView);
                             else
                                 redirectUrl = util.GetReservationViewReturnUrl(currentView);
                             break;
@@ -74,8 +76,7 @@ namespace LNF.Web.Scheduler.Controllers
                             res = helper.GetResourceTreeItemCollection().GetResource(rsv.ResourceID);
                             var currentDate = ctx.Request.SelectedDate();
                             var currentTime = GetReservationTime(ctx);
-
-                            redirectUrl = SchedulerUtility.GetReservationReturnUrl(PathInfo.Create(rsv), rsv.ReservationID, currentDate, currentTime);
+                            redirectUrl = SchedulerUtility.GetReservationReturnUrl(PathInfo.Create(res), ctx.Request.SelectedLocationPath(), rsv.ReservationID, currentDate, currentTime, currentView);
                             break;
                         case "DeleteReservation":
                             rsv = helper.GetReservationWithInvitees();
@@ -152,7 +153,8 @@ namespace LNF.Web.Scheduler.Controllers
             var util = Reservations.Create(Provider, now);
             var requestedState = GetReservationState(context);
             var rsv = helper.GetReservation();
-            var client = helper.GetReservationClientItem(rsv);
+            var res = helper.GetResource(rsv.ResourceID);
+            var client = helper.GetReservationClient(rsv);
             var args = ReservationStateArgs.Create(rsv, client, now);
             var state = ReservationStateUtility.Create(now).GetReservationState(args);
             var currentView = context.GetCurrentViewType();
@@ -179,7 +181,7 @@ namespace LNF.Web.Scheduler.Controllers
                     }
                     else
                     {
-                        util.Start(rsv, helper.GetReservationClientItem(rsv), currentUser.ClientID);
+                        util.Start(rsv, helper.GetReservationClient(rsv), currentUser.ClientID);
                     }
                     break;
                 case ReservationState.Endable:
@@ -197,13 +199,33 @@ namespace LNF.Web.Scheduler.Controllers
                 case ReservationState.PastSelf:
                     if (currentView == ViewType.DayView || currentView == ViewType.WeekView)
                         context.SetWeekStartDate(rsv.BeginDateTime.Date);
-                    return SchedulerUtility.GetReturnUrl("ReservationRunNotes.aspx", PathInfo.Create(rsv), rsv.ReservationID, context.Request.SelectedDate());
+                    return SchedulerUtility.GetReturnUrl("ReservationRunNotes.aspx", PathInfo.Create(res), context.Request.SelectedLocationPath(), rsv.ReservationID, context.Request.SelectedDate());
                 case ReservationState.Other:
                 case ReservationState.Invited:
                 case ReservationState.PastOther:
-                    return SchedulerUtility.GetReturnUrl("Contact.aspx", PathInfo.Create(rsv), rsv.ReservationID, context.Request.SelectedDate());
+                    return SchedulerUtility.GetReturnUrl("Contact.aspx", PathInfo.Create(res), context.Request.SelectedLocationPath(), rsv.ReservationID, context.Request.SelectedDate());
                 default:
-                    throw new NotImplementedException($"ReservationState = {state} is not implemented");
+                    // invalid state detected!
+                    // throw new NotImplementedException($"ReservationState = {state} is not implemented");
+                    context.Session["ErrorMessage"] = $"The current reservation state, {state}, is invalid. No actions are defined for this state. [RequestedState = {requestedState}, ReservationID = {reservationId}]";
+
+                    var vars = new Dictionary<string, object>
+                    {
+                        ["current state"] = state,
+                        ["requested state"] = requestedState,
+                        ["reservationId"] = reservationId,
+                        ["tool_engineer"] = args.IsToolEngineer,
+                        ["inlab"] = args.IsInLab,
+                        ["reserver"] = args.IsReserver,
+                        ["invited"] = args.IsInvited,
+                        ["authorized"] = args.IsAuthorized,
+                        ["before_mct"] = args.IsBeforeMinCancelTime(),
+                        ["startable"] = args.IsStartable()
+                    };
+
+                    helper.SendDebugEmail("ReservationController.GetReservationAction", "Invalid state detected!", "Invalid state detected!", vars);
+
+                    return SchedulerUtility.Create(Provider).GetReservationViewReturnUrl(currentView, false, reservationId);
             }
 
             string result = SchedulerUtility.Create(Provider).GetReservationViewReturnUrl(currentView, confirm, reservationId);
@@ -242,7 +264,7 @@ namespace LNF.Web.Scheduler.Controllers
             IResource res = Provider.Scheduler.Resource.GetResource(pathInfo.ResourceID);
             IClient currentUser = context.CurrentUser(Provider);
 
-            ClientAuthLevel authLevel = CacheManager.Current.GetAuthLevel(res.ResourceID, currentUser.ClientID);
+            ClientAuthLevel authLevel = CacheManager.Current.GetAuthLevel(res.ResourceID, currentUser);
 
             if (authLevel < ClientAuthLevel.SuperUser)
             {
@@ -263,7 +285,7 @@ namespace LNF.Web.Scheduler.Controllers
         private int GetCurrentUserActiveClientAccountsCount(HttpContextBase context)
         {
             string un = context.User.Identity.Name;
-            return DA.Current.Query<ClientAccountInfo>().Count(x => x.ClientAccountActive && x.ClientOrgActive && x.UserName == un);
+            return Provider.Data.Client.GetActiveClientAccounts(un).Count();
         }
 
         private DateTime GetWeekStartDate(HttpContextBase context)

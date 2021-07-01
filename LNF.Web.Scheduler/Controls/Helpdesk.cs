@@ -105,6 +105,7 @@ namespace LNF.Web.Scheduler.Controls
 
                 string subjectText = "[" + res.ResourceID.ToString() + ":" + res.ResourceName + "] " + txtSubject.Text;
                 CreateTicketResult addTicketResult = HelpdeskUtility.CreateTicket(CurrentUser, res, rsv, CurrentUser.ClientID, ddlReservations.SelectedItem.Text, subjectText, txtMessage.Text, ddlTicketType.SelectedItem.Text, Request.Url);
+
                 if (addTicketResult.Success)
                 {
                     litErrMsg.Text = WebUtility.BootstrapAlert("success", string.Format("Your ticket has been created. A confirmation email has been sent to {0}.", CurrentUser.Email));

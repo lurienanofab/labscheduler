@@ -5,17 +5,17 @@
 <%@ Import Namespace="System.Net.Mail" %>
 <%@ Import Namespace="System.Threading.Tasks" %>
 <%@ Import Namespace="LNF" %>
-<%@ Import Namespace="LNF.Cache" %>
-<%@ Import Namespace="LNF.CommonTools" %>
-<%@ Import Namespace="LNF.PhysicalAccess" %>
-<%@ Import Namespace="LNF.Scheduler" %>
-<%@ Import Namespace="LNF.Data" %>
 <%@ Import Namespace="LNF.Billing" %>
 <%@ Import Namespace="LNF.Billing.Process" %>
-<%@ Import Namespace="LNF.Scheduler" %>
-<%@ Import Namespace="LNF.Repository" %>
+<%@ Import Namespace="LNF.Cache" %>
+<%@ Import Namespace="LNF.CommonTools" %>
+<%@ Import Namespace="LNF.Data" %>
+<%@ Import Namespace="LNF.DataAccess" %>
 <%@ Import Namespace="LNF.Impl.Repository.Data" %>
 <%@ Import Namespace="LNF.Impl.Repository.Scheduler" %>
+<%@ Import Namespace="LNF.PhysicalAccess" %>
+<%@ Import Namespace="LNF.Repository" %>
+<%@ Import Namespace="LNF.Scheduler" %>
 <%@ Import Namespace="LNF.Web" %>
 <%@ Import Namespace="LNF.Web.Scheduler" %>
 <%@ Import Namespace="LNF.Web.Scheduler.TreeView" %>
@@ -32,6 +32,8 @@
     public HttpContextBase ContextBase { get { return _contextBase; } }
 
     public IClient CurrentUser { get { return ContextBase.CurrentUser(Provider); } }
+
+    public ISession DataSession { get { return Provider.DataAccess.Session; } }
 
     public enum AlertType
     {
@@ -60,7 +62,7 @@
         if (Session["LogInAsOriginalUser"] != null)
         {
             string un = Session["LogInAsOriginalUser"].ToString();
-            return CacheManager.Current.GetClient(un);
+            return Provider.Data.Client.GetClient(un);
         }
 
         return null;
@@ -124,7 +126,7 @@
                 {
                     var clientId = GetClientID();
 
-                    var client = clientId == 0 ? CurrentUser : CacheManager.Current.GetClient(clientId);
+                    var client = clientId == 0 ? CurrentUser : Provider.Data.Client.GetClient(clientId);
 
                     if (client == null)
                         throw new Exception(string.Format("Cannot find a Client with ClientID = {0}", clientId));
@@ -158,11 +160,11 @@
         }
     }
 
-    private ReservationProcessInfoItem GetReservationProcessInfoItem(ReservationProcessInfo rpi)
+    private XReservationProcessInfoItem GetReservationProcessInfoItem(ReservationProcessInfo rpi)
     {
-        var pil = rpi.ProcessInfoLine;
-        var pi = DA.Current.Single<LNF.Impl.Repository.Scheduler.ProcessInfo>(pil.ProcessInfoID);
-        return new ReservationProcessInfoItem() { ReservationProcessInfo = rpi, ProcessInfoLine = pil, ProcessInfo = pi };
+        var pil = DataSession.Single<ProcessInfoLine>(rpi.ProcessInfoLineID);
+        var pi = DataSession.Single<LNF.Impl.Repository.Scheduler.ProcessInfo>(pil.ProcessInfoID);
+        return new XReservationProcessInfoItem() { ReservationProcessInfo = rpi, ProcessInfoLine = pil, ProcessInfo = pi };
     }
 
     private bool SwitchUser(IClient client)
@@ -223,7 +225,7 @@
             hypLogInAsOriginalUser.NavigateUrl = string.Format("~/Utility.aspx?tab=user-report&clientId={0}&login=true", originalUser.ClientID);
         }
 
-        ddlCurrentUser.DataSource = CacheManager.Current.Clients().OrderBy(x => x.DisplayName).Select(x => new { x.ClientID, DisplayName = string.Format("{0} [{1}]", x.DisplayName, x.ClientID) }).ToList();
+        ddlCurrentUser.DataSource = Provider.Data.Client.GetClients().OrderBy(x => x.DisplayName).Select(x => new { x.ClientID, DisplayName = string.Format("{0} [{1}]", x.DisplayName, x.ClientID) }).ToList();
         ddlCurrentUser.DataBind();
 
         var listItem = ddlCurrentUser.Items.FindByValue(client.ClientID.ToString());
@@ -231,9 +233,11 @@
 
         var ipaddr = Request.UserHostAddress;
         var inlab = Provider.PhysicalAccess.GetCurrentlyInArea("all");
-        var paUtil = new PhysicalAccessUtility(inlab, ipaddr);
-        var isKiosk = Kiosks.IsKiosk(ipaddr);
-        var onKiosk = Kiosks.IsOnKiosk(ipaddr);
+
+        var paUtil = new PhysicalAccessUtility(inlab, ipaddr, Provider.Scheduler.Kiosk);
+        var kiosks = Kiosks.Create(Provider.Scheduler.Kiosk);
+        var isKiosk = kiosks.IsKiosk(ipaddr);
+        var onKiosk = kiosks.IsOnKiosk(ipaddr);
         var isInLab = paUtil.IsInLab(client.ClientID);
         var clientInLab = paUtil.ClientInLab(client.ClientID);
 
@@ -295,13 +299,13 @@
 
         txtReservationID.Text = reservationId.ToString();
 
-        IReservation rsv = DA.Current.Single<ReservationInfo>(reservationId);
+        IReservation rsv = DataSession.Single<ReservationInfo>(reservationId);
 
         if (rsv != null)
         {
             if (command == "history")
             {
-                var history = DA.Current.Query<ReservationHistory>().Where(x => x.Reservation.ReservationID == rsv.ReservationID).ToList();
+                var history = DataSession.Query<ReservationHistory>().Where(x => x.Reservation.ReservationID == rsv.ReservationID).ToList();
 
                 if (history.Count > 0)
                 {
@@ -316,7 +320,7 @@
             }
             else if (command == "invitees")
             {
-                IEnumerable<IReservationInvitee> invitees = DA.Current.Query<ReservationInviteeInfo>().Where(x => x.ReservationID == rsv.ReservationID).ToList();
+                IEnumerable<IReservationInviteeItem> invitees = DataSession.Query<ReservationInviteeInfo>().Where(x => x.ReservationID == rsv.ReservationID).ToList();
 
                 if (invitees.Count() > 0)
                 {
@@ -331,7 +335,7 @@
             }
             else if (command == "procinfo")
             {
-                IList<ReservationProcessInfo> procinfo = DA.Current.Query<ReservationProcessInfo>().Where(x => x.Reservation.ReservationID == reservationId).ToList();
+                IList<ReservationProcessInfo> procinfo = DataSession.Query<ReservationProcessInfo>().Where(x => x.ReservationID == reservationId).ToList();
 
                 if (procinfo.Count > 0)
                 {
@@ -354,9 +358,9 @@
                 else if (command == "delete")
                 {
                     // do a full purge, use at your own risk!
-                    IList<ReservationHistory> history = DA.Current.Query<ReservationHistory>().Where(x => x.Reservation.ReservationID == rsv.ReservationID).ToList();
+                    IList<ReservationHistory> history = DataSession.Query<ReservationHistory>().Where(x => x.Reservation.ReservationID == rsv.ReservationID).ToList();
 
-                    DA.Command(CommandType.Text).Batch(x =>
+                    DataCommand(CommandType.Text).Batch(x =>
                     {
                         x.Select.AddParameter("ReservationID", reservationId);
 
@@ -599,7 +603,7 @@
         }
     }
 
-    public class ReservationProcessInfoItem
+    public class XReservationProcessInfoItem
     {
         public ReservationProcessInfo ReservationProcessInfo { get; set; }
         public ProcessInfoLine ProcessInfoLine { get; set; }

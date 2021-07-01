@@ -40,7 +40,7 @@
             <asp:Literal runat="server" ID="litComputer"></asp:Literal>
         </div>
 
-        <asp:PlaceHolder runat="server" ID="phMobileLink" Visible='<%#Not LNF.Scheduler.Kiosks.IsKiosk(Request.Url.ToString())%>'>
+        <asp:PlaceHolder runat="server" ID="phMobileLink" Visible='<%#Not Helper.IsKiosk()%>'>
             <div style="margin-top: 10px;">
                 <a href="." target="_top" class="mobile-link">Reload for mobile browsers (no menu)</a>
             </div>

@@ -1,6 +1,5 @@
 ﻿using LNF.Cache;
 using LNF.Scheduler;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
@@ -79,9 +78,9 @@ namespace LNF.Web.Scheduler.Controls
             if (res == null)
                 return string.Empty;
             
-            string result = $"<span>{res.BuildingName} &gt; {res.LabDisplayName} &gt; {res.ProcessTechName} &gt; </span><span class=\"tabs-resource-name\">{res.ResourceName} [{res.ResourceID}]</span>";
+            string result = $"<span>{res.BuildingName} &gt; {res.LabDisplayName} &gt; {res.ProcessTechName} &gt; </span><span class=\"tabs-resource-name\"><a href=\"{Page.Request.Url}\">{res.ResourceName} [{res.ResourceID}]</a></span>";
 
-            var loc = Provider.Scheduler.LabLocation.GetLabLocationByResource(res.ResourceID);
+            var loc = GetLabLocationByResource(res.ResourceID);
 
             if (loc != null)
             {
@@ -93,9 +92,27 @@ namespace LNF.Web.Scheduler.Controls
             return result;
         }
 
+        protected ILabLocation GetLabLocationByResource(int resourceId)
+        {
+            IEnumerable<ILabLocation> labLocations = SchedulerPage.Helper.LabLocations();
+            IEnumerable<IResourceLabLocation> resourceLabLocations = SchedulerPage.Helper.ResourceLabLocations();
+
+            ILabLocation result = null;
+
+            var rll = resourceLabLocations.FirstOrDefault(x => x.ResourceID == resourceId);
+
+            if (rll != null)
+            {
+                result = labLocations.FirstOrDefault(x => x.LabLocationID == rll.LabLocationID);
+            }
+
+            return result;
+        }
+
         protected virtual IList<TabItem> GetTabs()
         {
-            ClientAuthLevel authLevel = CacheManager.Current.GetAuthLevel(PathInfo.Parse(SelectedPath).ResourceID, CurrentUser.ClientID);
+            ClientAuthLevel authLevel = CacheManager.Current.GetAuthLevel(PathInfo.Parse(SelectedPath).ResourceID, CurrentUser);
+
             bool authorized = (authLevel & ClientAuthLevel.ToolEngineer) > 0;
 
             List<TabItem> tabs = new List<TabItem>

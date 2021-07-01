@@ -354,7 +354,7 @@
 
                 if (isRecurring) {
                     var separator = redirectUrl.indexOf("?") >= 0 ? "&" : "?";
-                    window.location = [redirectUrl, "recurring=1"].join(separator)
+                    window.location = [redirectUrl, "recurring=1"].join(separator);
                 } else {
                     window.location = window.location.href.replace("&recurring=1", "");
                 }

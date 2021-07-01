@@ -4,8 +4,10 @@ using LNF.CommonTools;
 using LNF.Control;
 using LNF.Data;
 using LNF.Scheduler;
+using LNF.Web.Scheduler.Models;
 using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 using System.Web;
 using System.Web.SessionState;
 
@@ -25,12 +27,12 @@ namespace LNF.Web.Scheduler.Handlers
 
             object result = null;
 
-            int clientId;
+            int clientId = Utility.ConvertTo(ctx.Request["ClientID"], 0);
+
             DateTime period;
 
             if (command == "update-billing")
             {
-                clientId = Utility.ConvertTo(ctx.Request["ClientID"], 0);
                 period = Convert.ToDateTime(ctx.Request["Period"]);
 
                 var logs = Provider.Billing.Process.UpdateBilling(new UpdateBillingArgs
@@ -46,15 +48,24 @@ namespace LNF.Web.Scheduler.Handlers
             {
                 bool error = false;
                 string msg = "OK!";
+                DataCleanResult dataCleanResult = null;
                 DataResult dataResult = null;
                 Step1Result step1Result = null;
-                
+                bool isTemp;
+
                 try
                 {
-                    clientId = Utility.ConvertTo(ctx.Request["ClientID"], 0);
                     period = Convert.ToDateTime(ctx.Request["Period"]);
 
-                    // ToolDataClean is updated in IReservationRepository.SaveReservationHistory prior to this request.
+                    isTemp = Utility.IsCurrentPeriod(period);
+
+                    dataCleanResult = Provider.Billing.Process.DataClean(new DataCleanCommand
+                    {
+                        BillingCategory = BillingCategory.Tool | BillingCategory.Room,
+                        ClientID = clientId,
+                        StartDate = period,
+                        EndDate = period.AddMonths(1)
+                    });
 
                     dataResult = Provider.Billing.Process.Data(new DataCommand
                     {
@@ -71,16 +82,51 @@ namespace LNF.Web.Scheduler.Handlers
                         Period = period,
                         Record = 0,
                         Delete = true,
-                        IsTemp = Utility.IsCurrentPeriod(period)
+                        IsTemp = isTemp
                     });
+
+                    var errorCheck =
+                        dataResult.WriteToolDataProcessResult.RowsLoaded >= dataCleanResult.WriteToolDataCleanProcessResult.RowsLoaded
+                        && step1Result.PopulateToolBillingProcessResult.RowsLoaded >= dataResult.WriteToolDataProcessResult.RowsLoaded;
+
+                    if (!errorCheck)
+                        throw new Exception($"A problem occurred when trying to load billing data. Period: {period:yyyy-MM-dd:HH:mm:ss}, ClientID: {clientId}, Rows Loaded: DataClean = {dataCleanResult.WriteToolDataCleanProcessResult.RowsLoaded}, Data = {dataResult.WriteToolDataProcessResult.RowsLoaded}, Step1 = {step1Result.PopulateToolBillingProcessResult.RowsLoaded}");
                 }
                 catch (Exception ex)
                 {
                     error = true;
                     msg = ex.Message;
+                    SendEmail.SendDebugEmail(clientId, "LNF.Web.Scheduler.Handlers.ReservationHandler.ProcessRequest", $"[DEBUG:{DateTime.Now:yyyy-MM-dd HH:mm:ss}] An error occurred while updating billing from the Reservation History page.", msg);
                 }
 
-                result = new { Error = error, Message = msg, DataResult = dataResult, Step1Result = step1Result };
+                result = new { Error = error, Message = msg, DataCleanResult = dataCleanResult, DataResult = dataResult, Step1Result = step1Result };
+            }
+            else if (command == "get-clients-for-reservation-history")
+            {
+                bool isok = clientId > 0;
+                DateTime sd, ed;
+
+                if (string.IsNullOrEmpty(ctx.Request.Form["StartDate"]))
+                    sd = Reservations.MinReservationBeginDate;
+                else
+                    isok = isok & DateTime.TryParse(ctx.Request.Form["StartDate"], out sd);
+
+                if (string.IsNullOrEmpty(ctx.Request.Form["EndDate"]))
+                    ed = Reservations.MaxReservationEndDate;
+                else
+                    isok = isok & DateTime.TryParse(ctx.Request.Form["EndDate"], out ed);
+
+                IEnumerable<ReservationHistoryClient> clients = null;
+
+                if (isok)
+                {
+                    clients = ReservationHistoryUtility.Create(Provider).SelectReservationHistoryClients(sd, ed, clientId);
+                    result = new { Error = false, Message = "OK", Clients = clients };
+                }
+                else
+                {
+                    result = new { Error = true, Message = "One or more parameters are invalid.", Clients = clients };
+                }
             }
             else if (int.TryParse(ctx.Request["ReservationID"], out int reservationId))
             {
@@ -103,18 +149,25 @@ namespace LNF.Web.Scheduler.Handlers
 
                         double chargeMultiplier = 1.00 - (forgivenPct / 100.0);
 
+                        clientId = ctx.CurrentUser(Provider).ClientID;
+
                         var model = new ReservationHistoryUpdate()
                         {
                             ReservationID = reservationId,
                             AccountID = accountId,
                             ChargeMultiplier = chargeMultiplier,
                             Notes = notes,
-                            EmailClient = emailClient
+                            EmailClient = emailClient,
+                            ClientID = clientId
                         };
 
                         bool updateResult = Provider.Scheduler.Reservation.UpdateReservationHistory(model);
                         string msg = updateResult ? "OK" : "An error occurred.";
-                        result = new { Error = !updateResult, Message = msg };
+                        result = new
+                        {
+                            Error = !updateResult,
+                            Message = msg
+                        };
 
                         break;
                     case "test":
@@ -128,7 +181,7 @@ namespace LNF.Web.Scheduler.Handlers
             }
             else
             {
-                throw new Exception("Missing parameter: id");
+                throw new Exception("Missing parameter: command");
             }
 
             ctx.Response.Write(JsonConvert.SerializeObject(result));
@@ -150,7 +203,7 @@ namespace LNF.Web.Scheduler.Handlers
 
                 if (rsv != null)
                 {
-                    util.Start(rsv, helper.GetReservationClientItem(rsv, client), context.CurrentUser(provider).ClientID);
+                    util.Start(rsv, helper.GetReservationClient(rsv, client), context.CurrentUser(provider).ClientID);
                     return new { Error = false, Message = "OK" };
                 }
                 else
@@ -175,7 +228,7 @@ namespace LNF.Web.Scheduler.Handlers
                 return new { Error = true, Message = string.Format("Cannot find record for ReservationID {0}", reservationId) };
         }
 
-        public static StartReservationItem CreateStartReservationItem(HttpContextBase context, IProvider provider, IReservation rsv, IClient client)
+        public static StartReservationItem CreateStartReservationItem(HttpContextBase context, IProvider provider, IReservationItem rsv, IClient client)
         {
             var now = DateTime.Now;
             var util = Reservations.Create(provider, now);
@@ -213,7 +266,7 @@ namespace LNF.Web.Scheduler.Handlers
 
             var reservationItem = provider.Scheduler.Reservation.GetReservationWithInvitees(rsv.ReservationID);
             var helper = new SchedulerContextHelper(context, provider);
-            var args = ReservationStateArgs.Create(reservationItem, helper.GetReservationClientItem(reservationItem), now);
+            var args = ReservationStateArgs.Create(reservationItem, helper.GetReservationClient(reservationItem), now);
             var stateUtil = ReservationStateUtility.Create(now);
             ReservationState state = stateUtil.GetReservationState(args);
 

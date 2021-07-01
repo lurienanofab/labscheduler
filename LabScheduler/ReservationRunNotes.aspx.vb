@@ -1,8 +1,6 @@
-﻿Imports LNF.Repository
-Imports LNF.Scheduler
+﻿Imports LNF.Scheduler
 Imports LNF.Web.Scheduler
 Imports LNF.Web.Scheduler.Content
-Imports Scheduler = LNF.Impl.Repository.Scheduler
 
 Namespace Pages
     Public Class ReservationRunNotes
@@ -20,14 +18,14 @@ Namespace Pages
             If Not IsPostBack Then
                 ' Get Reservation + Resource
                 Dim reservationId As Integer = GetReservationID()
-                Dim rsv As Scheduler.Reservation = DA.Current.Single(Of Scheduler.Reservation)(reservationId)
+                Dim rsv As IReservationItem = Provider.Scheduler.Reservation.GetReservationItem(reservationId)
 
                 If rsv Is Nothing Then
                     Throw New Exception(String.Format("Cannot find a Reservation with ReservationID = {0}", reservationId))
                 End If
 
                 ' Initialize controls
-                litResourceName.Text = rsv.Resource.ResourceName
+                litResourceName.Text = rsv.ResourceName
                 litBeginTime.Text = rsv.BeginDateTime.ToString()
                 litEndTime.Text = rsv.EndDateTime.ToString()
                 txtNotes.Text = rsv.Notes
@@ -35,10 +33,9 @@ Namespace Pages
             End If
         End Sub
 
-        Protected Sub btnSubmit_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles btnSubmit.Click
+        Protected Sub BtnSubmit_Click(ByVal sender As Object, ByVal e As EventArgs) Handles btnSubmit.Click
             Dim notes As String = Server.HtmlDecode(txtNotes.Text)
-            Dim rsv As Scheduler.Reservation = DA.Current.Single(Of Scheduler.Reservation)(GetReservationID())
-            rsv.UpdateNotes(notes)
+            Provider.Scheduler.Reservation.UpdateNotes(GetReservationID(), notes)
             ReturnFromNotes()
         End Sub
 

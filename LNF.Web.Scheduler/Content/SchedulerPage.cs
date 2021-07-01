@@ -7,7 +7,7 @@ namespace LNF.Web.Scheduler.Content
 {
     public abstract class SchedulerPage : LNFPage
     {
-        public SchedulerContextHelper Helper => NewHelper();
+        public new SchedulerContextHelper Helper => NewHelper();
 
         public SchedulerMasterPage SchedulerMaster
         {
@@ -32,7 +32,7 @@ namespace LNF.Web.Scheduler.Content
         /// <summary>
         /// Gets the current ViewType from session
         /// </summary>
-        public ViewType GetCurrentView()
+        public virtual ViewType GetCurrentView()
         {
             return ContextBase.GetCurrentViewType();
         }
@@ -40,7 +40,7 @@ namespace LNF.Web.Scheduler.Content
         /// <summary>
         /// Sets the current ViewType session variable
         /// </summary>
-        public void SetCurrentView(ViewType value)
+        public virtual void SetCurrentView(ViewType value)
         {
             ContextBase.SetCurrentViewType(value);
         }

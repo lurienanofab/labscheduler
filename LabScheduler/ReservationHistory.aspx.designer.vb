@@ -15,6 +15,24 @@ Namespace Pages
     Partial Public Class ReservationHistory
         
         '''<summary>
+        '''hidAjaxUrl control.
+        '''</summary>
+        '''<remarks>
+        '''Auto-generated field.
+        '''To modify move field declaration from designer file to code-behind file.
+        '''</remarks>
+        Protected WithEvents hidAjaxUrl As Global.System.Web.UI.HtmlControls.HtmlInputHidden
+        
+        '''<summary>
+        '''hidClientID control.
+        '''</summary>
+        '''<remarks>
+        '''Auto-generated field.
+        '''To modify move field declaration from designer file to code-behind file.
+        '''</remarks>
+        Protected WithEvents hidClientID As Global.System.Web.UI.HtmlControls.HtmlInputHidden
+        
+        '''<summary>
         '''ddlClients control.
         '''</summary>
         '''<remarks>

@@ -4,7 +4,7 @@
 
 <uc:HelpdeskInfo runat="server" ID="HelpdeskInfo1" />
 
-<div class="reservation-view">
+<div runat="server" id="divReservationView" class="reservation-view">
     <asp:PlaceHolder runat="server" ID="phErrorMessage" Visible="false">
         <div class="alert alert-danger" role="alert">
             <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>

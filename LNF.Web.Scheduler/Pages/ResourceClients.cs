@@ -98,7 +98,7 @@ namespace LNF.Web.Scheduler.Pages
 
             var p = ClientPrivilege.LabUser | ClientPrivilege.Staff;
 
-            var query = DA.Current.Query<ClientInfo>().Where(x => (x.Privs & p) > 0 && x.ClientActive && !existing.Contains(x.ClientID)).OrderBy(x => x.LName).ThenBy(x => x.FName);
+            var query = DataSession.Query<ClientInfo>().Where(x => (x.Privs & p) > 0 && x.ClientActive && !existing.Contains(x.ClientID)).OrderBy(x => x.LName).ThenBy(x => x.FName).ToList();
 
             ClientsDropDownList.DataSource = query;
             ClientsDropDownList.DataBind();
@@ -227,7 +227,7 @@ namespace LNF.Web.Scheduler.Pages
 
         private string GetEmailAddress(int clientId)
         {
-            var c = DA.Current.Single<ClientInfo>(clientId);
+            var c = Provider.Data.Client.GetClient(clientId);
 
             if (c != null)
                 return c.Email;
@@ -289,7 +289,7 @@ namespace LNF.Web.Scheduler.Pages
 
                     SetExpiration(rc);
 
-                    DA.Current.Insert(rc);
+                    DataSession.Insert(rc);
 
                     CurrentClients.Add(new ResourceClientItem()
                     {
@@ -310,10 +310,13 @@ namespace LNF.Web.Scheduler.Pages
                     if (cc != null)
                     {
                         refreshAuthLevel |= cc.AuthLevel;
-                        var rc = DA.Current.Single<ResourceClient>(cc.ResourceClientID);
+
+                        var rc = DataSession.Single<ResourceClient>(cc.ResourceClientID);
                         rc.AuthLevel = selectedAuthLevel;
-                        cc.AuthLevel = selectedAuthLevel;
                         SetExpiration(rc);
+                        DataSession.SaveOrUpdate(rc);
+
+                        cc.AuthLevel = selectedAuthLevel;
                         cc.Expiration = rc.Expiration;
 
                         CancelEdit();
@@ -368,8 +371,8 @@ namespace LNF.Web.Scheduler.Pages
 
             if (cc != null)
             {
-                var rc = DA.Current.Single<ResourceClient>(cc.ResourceClientID);
-                DA.Current.Delete(rc);
+                var rc = DataSession.Single<ResourceClient>(cc.ResourceClientID);
+                DataSession.Delete(rc);
                 CurrentClients.Remove(cc);
             }
 
@@ -385,8 +388,9 @@ namespace LNF.Web.Scheduler.Pages
 
             if (cc != null)
             {
-                var rc = DA.Current.Single<ResourceClient>(cc.ResourceClientID);
+                var rc = DataSession.Single<ResourceClient>(cc.ResourceClientID);
                 rc.Expiration = DateTime.Now.AddMonths(GetCurrentResource().AuthDuration);
+                DataSession.SaveOrUpdate(rc);
             }
 
             Fill(authLevel);

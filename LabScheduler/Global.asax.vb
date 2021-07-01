@@ -5,13 +5,32 @@ Imports LabScheduler.AppCode
 Imports LNF
 Imports LNF.Impl
 Imports LNF.Web
+Imports SimpleInjector
 
-Public Class Global_asax
+Public Class [Global]
     Inherits HttpApplication
+
+    Private Shared webapp As WebApp
+
+    Public Shared ReadOnly Property Container As Container
+        Get
+            Return webapp.Container
+        End Get
+    End Property
 
     Sub Application_Start(ByVal sender As Object, ByVal e As EventArgs)
         Dim assemblies As Assembly() = BuildManager.GetReferencedAssemblies().Cast(Of Assembly)().ToArray()
-        WebApp.Current.Bootstrap(assemblies)
+
+        webapp = New WebApp()
+
+        ' setup up dependency injection container
+        Dim wcc As New WebContainerConfiguration(webapp.Container)
+        wcc.EnablePropertyInjection()
+        wcc.RegisterAllTypes()
+
+        ' setup web dependency injection
+        webapp.Bootstrap(assemblies)
+
         Application("AppServer") = ConfigurationManager.AppSettings("AppServer")
         Application("DocStore") = ConfigurationManager.AppSettings("DocStore")
         Application("DocServer") = ConfigurationManager.AppSettings("DocServer")
@@ -34,7 +53,7 @@ Public Class Global_asax
         Dim lastEx As Exception = Server.GetLastError()
         If lastEx IsNot Nothing Then
             Dim baseEx As Exception = lastEx.GetBaseException()
-            Dim util As New ErrorUtility(New HttpContextWrapper(Context), WebApp.Current.GetInstance(Of IProvider)())
+            Dim util As New ErrorUtility(New HttpContextWrapper(Context), Container.GetInstance(Of IProvider)())
             If baseEx IsNot Nothing Then
                 errors = util.GetErrorData(baseEx)
             Else
@@ -54,14 +73,14 @@ Public Class Global_asax
     End Sub
 
     Sub Application_BeginRequest(ByVal sender As Object, ByVal e As EventArgs)
-        If IO.Path.GetExtension(Request.FilePath) = ".aspx" AndAlso Response.ContentType = "text/html" Then
-            RequestLog.Start()
-        End If
+
     End Sub
 
     Sub Application_EndRequest(ByVal sender As Object, ByVal e As EventArgs)
-        If IO.Path.GetExtension(Request.FilePath) = ".aspx" AndAlso Response.ContentType = "text/html" Then
-            Response.Write(RequestLog.FlushScript())
-        End If
+
+    End Sub
+
+    Public Shared Sub InitializeHandler(handler As IHttpHandler)
+        webapp.InitializeHandler(handler)
     End Sub
 End Class

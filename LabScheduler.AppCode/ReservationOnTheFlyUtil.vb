@@ -1,5 +1,6 @@
 Imports System.Configuration
 Imports System.Web
+Imports LNF.DataAccess
 Imports LNF.Impl.Repository.Scheduler
 Imports LNF.Repository
 
@@ -81,9 +82,9 @@ Public Class ReservationOnTheFlyUtil
         Return False
     End Function
 
-    Public Shared Function GetOnTheFlyResource(cardswipedata As String, buttonIndex As Integer) As OnTheFlyResource
+    Public Shared Function GetOnTheFlyResource(session As ISession, cardswipedata As String, buttonIndex As Integer) As OnTheFlyResource
         Dim readerName As String = GetReaderName(cardswipedata)
-        Return DA.Current.Query(Of OnTheFlyResource).FirstOrDefault(Function(x) x.CardReaderName = readerName AndAlso x.ButtonIndex = buttonIndex)
+        Return session.Query(Of OnTheFlyResource).FirstOrDefault(Function(x) x.CardReaderName = readerName AndAlso x.ButtonIndex = buttonIndex)
     End Function
 
     Public Shared Function GetCardNumber(cardswipedata As String) As String

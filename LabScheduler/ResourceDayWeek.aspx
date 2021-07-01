@@ -4,6 +4,24 @@
 <%@ Register TagPrefix="lnf" Assembly="LNF.Web.Scheduler" Namespace="LNF.Web.Scheduler.Controls" %>
 
 <asp:Content ID="Content1" ContentPlaceHolderID="head" runat="server">
+    <style>
+        .resource-tool-tip {
+            margin-bottom: 10px;
+            font-weight: bold;
+            padding: 5px;
+            font-weight: bold;
+            display: inline-block;
+        }
+
+            .resource-tool-tip.offline {
+                background-color: #ff0000;
+                color: #EECCCC;
+            }
+
+            .resource-tool-tip.limited{
+                background-color: #E5E505;
+            }
+    </style>
 </asp:Content>
 
 <asp:Content ID="Content2" ContentPlaceHolderID="ContentPlaceHolder1" runat="server">
@@ -12,6 +30,13 @@
     <div class="row" style="overflow-x: hidden;">
         <div class="col-lg-12">
             <div class="view" style="overflow-x: auto;">
+
+                <asp:PlaceHolder runat="server" ID="phResourceToolTip" Visible="false">
+                    <asp:Panel runat="server" ID="panResourceToolTip">
+                        <asp:Literal runat="server" ID="litResourceToolTip"></asp:Literal>
+                    </asp:Panel>
+                </asp:PlaceHolder>
+
                 <uc:ReservationView runat="server" ID="ReservationView1"></uc:ReservationView>
                 <div class="ical-container">
                     <div class="ical-title">

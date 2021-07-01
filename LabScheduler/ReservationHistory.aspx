@@ -93,6 +93,10 @@
             .update-billing .alert .update-billing-status {
                 margin-left: 10px;
             }
+
+        .client-select {
+            min-width: 300px;
+        }
     </style>
 </asp:Content>
 
@@ -101,31 +105,38 @@
 
     <hr />
 
-    <div class="form-inline">
+    <input type="hidden" class="ajax-url" id="hidAjaxUrl" runat="server" />
+    <input type="hidden" class="client-id" id="hidClientID" runat="server" />
+
+    <div class="form-inline" style="margin-bottom: 10px;">
         <div class="form-group">
             <span>Show reservations for</span>
-            <asp:DropDownList runat="server" ID="ddlClients" AutoPostBack="False" DataTextField="DisplayName" DataValueField="ClientID" CssClass="form-control"></asp:DropDownList>
+            <asp:DropDownList runat="server" ID="ddlClients" AutoPostBack="False" DataTextField="DisplayName" DataValueField="ClientID" CssClass="form-control client-select"></asp:DropDownList>
         </div>
     </div>
 
-    <div class="form-inline" style="margin-top: 10px;">
+    <div class="form-inline" style="margin-bottom: 10px;">
         <div class="form-group">
             <span>Show reservations in the past</span>
-            <span class="date-manager">
+            <div class="date-manager" style="display: inline-block;">
                 <asp:DropDownList runat="server" ID="ddlRange" AutoPostBack="False" CssClass="form-control daterange-select">
                     <asp:ListItem Value="0" Selected="True">30 days</asp:ListItem>
                     <asp:ListItem Value="1">3 months</asp:ListItem>
                     <asp:ListItem Value="2">1 year</asp:ListItem>
                     <asp:ListItem Value="3">All</asp:ListItem>
                 </asp:DropDownList>
-                <asp:TextBox runat="server" ID="txtStartDate" CssClass="sdate datepicker form-control" Width="85"></asp:TextBox>
-                <asp:TextBox runat="server" ID="txtEndDate" CssClass="edate datepicker form-control" Width="85"></asp:TextBox>
-            </span>
+                <div style="display: inline-block; margin-left: 2px;">
+                    <asp:TextBox runat="server" ID="txtStartDate" CssClass="sdate datepicker form-control" Width="85"></asp:TextBox>
+                </div>
+                <div style="display: inline-block; margin-left: 2px;">
+                    <asp:TextBox runat="server" ID="txtEndDate" CssClass="edate datepicker form-control" Width="85"></asp:TextBox>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div style="margin-top: 10px;">
-        <asp:Button runat="server" ID="btnSearchHistory" Text="Search" OnClick="BtnSearchHistory_Click" CssClass="lnf btn btn-default" />
+    <div style="margin-bottom: 10px;">
+        <asp:Button runat="server" ID="btnSearchHistory" Text="Search" OnClick="BtnSearchHistory_Click" CssClass="lnf btn btn-default search-button" />
     </div>
 
     <hr />
@@ -403,10 +414,51 @@
 </asp:Content>
 
 <asp:Content ID="Content3" ContentPlaceHolderID="scripts" runat="server">
-    <script src="scripts/jquery.dateManager.js?v=20161115"></script>
+    <script src="scripts/jquery.dateManager.js?v=20210628"></script>
 
     <script>
-        $(".date-manager").dateManager();
+        var ajaxUrl = $('.ajax-url').val();
+        var clientId = parseInt($('.client-id').val());
+
+        $(".date-manager").dateManager({
+            onChange: function (e) {
+                var clients = $(".client-select");
+                var items = $('option', clients);
+
+                var selectedVal = clients.val();
+
+                clients.prop('disabled', true);
+                clients.html('<option>Loading...</option>');
+                
+                var search = $(".search-button");
+                search.prop("disabled", true);
+
+                $.ajax({
+                    'url': ajaxUrl,
+                    'method': 'POST',
+                    'data': { 'Command': 'get-clients-for-reservation-history', 'StartDate': e.sdate, 'EndDate': e.edate, 'ClientID': clientId }
+                }).done(function (data) {
+                    if (!data.Error) {
+                        items = $.map(data.Clients, function (item) { return $('<option/>', { 'value': item.ClientID }).html(item.DisplayName); });
+                    } else {
+                        alert(data.Message);
+                    }
+
+                    clients.html(items)
+                    clients.val(selectedVal);
+
+                    clients.prop('disabled', false);
+                    search.prop("disabled", false);
+                }).fail(function (jqXHR) {
+                    var errmsg = getErrorMessage(jqXHR);
+
+                    alert(errmsg);
+
+                    clients.html(items)
+                    clients.val(selectedVal);
+                });
+            }
+        });
 
         $.extend($.fn.dataTableExt.oSort, {
             'moment-pre': function (a) {
@@ -466,19 +518,10 @@
                     $alert.removeClass("alert-danger");
                 }
             }).fail(function (jqXHR) {
-                console.log(jqXHR);
-
                 $alert.addClass("alert-danger");
                 $alert.removeClass("alert-success");
 
-                var doc = $.parseHTML(jqXHR.responseText);
-                var t = doc.find(function (x) { return x.nodeName === 'TITLE'; });
-                var errmsg;
-
-                if (t && t.innerText)
-                    errmsg = t.innerText;
-                else
-                    errmsg = "[" + jqXHR.status + "] " + jqXHR.statusText;
+                var errmsg = getErrorMessage(jqXHR);
 
                 $(".update-billing-status", $alert).html(errmsg);
             }).always(function () {
@@ -486,5 +529,18 @@
                 $well.hide();
             });
         });
+
+        function getErrorMessage(jqXHR) {
+            var doc = $.parseHTML(jqXHR.responseText);
+            var t = doc.find(function (x) { return x.nodeName === 'TITLE'; });
+            var errmsg;
+
+            if (t && t.innerText)
+                errmsg = t.innerText;
+            else
+                errmsg = "[" + jqXHR.status + "] " + jqXHR.statusText;
+
+            return errmsg;
+        }
     </script>
 </asp:Content>

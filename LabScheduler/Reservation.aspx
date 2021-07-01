@@ -418,7 +418,7 @@
 
     <asp:PlaceHolder runat="server" ID="phConfirm" Visible="false">
         <div class="row">
-            <div class="col-sm-6">
+            <div class="col-xs-6">
                 <div class="well confirmation">
                     <asp:Label runat="server" ID="lblConfirm" Font-Bold="true" />
                     <div style="text-align: center; margin-top: 10px;">
@@ -428,6 +428,16 @@
                         <asp:Button runat="server" ID="btnConfirmYes" Text="Yes" CssClass="confirm-button btn btn-default" OnClientClick="disable('.confirm-button');" UseSubmitBehavior="false" OnClick="BtnConfirmYes_Click" />
                         <asp:Button runat="server" ID="btnConfirmNo" Text="No" CssClass="confirm-button btn btn-default" OnClientClick="disable('.confirm-button');" UseSubmitBehavior="false" OnClick="BtnConfirmNo_Click" />
                     </div>
+                </div>
+            </div>
+        </div>
+    </asp:PlaceHolder>
+
+    <asp:PlaceHolder runat="server" ID="phConfirmError" Visible="false">
+        <div class="row">
+            <div class="col-xs-6">
+                <div class="alert alert-danger" role="alert">
+                    <asp:Literal runat="server" ID="litConfirmError"></asp:Literal>
                 </div>
             </div>
         </div>
@@ -450,5 +460,7 @@
         });
 
         $(".bs-datepicker").datepicker();
+
+        console.log("Current View: " + $(".current-view").val());
     </script>
 </asp:Content>

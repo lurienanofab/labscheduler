@@ -2,6 +2,7 @@
 Imports LNF.Scheduler
 Imports LNF.Web.Scheduler
 Imports LNF.Web.Scheduler.Content
+Imports LNF.Web.Scheduler.TreeView
 
 Namespace Pages
     Public Class ResourceDayWeek
@@ -69,6 +70,15 @@ Namespace Pages
                 ReservationView1.View = view
                 ReservationView1.Resource = res
                 txtCalendarURL.Text = FeedGenerator.Scheduler.Reservations.GetUrl(FeedFormats.Calendar, "all", res.ResourceID.ToString(), "tool-reservations", Request.Url)
+
+                Dim treeView As SchedulerResourceTreeView = Helper.CurrentResourceTreeView()
+                Dim selectedNode As ResourceNode = treeView.FindResourceNode(ContextBase.Request.SelectedPath())
+                If selectedNode IsNot Nothing AndAlso selectedNode.State <> ResourceState.Online Then
+                    phResourceToolTip.Visible = True
+                    panResourceToolTip.CssClass = "resource-tool-tip " + selectedNode.CssClass
+                    litResourceToolTip.Text = selectedNode.ToolTip
+                End If
+
             Else
                 Redirect("ResourceClients.aspx")
             End If

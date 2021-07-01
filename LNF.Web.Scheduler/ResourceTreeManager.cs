@@ -1,4 +1,5 @@
-﻿using LNF.Impl.Repository.Scheduler;
+﻿using LNF.DataAccess;
+using LNF.Impl.Repository.Scheduler;
 using LNF.Repository;
 using LNF.Scheduler;
 using System.Collections.Generic;
@@ -10,12 +11,10 @@ namespace LNF.Web.Scheduler
     {
         private IList<IResourceTree> _items;
 
-        public ResourceTreeManager(int clientId)
+        public ResourceTreeManager(IProvider provider, int clientId)
         {
             // create a new ResourceTreeManager based on the currently logged in user
-            _items = new List<IResourceTree>();
-            foreach(IResourceTree rt in DA.Current.Query<ResourceTree>().Where(x => x.ClientID == clientId).ToList())
-                _items.Add(rt);
+            _items = provider.Scheduler.Resource.GetResourceTree(clientId).ToList();
         }
 
         public static ProcessTechItem CreateProcessTechModel(IResourceTree item)

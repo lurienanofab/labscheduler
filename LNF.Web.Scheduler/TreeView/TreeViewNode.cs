@@ -9,14 +9,16 @@ namespace LNF.Web.Scheduler.TreeView
         public INode Parent { get; }
         public TreeViewNodeCollection Children { get; protected set; }
         public SchedulerResourceTreeView View { get; }
+        public SchedulerContextHelper Helper { get; }
         public int ID { get; protected set; }
         public string Name { get; protected set; }
         public string Description { get; protected set; }
         public T Item { get; }
         protected abstract void Load();
 
-        protected TreeViewNode(SchedulerResourceTreeView view, T item)
+        protected TreeViewNode(SchedulerContextHelper helper, SchedulerResourceTreeView view, T item)
         {
+            Helper = helper;
             Item = item;
             View = view;
             Parent = null;
@@ -24,6 +26,7 @@ namespace LNF.Web.Scheduler.TreeView
 
         protected TreeViewNode(SchedulerResourceTreeView view, T item, INode parent)
         {
+            Helper = parent.Helper;
             Item = item;
             View = view;
             Parent = parent ?? throw new ArgumentNullException("parent");

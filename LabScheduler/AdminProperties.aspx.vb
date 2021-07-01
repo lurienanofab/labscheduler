@@ -33,7 +33,7 @@ Namespace Pages
 
 #Region " Loading Functions "
         Private Sub LoadAdmin()
-            Dim query As IList(Of Client) = DA.Current.Query(Of Client)().Where(Function(x) x.Active).ToList()
+            Dim query As IList(Of Client) = DataSession.Query(Of Client)().Where(Function(x) x.Active).ToList()
             ddlAdmin.DataSource = query.Where(Function(x) x.HasPriv(ClientPrivilege.Administrator)).ToList()
             ddlAdmin.DataBind()
         End Sub
@@ -154,7 +154,7 @@ Namespace Pages
             ' Update Database
             Properties.Current.Save()
             kioskDB.Update(dtKiosk)
-            Kiosks.ClearCache()
+            Provider.Scheduler.Kiosk.RefreshCache()
 
             SetAlertMessage("Global Properties have been successfully modified.", "success")
         End Sub

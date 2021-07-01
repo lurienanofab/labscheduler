@@ -52,7 +52,7 @@ Public Class ErrorUtility
         list.Add(result)
 
         Try
-            DA.Current.Insert(result)
+            Provider.DataAccess.Session.Insert(result)
         Catch ex2 As Exception
             list.Add(New ErrorLog() With {
                 .Application = appName,

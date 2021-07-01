@@ -1,11 +1,10 @@
 Imports LNF.Repository
-Imports LNF.CommonTools
 
 Namespace DBAccess
     Public Class KioskLabDB
         ' Returns all kiosks
         Public Function SelectAll() As DataTable
-            Dim dt As DataTable = DA.Command() _
+            Dim dt As DataTable = DataCommand.Create() _
                 .Param("Action", "SelectAll") _
                 .FillDataTable("sselScheduler.dbo.procKioskLabSelect")
 
@@ -19,7 +18,7 @@ Namespace DBAccess
 
         ' Returns all kiosks in the specified laboratory
         Public Function SelectByLab(ByVal LabID As Integer) As DataTable
-            Dim dt As DataTable = DA.Command() _
+            Dim dt As DataTable = DataCommand.Create() _
                 .Param("Action", "SelectByLab") _
                 .Param("LabID", LabID) _
                 .FillDataTable("sselScheduler.dbo.procKioskLabSelect")
@@ -34,14 +33,16 @@ Namespace DBAccess
 
         ' Insert/Update/Delete Kiosks
         Public Sub Update(ByRef dt As DataTable)
-            DA.Command().Update(dt, Sub(x)
-                                        x.Insert.SetCommandText("sselScheduler.dbo.procKioskLabInsert")
-                                        x.Insert.AddParameter("KioskID", SqlDbType.Int)
-                                        x.Insert.AddParameter("LabID", SqlDbType.Int)
+            DataCommand.Create.Update(dt, AddressOf UpdateAction)
+        End Sub
 
-                                        x.Delete.SetCommandText("sselScheduler.dbo.procKioskLabDelete")
-                                        x.Delete.AddParameter("KioskID", SqlDbType.Int)
-                                    End Sub)
+        Private Sub UpdateAction(x As UpdateConfiguration)
+            x.Insert.SetCommandText("sselScheduler.dbo.procKioskLabInsert")
+            x.Insert.AddParameter("KioskID", SqlDbType.Int)
+            x.Insert.AddParameter("LabID", SqlDbType.Int)
+
+            x.Delete.SetCommandText("sselScheduler.dbo.procKioskLabDelete")
+            x.Delete.AddParameter("KioskID", SqlDbType.Int)
         End Sub
     End Class
 End Namespace

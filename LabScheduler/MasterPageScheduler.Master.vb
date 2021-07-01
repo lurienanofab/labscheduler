@@ -38,6 +38,7 @@ Namespace Pages
 
         Protected Sub Page_Load(ByVal sender As Object, ByVal e As EventArgs) Handles Me.Load
             Dim sw As Stopwatch = Stopwatch.StartNew()
+            Helper.AppendLog($"MasterPageScheduler.Page_Load: Started...")
 
             CheckSession()
 
@@ -66,7 +67,7 @@ Namespace Pages
                 Dim locationTree As SchedulerResourceTreeView = Helper.CurrentLocationTreeView()
                 If locationTree.Root.Count > 0 Then
                     phLocations.Visible = True
-                    ResourceTreeView2.SelectedPath = LocationPathInfo.Parse(Request.QueryString("LocationPath")).ToString()
+                    ResourceTreeView2.SelectedPath = ContextBase.Request.SelectedLocationPath().ToString()
                     ResourceTreeView2.View = Helper.CurrentLocationTreeView()
                 End If
             End If
@@ -74,8 +75,8 @@ Namespace Pages
             Dim elapsed As TimeSpan = sw.Elapsed
             sw.Stop()
 
-            RequestLog.Append("MasterPageScheduler.Page_Load: {0}", elapsed)
-            'litMasterTimer.Text = $"<div>MasterPageScheduler.Page_Load: {elapsed}</div>"
+            Helper.AppendLog($"MasterPageScheduler.Page_Load: Completed in {sw.Elapsed.TotalSeconds:0.0000} seconds")
+            sw.Stop()
         End Sub
 
         Private Function ShowLabLocations() As Boolean

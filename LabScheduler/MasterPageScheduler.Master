@@ -44,8 +44,10 @@
 <head runat="server">
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 
-    <link rel="shortcut icon" href="//ssel-apps.eecs.umich.edu/static/favicon.ico" type="image/x-icon" />
+    <title>LNF Scheduler</title>
 
+    <link rel="shortcut icon" href="//ssel-apps.eecs.umich.edu/static/favicon.ico" type="image/x-icon" />
+    
     <asp:ContentPlaceHolder runat="server" ID="head">
     </asp:ContentPlaceHolder>
 
@@ -61,7 +63,7 @@
     <link rel="stylesheet" href="//ssel-apps.eecs.umich.edu/static/styles/common.css" />
     <link rel="stylesheet" href="styles/admin.css" />
     <link rel="stylesheet" href="styles/helpdesk.css" />
-    <link rel="stylesheet" href="styles/main.css?v=20200708" />
+    <link rel="stylesheet" href="styles/main.css?v=20201104" />
     <link rel="stylesheet" href="styles/resource.css" />
     <link rel="stylesheet" href="styles/schedule.css" />
     <link rel="stylesheet" href="styles/splitter.css" />
@@ -196,7 +198,7 @@
     <script src="scripts/jquery.helpdeskinfo.js"></script>
     <script src="scripts/jquery.numerictext.js"></script>
     <script src="scripts/jquery.reservation.js?v=20161202"></script>
-    <script src="scripts/jquery.reservationView.js?v=20200515"></script>
+    <script src="scripts/jquery.reservationView.js?v=20201106"></script>
     <script src="scripts/jquery.schedule.js"></script>
     <script src="scripts/jquery.treeview.js"></script>
     <script src="scripts/calendar/calendar.js"></script>
@@ -205,7 +207,7 @@
     <script src="scripts/processinfo.js"></script>
 
     <script>
-        var lnfapi = new LNFAPI({ "host": "https://ssel-apps.eecs.umich.edu/webapi/" });
+        var lnfapi = new LNFAPI({ "host": "//ssel-apps.eecs.umich.edu/webapi/" });
 
         var isStaging = '<%=ConfigurationManager.AppSettings("IsStaging")%>' === 'true';
         $(document).staging({ "isStaging": isStaging });

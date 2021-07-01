@@ -34,7 +34,7 @@ namespace LNF.Web.Scheduler
                         var resourceId = page.ContextBase.Request.SelectedPath().ResourceID;
                         if (resourceId > 0)
                         {
-                            ClientAuthLevel authLevel = CacheManager.Current.GetAuthLevel(resourceId, currentUser.ClientID);
+                            ClientAuthLevel authLevel = CacheManager.Current.GetAuthLevel(resourceId, currentUser);
                             // So far, only Tool Engineer can see the 3 pages
                             return (authLevel & ClientAuthLevel.ToolEngineer) > 0;
                         }

@@ -228,7 +228,7 @@ Namespace Pages
 
             Try
                 ' Insert/Update Setting
-                Dim cs = DA.Current.Single(Of ClientSetting)(ContextBase.CurrentUser(Provider).ClientID)
+                Dim cs = DataSession.Single(Of ClientSetting)(ContextBase.CurrentUser(Provider).ClientID)
 
                 cs.BuildingID = Integer.Parse(ddlBuilding.SelectedValue)
                 cs.LabID = Integer.Parse(ddlLab.SelectedValue)
@@ -241,7 +241,7 @@ Namespace Pages
                 cs.EmailDeleteReserv = chkDeleteReserv.Checked
                 cs.EmailInvited = chkInviteReserv.Checked
 
-                DA.Current.SaveOrUpdate(cs)
+                DataSession.SaveOrUpdate(cs)
 
                 ' Update ResourceClient email notifications if they are different
                 Dim hidCurrentValue As HiddenField

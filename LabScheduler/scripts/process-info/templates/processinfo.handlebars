@@ -1,0 +1,101 @@
+﻿<table class="process-info-table">
+    <thead>
+        <tr>
+            <th>&nbsp;</th>
+            <th>Process Info Name</th>
+            <th>Param Name</th>
+            <th>Value Name</th>
+            <th>Special</th>
+            <th>Allow None</th>
+            <th>Require Value</th>
+            <th>Require Selection</th>
+            <th>&nbsp;</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{#each infos}}
+        <tr class="process-info" data-process-info-id="{{processInfoId}}">
+            <td class="expand">
+                <a href="#" class="expand-button"></a>
+                <a href="#" class="collapse-button"></a>
+                <a href="#" class="move-up-button"></a>
+                <a href="#" class="move-down-button"></a>
+            </td>
+            <td class="process-info-name">{{processInfoName}}</td>
+            <td class="param-name">{{paramName}}</td>
+            <td class="value-name">{{valueName}}</td>
+            <td class="special">{{special}}</td>
+            <td class="allow-none">{{allowNone}}</td>
+            <td class="require-value">{{requireValue}}</td>
+            <td class="require-selection">{{requireSelection}}</td>
+            <td class="edit-delete">
+                <a href="#" class="edit-button"></a>
+                <a href="#" class="delete-button"></a>
+                <a href="#" class="save-button"></a>
+                <a href="#" class="cancel-button"></a>
+            </td>
+        </tr>
+        <tr class="process-info-line-parent" data-process-info-id="{{processInfoId}}">
+            <td class="row-lines" colspan="9">
+                <table class="process-info-table">
+                    <thead>
+                        <tr>
+                            <th>Param</th>
+                            <th>Min Value</th>
+                            <th>Max Value</th>
+                            <th>&nbsp;</th>
+                        </tr>
+                    </thead>
+                    <tbody class="process-info-lines">
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td>
+                                <input type="text" class="add-param" maxlength="50" size="20" />
+                            </td>
+                            <td>
+                                <input type="text" class="add-min-value" maxlength="50" size="10" />
+                            </td>
+                            <td>
+                                <input type="text" class="add-max-value" maxlength="50" size="10" />
+                            </td>
+                            <td>
+                                <button type="button" class="add-process-info-line-button">Add</button>
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </td>
+        </tr>
+        {{/each}}
+    </tbody>
+    <tfoot>
+        <tr>
+            <td>&nbsp;</td>
+            <td>
+                <input type="text" class="add-process-info-name" maxlength="50" size="10" />
+            </td>
+            <td>
+                <input type="text" class="add-param-name" maxlength="50" size="10" />
+            </td>
+            <td>
+                <input type="text" class="add-value-name" maxlength="50" size="10" />
+            </td>
+            <td>
+                <input type="text" class="add-special" maxlength="50" size="10" />
+            </td>
+            <td>
+                <input type="checkbox" class="add-allow-none" />
+            </td>
+            <td>
+                <input type="checkbox" class="add-require-value" />
+            </td>
+            <td>
+                <input type="checkbox" class="add-require-selection" />
+            </td>
+            <td>
+                <button type="button" class="add-process-info-button">Add</button>
+            </td>
+        </tr>
+    </tfoot>
+</table>

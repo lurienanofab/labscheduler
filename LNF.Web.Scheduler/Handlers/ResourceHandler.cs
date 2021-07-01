@@ -1,5 +1,5 @@
-﻿using LNF.Impl.Repository.Scheduler;
-using LNF.Repository;
+﻿using LNF.DataAccess;
+using LNF.Impl.Repository.Scheduler;
 using Newtonsoft.Json;
 using System;
 using System.Linq;
@@ -11,6 +11,10 @@ namespace LNF.Web.Scheduler.Handlers
 {
     public class ResourceHandler : HttpTaskAsyncHandler, IReadOnlySessionState
     {
+        [Inject] public IProvider Provider { get; set; }
+
+        public ISession DataSession => Provider.DataAccess.Session;
+
         public override async Task ProcessRequestAsync(HttpContext context)
         {
             try
@@ -44,11 +48,10 @@ namespace LNF.Web.Scheduler.Handlers
 
         public void GetProcessInfoLineParams(HttpContext context)
         {
-
             if (!int.TryParse(context.Request.QueryString["resourceId"], out int resourceId))
                 throw new HttpException(500, "Invalid parameter: resourceId");
 
-            string[] paramNames = DA.Current.Query<ProcessInfoLineParam>().Where(x => x.Resource.ResourceID == resourceId).Select(x => x.ParameterName).ToArray();
+            string[] paramNames = DataSession.Query<ProcessInfoLineParam>().Where(x => x.ResourceID == resourceId).Select(x => x.ParameterName).ToArray();
 
             context.Response.ContentType = "application/json";
             context.Response.Write(JsonConvert.SerializeObject(paramNames));

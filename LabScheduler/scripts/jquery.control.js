@@ -3,8 +3,6 @@
         return this.each(function () {
             var $this = $(this);
 
-            var $this = $(this);
-
             var id = $this.data("id");
             var state = false;
 

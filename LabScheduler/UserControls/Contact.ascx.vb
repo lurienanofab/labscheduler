@@ -80,11 +80,6 @@ Namespace UserControls
             Return result
         End Function
 
-        Private Function GetEmailFromReservation(rsv As IReservation) As String
-            Dim c As IClient = Provider.Data.Client.GetClient(rsv.ClientID)
-            Return c.Email
-        End Function
-
         Protected Sub Page_Load(sender As Object, e As EventArgs) Handles Me.Load
             If Not IsPostBack Then
                 Dim showCancel = True
@@ -106,9 +101,9 @@ Namespace UserControls
                             Throw New Exception(String.Format("Cannot find Client with ClientID = {0}", clientId))
                         End If
                     ElseIf reservationId > 0 Then
-                        Dim rsv As IReservation = Provider.Scheduler.Reservation.GetReservation(reservationId)
+                        Dim rsv As IReservationItem = Provider.Scheduler.Reservation.GetReservation(reservationId)
                         If rsv IsNot Nothing Then
-                            SetSendTo(rsv.DisplayName, GetEmailFromReservation(rsv))
+                            SetSendTo(rsv.DisplayName, rsv.Email)
                         Else
                             Throw New Exception(String.Format("Cannot find Reservation with ReservationID = {0}", reservationId))
                         End If
@@ -179,16 +174,20 @@ Namespace UserControls
             End If
         End Sub
 
-        Private Function GetRecentReservations(resourceId As Integer) As IEnumerable(Of IReservation)
+        Private Function GetRecentReservations(resourceId As Integer) As IEnumerable(Of RecentReservation)
+            Dim rid As Integer
+
             If resourceId = 0 Then
-                Return Provider.Scheduler.Reservation.SelectRecentReservations(ContextBase.Request.SelectedPath().ResourceID)
+                rid = ContextBase.Request.SelectedPath().ResourceID
             Else
-                Return Provider.Scheduler.Reservation.SelectRecentReservations(resourceId)
+                rid = resourceId
             End If
+
+            Return Provider.Scheduler.Reservation.SelectRecentReservations(rid)
         End Function
 
         Private Sub LoadReservations()
-            Dim recentRsv As IEnumerable(Of IReservation) = GetRecentReservations(GetResourceID())
+            Dim recentRsv As IEnumerable(Of RecentReservation) = GetRecentReservations(GetResourceID())
             ddlReservations.Items.Clear()
             ddlReservations.Items.Add(New ListItem("None"))
             For Each rsv As IReservation In recentRsv
@@ -196,7 +195,6 @@ Namespace UserControls
                     .Value = rsv.ReservationID.ToString(),
                     .Text = rsv.BeginDateTime.ToString() + " - " + rsv.EndDateTime.ToString() + " Reserved by " + rsv.DisplayName
                 }
-
                 ddlReservations.Items.Add(newItem)
             Next
         End Sub
@@ -220,9 +218,9 @@ Namespace UserControls
                     Throw New Exception(String.Format("Cannot find Client with ClientID = {0}", clientId))
                 End If
             ElseIf reservationId > 0 Then
-                Dim rsv As IReservation = Provider.Scheduler.Reservation.GetReservation(reservationId)
+                Dim rsv As IReservationItem = Provider.Scheduler.Reservation.GetReservation(reservationId)
                 If rsv IsNot Nothing Then
-                    receiverAddr = GetEmailFromReservation(rsv)
+                    receiverAddr = rsv.Email
                 Else
                     Throw New Exception(String.Format("Cannot find Reservation with ReservationID = {0}", reservationId))
                 End If
@@ -285,12 +283,12 @@ Namespace UserControls
                     End If
                 End If
 
-                sb.AppendLine(Environment.NewLine + "--------------------------------------------------" + Environment.NewLine)
+                sb.AppendLine($"{Environment.NewLine}--------------------------------------------------{Environment.NewLine}")
                 sb.AppendLine(txtBody.Text)
 
                 'Print tool name on email so the recipients know which tool this email refers to
                 If res IsNot Nothing Then
-                    sb.AppendLine(Environment.NewLine + "** This email is sent via Scheduler, the tool is " + res.ResourceName + " **")
+                    sb.AppendLine($"{Environment.NewLine}** This email is sent via Scheduler, the tool is {res.ResourceName} **")
                 End If
 
                 body = sb.ToString()

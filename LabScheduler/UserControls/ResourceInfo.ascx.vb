@@ -1,6 +1,5 @@
 ﻿Imports LNF.Cache
 Imports LNF.Scheduler
-Imports LNF.Web
 Imports LNF.Web.Scheduler
 Imports LNF.Web.Scheduler.Content
 
@@ -11,7 +10,8 @@ Namespace UserControls
         Private _selectedPath As PathInfo
 
         Protected Sub Page_Load(sender As Object, e As EventArgs) Handles Me.Load
-            Dim startTime As Date = Date.Now
+            Dim sw As Stopwatch = Stopwatch.StartNew()
+            Helper.AppendLog($"ResourceInfo.Page_Load: Started...")
 
             _selectedPath = ContextBase.Request.SelectedPath()
 
@@ -67,7 +67,8 @@ Namespace UserControls
                 rptResourceInfo.DataBind()
             End If
 
-            RequestLog.Append("ResourceInfo.PageLoad: {0}", Date.Now - startTime)
+            Helper.AppendLog($"ResourceInfo.Page_Load: Completed in {sw.Elapsed.TotalSeconds:0.0000} seconds")
+            sw.Stop()
         End Sub
 
         Private Function GetToolEngineers() As List(Of ToolEngineerItem)

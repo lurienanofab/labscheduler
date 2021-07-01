@@ -18,13 +18,13 @@ namespace LNF.Web.Scheduler.Handlers
 
             try
             {
-                HandleCommand(ctx);
-                ctx.Response.Write(JsonConvert.SerializeObject(new { Success = true }));
+                var result = HandleCommand(ctx);
+                ctx.Response.Write(JsonConvert.SerializeObject(result));
             }
             catch (Exception ex)
             {
                 ctx.Response.StatusCode = 500;
-                ctx.Response.Write(JsonConvert.SerializeObject(new { Success = false, ErrorMessage = ex.Message, StackTrace = ex.StackTrace }));
+                ctx.Response.Write(JsonConvert.SerializeObject(new { Success = false, ErrorMessage = ex.Message, ex.StackTrace }));
             }
         }
 
@@ -33,20 +33,20 @@ namespace LNF.Web.Scheduler.Handlers
             get { return false; }
         }
 
-        private void HandleCommand(HttpContextBase context)
+        private object HandleCommand(HttpContextBase context)
         {
             string command = context.Request["command"];
             switch (command)
             {
                 case "send-hardware-issue-email":
-                    SendHardwareTicketEmails(context);
-                    break;
+                    int sent = SendHardwareTicketEmails(context);
+                    return new { Success = sent > 0, Message = $"Emails sent: {sent}" };
                 default:
                     throw new Exception("Invalid command");
             }
         }
 
-        private void SendHardwareTicketEmails(HttpContextBase context)
+        private int SendHardwareTicketEmails(HttpContextBase context)
         {
             string subject = context.Request["subject"];
             string message = context.Request["message"];
@@ -56,7 +56,8 @@ namespace LNF.Web.Scheduler.Handlers
 
             var res = Provider.Scheduler.Resource.GetResource(resourceId);
 
-            HelpdeskUtility.SendHardwareIssueEmail(res, context.CurrentUser(Provider).ClientID, subject, message);
+            int sent = HelpdeskUtility.SendHardwareIssueEmail(res, context.CurrentUser(Provider).ClientID, subject, message);
+            return sent;
         }
     }
 }

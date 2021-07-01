@@ -3,7 +3,7 @@
         return this.each(function () {
             var $this = $(this);
 
-            var opts = $.extend({}, { "onClick": null, "path": null }, options, $this.data());
+            var opts = $.extend({}, { "onClick": null, "path": null, "locationPath": null }, options, $this.data());
 
             var getRedirectUrl = function (args) {
                 var uri = URI("ReservationController.ashx");
@@ -26,7 +26,8 @@
                     Date: cell.data("date"), //every cell has one
                     Time: cell.data("time"),
                     State: cell.data("state"),
-                    Path: cell.data("path") || opts.path
+                    Path: cell.data("path") || opts.path,
+                    LocationPath: opts.locationPath
                 };
 
                 var valid = true;

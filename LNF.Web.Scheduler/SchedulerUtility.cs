@@ -28,7 +28,7 @@ namespace LNF.Web.Scheduler
             return new SchedulerUtility(provider);
         }
 
-        public ReservationState GetReservationCell(CustomTableCell rsvCell, IReservation rsv, ReservationClient client, DateTime now)
+        public ReservationState GetReservationCell(CustomTableCell rsvCell, IReservationItem rsv, ReservationClient client, IEnumerable<IReservationProcessInfo> reservationProcessInfos, IEnumerable<IReservationInviteeItem> invitees, LocationPathInfo locationPath, DateTime now)
         {
             int reservationId = rsv.ReservationID;
             int resourceId = rsv.ResourceID;
@@ -39,7 +39,7 @@ namespace LNF.Web.Scheduler
 
             // Tooltip Caption and Text
             string caption = Reservations.GetReservationCaption(state);
-            string toolTip = Reservations.Create(Provider, now).GetReservationToolTip(rsv, state);
+            string toolTip = Reservations.Create(Provider, now).GetReservationToolTip(rsv, state, reservationProcessInfos, invitees);
             rsvCell.Attributes["data-tooltip"] = toolTip;
             rsvCell.Attributes["data-caption"] = caption;
 
@@ -70,13 +70,17 @@ namespace LNF.Web.Scheduler
             // 2/11/05 - GPR: allow tool engineers to cancel any non-started, non-repair reservation in the future
             ClientAuthLevel userAuth = args.UserAuth;
 
+            PathInfo path = PathInfo.Create(rsv.BuildingID, rsv.LabID, rsv.ProcessTechID, rsv.ResourceID);
+            string navurl;
+
             //if (state == ReservationState.Editable || state == ReservationState.StartOrDelete || state == ReservationState.StartOnly || (userAuth == ClientAuthLevel.ToolEngineer && DateTime.Now < rsv.BeginDateTime && rsv.ActualBeginDateTime == null && state != ReservationState.Repair))
             // [2020-09-18 jg] StartOnly should not allow delete and NotInLab should allow delete
             if (CanDeleteReservation(state, args, now))
             {
+                navurl = $"~/ReservationController.ashx?Command=DeleteReservation&ReservationID={rsv.ReservationID}&Date={rsvCell.CellDate:yyyy-MM-dd}&Time={rsvCell.CellDate.TimeOfDay.TotalMinutes}&State={state}";
                 var hypDelete = new HyperLink
                 {
-                    NavigateUrl = $"~/ReservationController.ashx?Command=DeleteReservation&ReservationID={rsv.ReservationID}&Date={rsvCell.CellDate:yyyy-MM-dd}&Time={rsvCell.CellDate.TimeOfDay.TotalMinutes}&State={state}&Path={PathInfo.Create(rsv.BuildingID, rsv.LabID, rsv.ProcessTechID, rsv.ResourceID)}",
+                    NavigateUrl = NavigateUrl(navurl, path, locationPath),
                     ImageUrl = "~/images/deleteGrid.gif",
                     CssClass = "ReservDelete"
                 };
@@ -95,9 +99,10 @@ namespace LNF.Web.Scheduler
             //if (state == ReservationState.Editable || state == ReservationState.StartOrDelete || state == ReservationState.StartOnly)
             if (CanModifyReservation(state, args, now))
             {
+                navurl = $"~/ReservationController.ashx?Command=ModifyReservation&ReservationID={rsv.ReservationID}&Date={rsvCell.CellDate:yyyy-MM-dd}&Time={rsvCell.CellDate.TimeOfDay.TotalMinutes}&State={state}";
                 var hypModify = new HyperLink
                 {
-                    NavigateUrl = $"~/ReservationController.ashx?Command=ModifyReservation&ReservationID={rsv.ReservationID}&Date={rsvCell.CellDate:yyyy-MM-dd}&Time={rsvCell.CellDate.TimeOfDay.TotalMinutes}&State={state}&Path={PathInfo.Create(rsv.BuildingID, rsv.LabID, rsv.ProcessTechID, rsv.ResourceID)}",
+                    NavigateUrl = NavigateUrl(navurl, path, locationPath),
                     ImageUrl = "~/images/edit.png",
                     CssClass = "ReservModify"
                 };
@@ -118,14 +123,18 @@ namespace LNF.Web.Scheduler
 
         public static bool CanDeleteReservation(ReservationState state, ReservationStateArgs args, DateTime now)
         {
+            // [2020-09-29 jg] invitee and tool engineer can also delete
+
             if (state == ReservationState.StartOrDelete)
                 return true;
 
-            if (state == ReservationState.Editable) // [2020-09-29 jg] invitee can also delete
+            if (state == ReservationState.Editable)
                 return true;
 
-            // tool engineer override
-            if (ToolEngineerCanOverride(state, args, now))
+            if (state == ReservationState.Invited)
+                return true;
+
+            if (state == ReservationState.NotInLab)
                 return true;
 
             return false;
@@ -135,28 +144,23 @@ namespace LNF.Web.Scheduler
         {
             // [2020-09-29 jg] Editable means Delete or Modify so we must check here for isReserver.
 
+            // only reserver can modify
+            if (!args.IsReserver)
+                return false;
+
             if (state == ReservationState.StartOrDelete)
                 return true;
 
-            if (state == ReservationState.Editable && args.IsReserver) // [2020-09-29 jg] only reserver can modify
+            if (state == ReservationState.Editable)
                 return true;
 
-            // tool engineer override
-            if (ToolEngineerCanOverride(state, args, now))
+            if (state == ReservationState.NotInLab)
                 return true;
 
             return false;
         }
 
-        public static bool ToolEngineerCanOverride(ReservationState state, ReservationStateArgs args, DateTime now)
-        {
-            return args.IsToolEngineer
-                && now < args.BeginDateTime
-                && args.ActualBeginDateTime == null
-                && state != ReservationState.Repair;
-        }
-
-        public static void GetMultipleReservationCell(CustomTableCell rsvCell, IEnumerable<IReservation> reservs)
+        public static void GetMultipleReservationCell(CustomTableCell rsvCell, IEnumerable<IReservationItem> reservs)
         {
             // Display multiple reservations
             rsvCell.HorizontalAlign = HorizontalAlign.Center;
@@ -278,20 +282,20 @@ namespace LNF.Web.Scheduler
             }
             else
             {
-                result = LocationPathInfo.Parse(context.Request.QueryString["LocationPath"]);
+                result = context.Request.SelectedLocationPath();
             }
 
             return result;
         }
 
-        public static string GetReservationReturnUrl(PathInfo pathInfo, int reservationId, DateTime date, TimeSpan time)
+        public static string GetReservationReturnUrl(PathInfo path, LocationPathInfo locationPath, int reservationId, DateTime date, TimeSpan time, ViewType view)
         {
-            var result = GetReturnUrl("Reservation.aspx", pathInfo, reservationId, date);
-            result += $"&Time={time.TotalMinutes}"; // at least date will be in the query string, so definitely use '&' here
+            var result = GetReturnUrl("Reservation.aspx", path, locationPath, reservationId, date);
+            result += $"&Time={time.TotalMinutes}&View={view}"; // at least date will be in the query string, so definitely use '&' here
             return result;
         }
 
-        public static string GetReturnUrl(string page, PathInfo pathInfo, int reservationId, DateTime date)
+        public static string GetReturnUrl(string page, PathInfo path, LocationPathInfo locationPath, int reservationId, DateTime date)
         {
             string result = $"~/{page}";
 
@@ -303,9 +307,15 @@ namespace LNF.Web.Scheduler
                 separator = "&";
             }
 
-            if (!pathInfo.IsEmpty())
+            if (!path.IsEmpty())
             {
-                result += $"{separator}Path={pathInfo.UrlEncode()}";
+                result += $"{separator}Path={path.UrlEncode()}";
+                separator = "&";
+            }
+
+            if (!locationPath.IsEmpty())
+            {
+                result += $"{separator}LocationPath={locationPath.UrlEncode()}";
                 separator = "&";
             }
 
@@ -379,6 +389,15 @@ namespace LNF.Web.Scheduler
             }
 
             return false;
+        }
+
+        public static string NavigateUrl(string url, PathInfo path, LocationPathInfo locationPath)
+        {
+            if (!path.IsEmpty())
+                url += $"&Path={path.UrlEncode()}";
+            if (!locationPath.IsEmpty())
+                url += $"&LocationPath={locationPath.UrlEncode()}";
+            return url;
         }
     }
 }

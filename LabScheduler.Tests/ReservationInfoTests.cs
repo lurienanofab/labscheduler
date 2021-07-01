@@ -15,7 +15,7 @@ namespace LabScheduler.Tests
         {
             var container = new Container();
             var config = new ThreadStaticContainerConfiguration(container);
-            config.Configure();
+            config.RegisterAllTypes();
             var mgr = container.GetInstance<ISessionManager>();
             var provider = container.GetInstance<IProvider>();
             ServiceProvider.Setup(provider);

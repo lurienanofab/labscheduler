@@ -175,14 +175,21 @@ namespace LNF.Web.Scheduler.Pages
 
                 var util = new RepairUtility(treeItem, CurrentUser, Provider);
 
+                DateTime repairActualBeginDateTime, repairActualEndDateTime;
+                string notes = txtNotes.Text;
+
                 switch (e.CommandName)
                 {
                     case "start":
                         var state = GetSelectedState();
-                        repair = util.StartRepair(ContextBase, state, GetRepairActualBeginDateTime(state), GetRepairActualEndDateTime(state), txtNotes.Text);
+                        repairActualBeginDateTime = GetRepairActualBeginDateTime(state);
+                        repairActualEndDateTime = GetRepairActualEndDateTime(state);
+                        repair = util.StartRepair(ContextBase, state, repairActualBeginDateTime, repairActualEndDateTime, notes);
                         break;
                     case "update":
-                        repair = util.UpdateRepair(GetRepairActualBeginDateTime(res.State), GetRepairActualEndDateTime(res.State), txtNotes.Text);
+                        repairActualBeginDateTime = GetRepairActualBeginDateTime(res.State);
+                        repairActualEndDateTime = GetRepairActualEndDateTime(res.State);
+                        repair = util.UpdateRepair(repairActualBeginDateTime, repairActualEndDateTime, notes);
                         break;
                     case "end":
                         repair = util.EndRepair(DateTime.Now);

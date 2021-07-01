@@ -44,8 +44,8 @@ namespace LNF.Web.Scheduler
                     repair = Provider.Scheduler.Reservation.InsertRepair(Resource.ResourceID, CurrentUser.ClientID, beginDateTime, endDateTime, actualBeginDateTime, notes, CurrentUser.ClientID);
 
                     // Remove invitees and process info that might be in the session
-                    context.Session.Remove("ReservationInvitees");
-                    context.Session.Remove("ReservationProcessInfos");
+                    context.Session.Remove($"ReservationInvitees#{Resource.ResourceID}");
+                    context.Session.Remove($"ReservationProcessInfos#{Resource.ResourceID}");
 
                     // Set the state into resource table and session object
                     Resources.UpdateState(Resource.ResourceID, ResourceState.Offline, string.Empty);
@@ -66,6 +66,7 @@ namespace LNF.Web.Scheduler
         public IReservation UpdateRepair(DateTime actualBeginDateTime, DateTime actualEndDateTime, string notes)
         {
             IReservation repair = null;
+            IReservation result = null;
 
             if (Resource.HasState(ResourceState.Offline))
             {
@@ -83,9 +84,11 @@ namespace LNF.Web.Scheduler
                         endDateTime = Resource.GetNextGranularity(actualEndDateTime, GranularityDirection.Next);
 
                         // Modify existing repair reservation
-                        Provider.Scheduler.Reservation.UpdateRepair(repair.ReservationID, endDateTime, notes, CurrentUser.ClientID);
+                        result = Provider.Scheduler.Reservation.UpdateRepair(repair.ReservationID, endDateTime, notes, CurrentUser.ClientID);
 
-                        UpdateAffectedReservations(repair);
+                        // result has the modified end datetime, so affected reservations will be updated
+
+                        UpdateAffectedReservations(result);
                     }
                 }
             }
@@ -95,7 +98,7 @@ namespace LNF.Web.Scheduler
                 Resources.UpdateState(Resource.ResourceID, ResourceState.Limited, notes);
             }
 
-            return repair;
+            return result;
         }
 
         public IReservation EndRepair(DateTime now)
@@ -139,7 +142,7 @@ namespace LNF.Web.Scheduler
         /// Checks for all reservations affected by the repair and either cancels or deletes them (depending of if they are started or not), and then forgives them.
         /// </summary>
         /// <param name="repair">The repair reservation.</param>
-        private bool UpdateAffectedReservations(IReservation repair)
+        private bool UpdateAffectedReservations(IReservationItem repair)
         {
             // Might be null when resource state is Limited
             if (repair == null) return false;
@@ -148,26 +151,18 @@ namespace LNF.Web.Scheduler
             var endableReservations = Provider.Scheduler.Reservation.SelectEndableReservations(repair.ResourceID);
             foreach (var endable in endableReservations.Where(x => x.ReservationID != repair.ReservationID))
             {
-                Provider.Scheduler.Reservation.EndForRepair(endable.ReservationID, CurrentUser.ClientID, CurrentUser.ClientID);
-                Provider.Scheduler.Email.EmailOnCanceledByRepair(endable, false, "Offline", repair.Notes, repair.EndDateTime, CurrentUser.ClientID);
-                Provider.Scheduler.Email.EmailOnForgiveCharge(endable, 100, true, CurrentUser.ClientID);
+                Provider.Scheduler.Reservation.EndAndForgiveForRepair(endable.ReservationID, "Ended and forgiven for repair.", CurrentUser.ClientID, CurrentUser.ClientID);
+                Provider.Scheduler.Email.EmailOnCanceledByRepair(endable.ReservationID, false, "Offline", repair.Notes, repair.EndDateTime, CurrentUser.ClientID);
+                Provider.Scheduler.Email.EmailOnForgiveCharge(endable.ReservationID, 100, true, CurrentUser.ClientID);
             }
 
             // Find and remove any unstarted reservations made during time of repair
-            var unstartedReservations = Provider.Scheduler.Reservation.SelectByResource(repair.ResourceID, repair.BeginDateTime, repair.EndDateTime, false);
+            var unstartedReservations = Provider.Scheduler.Reservation.SelectUnstarted(repair.ResourceID, repair.BeginDateTime, repair.EndDateTime);
             foreach (var unstarted in unstartedReservations)
             {
-                // Do nothing if already canceled
-                if (unstarted.IsActive)
-                {
-                    // If the reservation has not begun
-                    if (!unstarted.ActualBeginDateTime.HasValue)
-                    {
-                        Provider.Scheduler.Reservation.CancelReservation(unstarted.ReservationID, CurrentUser.ClientID);
-                        Provider.Scheduler.Email.EmailOnCanceledByRepair(unstarted, true, "Offline", repair.Notes, repair.EndDateTime, CurrentUser.ClientID);
-                        Provider.Scheduler.Email.EmailOnForgiveCharge(unstarted, 100, true, CurrentUser.ClientID);
-                    }
-                }
+                Provider.Scheduler.Reservation.CancelReservation(unstarted.ReservationID, "Cancelled for repair.", CurrentUser.ClientID);
+                Provider.Scheduler.Email.EmailOnCanceledByRepair(unstarted.ReservationID, true, "Offline", repair.Notes, repair.EndDateTime, CurrentUser.ClientID);
+                // Don't send forgiveness email yet, this will happen below...
             }
 
             // 2009-05-21 Make the old reservations that were covered by the repair to be forgiven
@@ -195,10 +190,10 @@ namespace LNF.Web.Scheduler
                 if (rsv.ChargeMultiplier > 0)
                 {
                     // Set charge multiplier to zero
-                    Provider.Scheduler.Reservation.UpdateCharges(rsv.ReservationID, 0, true, CurrentUser.ClientID);
+                    Provider.Scheduler.Reservation.UpdateCharges(rsv.ReservationID, "Forgiven for repair.", 0, true, CurrentUser.ClientID);
 
                     // Email User after everything is done.
-                    Provider.Scheduler.Email.EmailOnForgiveCharge(rsv, 100, true, CurrentUser.ClientID);
+                    Provider.Scheduler.Email.EmailOnForgiveCharge(rsv.ReservationID, 100, true, CurrentUser.ClientID);
 
                     // The session variable is set now and then checked for on the next page load.
                     result = true;

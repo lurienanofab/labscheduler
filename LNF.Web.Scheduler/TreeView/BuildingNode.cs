@@ -6,7 +6,7 @@ namespace LNF.Web.Scheduler.TreeView
 {
     public class BuildingNode : TreeViewNode<IBuilding>
     {
-        public BuildingNode(SchedulerResourceTreeView view, IBuilding item) : base(view, item)
+        public BuildingNode(SchedulerContextHelper helper, SchedulerResourceTreeView view, IBuilding item) : base(helper, view, item)
         {
             Load();
         }

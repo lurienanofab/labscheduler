@@ -2,6 +2,7 @@
 
 <%@ Import Namespace="System.Data" %>
 <%@ Import Namespace="System.Threading.Tasks" %>
+<%@ Import Namespace="LNF" %>
 <%@ Import Namespace="LNF.Scheduler" %>
 <%@ Import Namespace="LNF.Repository" %>
 <%@ Import Namespace="LNF.Impl.Repository.Scheduler" %>
@@ -11,6 +12,8 @@
 <script runat="server">
     ReservationItem[] currentReservations;
     ReservationItem[] nextReservations;
+
+    [Inject] public IProvider Provider { get; set; }
 
     void Page_Load(object sender, EventArgs e)
     {
@@ -23,12 +26,12 @@
             return;
         }
 
-        currentReservations = DA.Current.Query<Reservation>()
+        currentReservations = Provider.DataAccess.Session.Query<Reservation>()
                 .Where(x => x.IsActive && x.IsStarted && x.ActualBeginDateTime != null && x.ActualEndDateTime == null)
                 .OrderBy(x => x.ActualBeginDateTime).ToArray()
                 .Select(GetReservationItem).ToArray();
 
-        nextReservations = DA.Current.Query<Reservation>()
+        nextReservations = Provider.DataAccess.Session.Query<Reservation>()
             .Where(x => x.IsActive && !x.IsStarted && x.ActualBeginDateTime == null && x.ActualEndDateTime == null && x.EndDateTime >= DateTime.Now)
             .OrderBy(x => x.BeginDateTime).ToArray()
             .Select(GetReservationItem).ToArray();
@@ -38,7 +41,7 @@
 
     void LoadToolStatus()
     {
-        DataTable dt = DA.Command(CommandType.Text).FillDataTable("SELECT ResourceID, ResourceName FROM sselScheduler.dbo.Resource WHERE IsActive = 1 ORDER BY ResourceName");
+        DataTable dt = DataCommand.Create(CommandType.Text).FillDataTable("SELECT ResourceID, ResourceName FROM sselScheduler.dbo.Resource WHERE IsActive = 1 ORDER BY ResourceName");
         WagoInterlock.AllToolStatus(dt);
         rptToolStatus.DataSource = dt.AsEnumerable().Select(GetToolStatusItem);
         rptToolStatus.DataBind();

@@ -5,6 +5,7 @@ Imports LNF.Data
 Imports LNF.Scheduler
 Imports LNF.Web.Scheduler
 Imports LNF.Web.Scheduler.Content
+Imports LNF.Web.Scheduler.Models
 
 Namespace Pages
     Public Class ReservationHistory
@@ -14,6 +15,17 @@ Namespace Pages
 
         Private _holidays As IEnumerable(Of IHoliday)
         Private _maxForgivenDay As Integer = Integer.Parse(Utility.GetRequiredAppSetting("MaxForgivenDay"))
+
+        Public _utility As ReservationHistoryUtility
+
+        Public ReadOnly Property ReservationHistoryUtility As ReservationHistoryUtility
+            Get
+                If _utility Is Nothing Then
+                    _utility = ReservationHistoryUtility.Create(Provider)
+                End If
+                Return _utility
+            End Get
+        End Property
 
         Private Function GetClient() As IClient
             Dim c As IClient = Nothing
@@ -40,7 +52,7 @@ Namespace Pages
             End Get
         End Property
 
-        Public ReadOnly Property EditReservation As IReservation
+        Public ReadOnly Property EditReservation As IReservationItem
             Get
                 If _EditReservation Is Nothing OrElse _EditReservation.ReservationID <> EditReservationID Then
                     If EditReservationID > 0 Then
@@ -56,7 +68,12 @@ Namespace Pages
 
         Protected Sub Page_Load(sender As Object, e As EventArgs) Handles Me.Load
             If Not Page.IsPostBack Then
+                hidAjaxUrl.Value = VirtualPathUtility.ToAbsolute("~/ajax/reservation.ashx")
+                hidClientID.Value = CurrentUser.ClientID.ToString()
+
+                LoadDateRange()
                 LoadClients()
+
                 If EditReservationID = 0 Then
                     LoadReservationHistory()
                 Else
@@ -65,20 +82,7 @@ Namespace Pages
             End If
         End Sub
 
-        Private Sub LoadClients()
-            ddlClients.DataSource = SelectReservationHistoryClients()
-            ddlClients.DataBind()
-
-            If EditReservation IsNot Nothing Then
-                Session("SelectedClientID") = EditReservation.ClientID.ToString()
-            End If
-
-            If Session("SelectedClientID") Is Nothing Then
-                ddlClients.SelectedValue = CurrentUser.ClientID.ToString()
-            Else
-                ddlClients.SelectedValue = Session("SelectedClientID").ToString()
-            End If
-
+        Private Sub LoadDateRange()
             Dim range As Integer
             Dim sd, ed As Date?
 
@@ -126,25 +130,58 @@ Namespace Pages
                 txtEndDate.Text = ed.Value.ToString("MM/dd/yyyy")
             End If
 
-            Session("SelectedRange") = ddlRange.SelectedValue
-            Session("SelectedStartDate") = txtStartDate.Text
-            Session("SelectedEndDate") = txtEndDate.Text
+            Session("SelectedRange") = Integer.Parse(ddlRange.SelectedValue)
+            Session("SelectedStartDate") = Date.Parse(txtStartDate.Text)
+            Session("SelectedEndDate") = Date.Parse(txtEndDate.Text)
+        End Sub
+
+        Private Sub LoadClients()
+            Dim sd As Date = GetStartDate()
+            Dim ed As Date = GetEndDate()
+
+            ddlClients.DataSource = ReservationHistoryUtility.SelectReservationHistoryClients(sd, ed, CurrentUser.ClientID)
+            ddlClients.DataBind()
+
+            If EditReservation IsNot Nothing Then
+                Session("SelectedClientID") = EditReservation.ClientID
+            End If
+
+            If Session("SelectedClientID") Is Nothing Then
+                ddlClients.SelectedValue = CurrentUser.ClientID.ToString()
+            Else
+                Dim selectedValue As String = Session("SelectedClientID").ToString()
+                If ddlClients.Items.FindByValue(selectedValue) IsNot Nothing Then
+                    ddlClients.SelectedValue = selectedValue
+                Else
+                    ddlClients.SelectedValue = CurrentUser.ClientID.ToString()
+                    Session("SelectedClientID") = CurrentUser.ClientID
+                End If
+            End If
         End Sub
 
         Private Sub LoadReservationHistory()
             Dim includeCanceledForModification = CacheManager.Current.ShowCanceledForModification() AndAlso CurrentUser.HasPriv(ClientPrivilege.Staff)
 
-            Dim sd As Date = ReservationHistoryUtility.GetStartDate(txtStartDate.Text)
-            Dim ed As Date = ReservationHistoryUtility.GetEndDate(txtEndDate.Text)
+            Dim sd, ed As Date
+
+            If Date.TryParse(txtStartDate.Text, sd) Then
+                Session("SelectedStartDate") = sd
+            Else
+                Throw New Exception("Invalid date value for Start Date.")
+            End If
+
+            If Date.TryParse(txtEndDate.Text, ed) Then
+                Session("SelectedEndDate") = ed
+            Else
+                Throw New Exception("Invalid date value for End Date.")
+            End If
 
             Dim client As IClient = GetClient()
 
             Session("SelectedClientID") = client.ClientID
-            Session("SelectedRange") = Integer.Parse(ddlRange.SelectedValue)
-            Session("SelectedStartDate") = If(String.IsNullOrEmpty(txtStartDate.Text), Nothing, Date.Parse(txtStartDate.Text))
-            Session("SelectedEndDate") = If(String.IsNullOrEmpty(txtEndDate.Text), Nothing, Date.Parse(txtEndDate.Text))
 
-            rptHistory.DataSource = ReservationHistoryUtility.GetReservationHistoryData(Provider, client, sd, ed, includeCanceledForModification).OrderByDescending(Function(x) x.BeginDateTime).ToList()
+            ' In the UI the end date is inclusive, but we should use an exclusive end date when calling GetReservationHistoryData - so add one day.
+            rptHistory.DataSource = ReservationHistoryUtility.GetReservationHistoryData(client, sd, ed.AddDays(1), includeCanceledForModification).OrderByDescending(Function(x) x.BeginDateTime).ToList()
             rptHistory.DataBind()
 
             ' Display datagrid
@@ -187,6 +224,8 @@ Namespace Pages
         End Sub
 
         Private Sub LoadEditForm()
+            Session("SelectedClientID") = EditReservation.ClientID
+
             Dim holidays As IEnumerable(Of IHoliday) = GetHolidays()
             Dim canForgive As Boolean = ReservationHistoryUtility.ReservationCanBeForgiven(CurrentUser, EditReservation, Date.Now, _maxForgivenDay, holidays)
             Dim canChangeAcct As Boolean = ReservationHistoryUtility.ReservationAccountCanBeChanged(CurrentUser, EditReservation, Date.Now, holidays)
@@ -219,7 +258,7 @@ Namespace Pages
                 litEditReservationAccountMessage.Text = "<div>No accounts are available for this reservation</div>"
             End If
 
-            Dim item As WebControls.ListItem = ddlEditReservationAccount.Items.FindByValue(EditReservation.AccountID.ToString())
+            Dim item As ListItem = ddlEditReservationAccount.Items.FindByValue(EditReservation.AccountID.ToString())
 
             If item IsNot Nothing Then
                 ddlEditReservationAccount.SelectedValue = EditReservation.AccountID.ToString()
@@ -275,15 +314,15 @@ Namespace Pages
 
         Private Function InviteeListHTML() As String
             Dim sb As New StringBuilder()
-            For Each item As IReservationInvitee In Provider.Scheduler.Reservation.GetInvitees(EditReservationID)
-                sb.AppendLine($"<div>{item.DisplayName}</div>")
+            For Each item As IReservationInviteeItem In Provider.Scheduler.Reservation.GetInvitees(EditReservationID)
+                sb.AppendLine($"<div>{item.InviteeDisplayName}</div>")
             Next
             Return sb.ToString()
         End Function
 
         ' this overload is called from the aspx page
         Protected Overloads Function IsBeforeForgiveCutoff(item As Web.Scheduler.ReservationHistoryItem) As Boolean
-            Return ReservationHistoryUtility.IsBeforeForgiveCutoff(item, Date.Now, _maxForgivenDay, GetHolidays())
+            Return ReservationHistoryUtility.Create(Provider).IsBeforeForgiveCutoff(item, Date.Now, _maxForgivenDay, GetHolidays())
         End Function
 
         Protected Sub BtnSearchHistory_Click(sender As Object, e As EventArgs)
@@ -318,7 +357,7 @@ Namespace Pages
                 Dim temp As Boolean = Utility.IsCurrentPeriod(period)
                 Dim clientId As Integer = EditReservation.ClientID
 
-                Dim result = Provider.Scheduler.Reservation.SaveReservationHistory(EditReservation, accountId, forgivenPct, txtNotes.Text, chkEmailClient.Checked)
+                Dim result = Provider.Scheduler.Reservation.SaveReservationHistory(EditReservation, accountId, forgivenPct, txtNotes.Text, chkEmailClient.Checked, CurrentUser.ClientID)
 
                 If result.ReservationUpdated Then
                     alertText += "<strong>Reservation updated OK!</strong>"
@@ -413,8 +452,8 @@ Namespace Pages
                 Dim ed As Date
 
                 If EditReservation Is Nothing Then
-                    sd = ReservationHistoryUtility.GetStartDate(txtStartDate.Text)
-                    ed = ReservationHistoryUtility.GetEndDate(txtEndDate.Text)
+                    sd = GetStartDate()
+                    ed = GetEndDate()
                 Else
                     sd = EditReservation.ChargeBeginDateTime().FirstOfMonth()
                     ed = EditReservation.ChargeEndDateTime().FirstOfMonth().AddMonths(1)
@@ -426,23 +465,32 @@ Namespace Pages
             Return _holidays
         End Function
 
-        Private Function SelectReservationHistoryClients() As IEnumerable(Of IClient)
-            ' Dim canViewEveryone = CurrentUser.HasPriv(ClientPrivilege.Staff Or ClientPrivilege.Administrator Or ClientPrivilege.Developer)
+        Public Function GetStartDate() As Date
+            If String.IsNullOrEmpty(txtStartDate.Text) Then
+                Return Reservations.MinReservationBeginDate
+            End If
 
-            ' allow everyone to see other users history
-            Dim canViewEveryone As Boolean = True
+            Dim d As Date
 
-            Dim priv As ClientPrivilege = ClientPrivilege.LabUser Or ClientPrivilege.Staff
+            If Date.TryParse(txtStartDate.Text, d) Then
+                Return d.Date
+            Else
+                Return Date.Now.Date
+            End If
+        End Function
 
-            Dim sd As Date = ReservationHistoryUtility.GetStartDate(txtStartDate.Text)
-            Dim ed As Date = ReservationHistoryUtility.GetEndDate(txtEndDate.Text)
+        Public Function GetEndDate() As Date
+            If String.IsNullOrEmpty(txtEndDate.Text) Then
+                Return Reservations.MaxReservationEndDate
+            End If
 
-            Dim result As IEnumerable(Of IClient) = Provider.Data.Client.GetActiveClients(sd, ed, priv:=priv) _
-                .Where(Function(x) canViewEveryone OrElse x.ClientID = CurrentUser.ClientID) _
-                .OrderBy(Function(x) x.DisplayName) _
-                .ToList()
+            Dim d As Date
 
-            Return result
+            If Date.TryParse(txtEndDate.Text, d) Then
+                Return d.Date.AddDays(1)
+            Else
+                Return Date.Now.Date.AddDays(1)
+            End If
         End Function
     End Class
 End Namespace

@@ -9,6 +9,10 @@ Public Class LabLocation
     Private _lab As ILab
 
     Protected Sub Page_Load(ByVal sender As Object, ByVal e As EventArgs) Handles Me.Load
+        Dim sw As Stopwatch = Stopwatch.StartNew()
+
+        Helper.AppendLog($"LabLocation.Page_Load: Started...")
+
         GetLabLocation()
 
         If Not Page.IsPostBack Then
@@ -20,6 +24,9 @@ Public Class LabLocation
         End If
 
         SetCurrentView(ViewType.LocationView)
+
+        Helper.AppendLog($"LabLocation.Page_Load: Completed in {sw.Elapsed.TotalSeconds:0.0000} seconds")
+        sw.Stop()
     End Sub
 
     Private Sub LoadLabLocation()
@@ -47,7 +54,7 @@ Public Class LabLocation
     Private Sub GetLabLocation()
         'Need to handle the case when there is a Lab but no LabLocation. See LNF.Web.Scheduler.SchedulerUtility.GetLocationPath
 
-        Dim locationPath As LocationPathInfo = GetLocationPathInfo()
+        Dim locationPath As LocationPathInfo = GetLocationPath()
 
         Dim labLocationId As Integer = locationPath.LabLocationID
 
@@ -64,11 +71,12 @@ Public Class LabLocation
         End If
     End Sub
 
-    Private Function GetLocationPathInfo() As LocationPathInfo
+    Private Function GetLocationPath() As LocationPathInfo
+        Helper.AppendLog($"LabLocation.GetLocationPath: QueryString = ""{Request.QueryString}""")
         If String.IsNullOrEmpty(Request.QueryString("LocationPath")) Then
             Throw New Exception("Missing required querystring parameter: LocationPath")
         Else
-            Return LocationPathInfo.Parse(Request.QueryString("LocationPath"))
+            Return ContextBase.Request.SelectedLocationPath()
         End If
     End Function
 End Class

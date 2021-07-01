@@ -1,7 +1,4 @@
-﻿Imports LNF.Cache
-Imports LNF.Data
-Imports LNF.Scheduler
-Imports LNF.Web
+﻿Imports LNF.Scheduler
 Imports LNF.Web.Controls
 Imports LNF.Web.Scheduler
 Imports LNF.Web.Scheduler.Content
@@ -15,8 +12,15 @@ Namespace UserControls
         ' This is loaded in PopulateRecurringReservations(), unless View = ViewType.UserView, then it is loaded in LoadHeaders().
         Private _reservations As ReservationCollection
 
-        ' This is an array of ReservationIDs to which the current user was invited.
-        Private _invited As Integer()
+        ' This is an array of ResourceIDs for all currently displayed resources.
+        Private _resources As Integer()
+
+        ' This is a list of IResourceClients for all currently displayed resources.
+        Private _resourceClients As List(Of IResourceClient)
+
+
+        Private _sdate As Date
+        Private _edate As Date
 
         Public Property View As ViewType
         Public Property Resource As IResource
@@ -39,7 +43,8 @@ Namespace UserControls
 
         ' needs to be called everytime for event wiring
         Protected Sub Page_Load(sender As Object, e As EventArgs) Handles Me.Load
-            Dim startTime As Date = Date.Now
+            Dim sw As Stopwatch = Stopwatch.StartNew()
+            Helper.AppendLog($"ReservationView.Page_Load: Started...")
 
             If View = ViewType.UserView Then
                 HelpdeskInfo1.MultiTool = True
@@ -49,12 +54,13 @@ Namespace UserControls
 
             Dim linkText As String
             Dim linkUrl As String
-            Dim locationPath As LocationPathInfo
+            Dim locationPath As LocationPathInfo = ContextBase.Request.SelectedLocationPath()
+
+            divReservationView.Attributes.Add("data-location-path", locationPath.ToString())
 
             If ContextBase.GetDisplayDefaultHours() Then
                 linkText = "Full<br>Day"
                 If View = ViewType.LocationView Then
-                    locationPath = LocationPathInfo.Parse(ContextBase.Request.QueryString("LocationPath"))
                     linkUrl = $"~/ReservationController.ashx?Command=ChangeHourRange&Range=FullDay&LocationPath={locationPath.UrlEncode()}&Date={ContextBase.Request.SelectedDate():yyyy-MM-dd}"
                 Else
                     linkUrl = $"~/ReservationController.ashx?Command=ChangeHourRange&Range=FullDay&Path={ContextBase.Request.SelectedPath().UrlEncode()}&Date={ContextBase.Request.SelectedDate():yyyy-MM-dd}"
@@ -62,7 +68,6 @@ Namespace UserControls
             Else
                 linkText = "Default<br>Hours"
                 If View = ViewType.LocationView Then
-                    locationPath = LocationPathInfo.Parse(ContextBase.Request.QueryString("LocationPath"))
                     linkUrl = $"~/ReservationController.ashx?Command=ChangeHourRange&Range=DefaultHours&LocationPath={locationPath.UrlEncode()}&Date={ContextBase.Request.SelectedDate():yyyy-MM-dd}"
                 Else
                     linkUrl = $"~/ReservationController.ashx?Command=ChangeHourRange&Range=DefaultHours&Path={ContextBase.Request.SelectedPath().UrlEncode()}&Date={ContextBase.Request.SelectedDate():yyyy-MM-dd}"
@@ -83,7 +88,8 @@ Namespace UserControls
 
             Session("ReturnFromEmail") = SchedulerUtility.Create(Provider).GetReservationViewReturnUrl(View)
 
-            RequestLog.Append("ReservationView.Page_load: {0}", Date.Now - startTime)
+            Helper.AppendLog($"ReservationView.Page_Load: Completed in {sw.Elapsed.TotalSeconds:0.0000} seconds")
+            sw.Stop()
         End Sub
 
         Protected Sub DialogButton_OnCommand(sender As Object, e As CommandEventArgs)
@@ -153,32 +159,32 @@ Namespace UserControls
 
             _reservations = New ReservationCollection(Provider, CurrentUser.ClientID)
 
-            Dim sd, ed As Date
-
             Select Case View
                 Case ViewType.WeekView
-                    sd = ContextBase.Request.SelectedDate()
-                    ed = sd.AddDays(7)
-                    _reservations.SelectByResource(Resource.ResourceID, sd, ed)
+                    _sdate = ContextBase.Request.SelectedDate()
+                    _edate = _sdate.AddDays(7)
+                    _reservations.SelectByResource(Resource.ResourceID, _sdate, _edate)
                 Case ViewType.DayView
-                    sd = ContextBase.Request.SelectedDate()
-                    ed = sd.AddDays(1)
-                    _reservations.SelectByResource(Resource.ResourceID, sd, ed)
+                    _sdate = ContextBase.Request.SelectedDate()
+                    _edate = _sdate.AddDays(1)
+                    _reservations.SelectByResource(Resource.ResourceID, _sdate, _edate)
                 Case ViewType.ProcessTechView
-                    sd = ContextBase.Request.SelectedDate()
-                    ed = sd.AddDays(1)
-                    _reservations.SelectByProcessTech(ProcessTechID, sd, ed)
+                    _sdate = ContextBase.Request.SelectedDate()
+                    _edate = _sdate.AddDays(1)
+                    _reservations.SelectByProcessTech(ProcessTechID, _sdate, _edate)
                 Case ViewType.UserView
-                    sd = ContextBase.Request.SelectedDate()
-                    ed = sd.AddDays(1)
+                    _sdate = ContextBase.Request.SelectedDate()
+                    _edate = _sdate.AddDays(1)
                     ' We need all reservations, not just for current user, to check for conflicts
                     ' when recurring reservations are created. Also any tool is possible.
-                    _reservations.SelectByDateRange(sd, ed)
+                    _reservations.SelectByDateRange(_sdate, _edate)
                 Case ViewType.LocationView
-                    sd = ContextBase.Request.SelectedDate()
-                    ed = sd.AddDays(1)
-                    _reservations.SelectByLabLocation(LabLocationID, sd, ed)
+                    _sdate = ContextBase.Request.SelectedDate()
+                    _edate = _sdate.AddDays(1)
+                    _reservations.SelectByLabLocation(LabLocationID, _sdate, _edate)
             End Select
+
+            Helper.AppendLog($"ReservationView.InitReservations: view = {View}, count = {_reservations.Count()}, sdate = #{_sdate:yyyy-MM-dd HH:mm:ss}#, edate = #{_edate:yyyy-MM-dd HH:mm:ss}#")
         End Sub
 
 #Region "Load Table"
@@ -204,6 +210,8 @@ Namespace UserControls
             tblSchedule.Visible = True
             ShowNoDataMessage(String.Empty)
 
+            Dim list As New List(Of Integer)
+
             Select Case View
                 Case ViewType.DayView, ViewType.WeekView
                     'Determines start date of the week
@@ -211,11 +219,16 @@ Namespace UserControls
                         Response.Redirect("~", False)
                         Return
                     End If
+
+                    list.Add(Resource.ResourceID)
+
                     Dim weekStartDate As Date = ContextBase.Request.SelectedDate()
                     Dim maxDay As Integer = If(View = ViewType.WeekView, 7, 1)
+
                     For i As Integer = 1 To maxDay
                         AddHeaderCell(Resource.ResourceID, Resource.ResourceName, weekStartDate.AddDays(i - 1))
                     Next
+
                     _minGran = Resource.Granularity
                 Case ViewType.ProcessTechView
                     Dim query As IList(Of IResourceTree) = Helper.GetResourceTreeItemCollection().Resources().Where(Function(x) x.ProcessTechID = ProcessTechID AndAlso x.ResourceIsActive).OrderBy(Function(x) x.ResourceName).ToList()
@@ -223,6 +236,7 @@ Namespace UserControls
                     Dim d As Date = ContextBase.Request.SelectedDate()
 
                     For Each r As IResource In query
+                        list.Add(r.ResourceID)
                         AddHeaderCell(r.ResourceID, r.ResourceName, d)
                     Next
 
@@ -240,12 +254,13 @@ Namespace UserControls
                     ' reservations for the current user. We need all reservations because 1. We don't know for sure which tools will be displayed yet,
                     ' and 2. we must make sure any newly created recurring reservations do not conflict (the result of GetReservations() will be used
                     ' when it comes time to look for conflicts).
-                    Dim activeReservationsForCurrentUser As IEnumerable(Of IReservation) = Reservations.Find(ContextBase.Request.SelectedDate(), False, False).ToList() 'False means do not include cancelled
+                    Dim activeReservationsForCurrentUser As IEnumerable(Of IReservationItem) = Reservations.Find(ContextBase.Request.SelectedDate(), False, False).ToList() 'False means do not include cancelled
                     Dim prevResourceId As Integer = -1
 
-                    For Each res As IReservation In activeReservationsForCurrentUser.OrderBy(Function(x) x.ResourceID)
+                    For Each res As IReservationItem In activeReservationsForCurrentUser.OrderBy(Function(x) x.ResourceID)
                         If res.ResourceID <> prevResourceId Then
                             prevResourceId = res.ResourceID
+                            list.Add(res.ResourceID)
                             AddHeaderCell(res.ResourceID, res.ResourceName, ContextBase.Request.SelectedDate())
                             HelpdeskInfo1.Resources.Add(prevResourceId)
                         End If
@@ -265,6 +280,7 @@ Namespace UserControls
                     Dim d As Date = ContextBase.Request.SelectedDate()
 
                     For Each r As IResource In query
+                        list.Add(r.ResourceID)
                         AddHeaderCell(r.ResourceID, r.ResourceName, d)
                     Next
 
@@ -276,6 +292,9 @@ Namespace UserControls
 
                     _minGran = If(_minGran > 60, 60, _minGran)
             End Select
+
+            _resources = list.ToArray()
+            _resourceClients = Provider.Scheduler.Resource.GetResourceClients(_resources).ToList()
         End Sub
 
         Private Sub AddHeaderCell(resourceId As Integer, resourceName As String, cellDate As Date)
@@ -335,7 +354,7 @@ Namespace UserControls
 
                 ' Time Cell
                 newRow.Cells.Add(New TableCell With {
-                    .CssClass = "TableCell",
+                    .CssClass = "TableCell time",
                     .Text = weekStart.Add(currentTime).ToShortTimeString()
                 })
 
@@ -377,8 +396,8 @@ Namespace UserControls
 
                         SetReservationCell(rsvCell, res, authLevel)
                     ElseIf View = ViewType.UserView Then
-                        rsvCell.CssClass = "TableCell"
                         rsvCell.CellDate = weekStart.Add(currentTime)
+                        rsvCell.CssClass = GetReservationCellCssClass(rsvCell)
                         rsvCell.ResourceID = headerCell.ResourceID
                         rsvCell.AutoPostBack = False
                     End If
@@ -395,36 +414,42 @@ Namespace UserControls
             If res.IsSchedulable = False Then
                 ' If resource is not schedulable
                 SetNotSchedulableCell(cell)
-            ElseIf cell.CellDate < DateTime.Now Then
+            ElseIf cell.CellDate < Date.Now Then
                 ' If the cell date is in the past
                 SetInPastCell(cell)
-            ElseIf cell.CellDate < DateTime.Now.AddMinutes(res.ReservFence) OrElse authLevel >= ClientAuthLevel.SuperUser Then
+            ElseIf cell.CellDate < Date.Now.AddMinutes(res.ReservFence) OrElse authLevel >= ClientAuthLevel.SuperUser Then
                 ' If the cell date is not in the past and before the reservation fence
                 ' Or if the user is the tool engineer and cell date is not in the past
                 SetReservableCell(cell, res)
-            ElseIf cell.CellDate > DateTime.Now.AddMinutes(res.ReservFence) AndAlso authLevel < ClientAuthLevel.SuperUser Then
+            ElseIf cell.CellDate > Date.Now.AddMinutes(res.ReservFence) AndAlso authLevel < ClientAuthLevel.SuperUser Then
                 ' If the cell date is after the reservation fence and user is not a tool engineer
                 SetPastFenceCell(cell)
             End If
         End Sub
 
+        Private Function GetReservationCellCssClass(cell As CustomTableCell) As String
+            Dim result As String = "TableCell"
+            If cell.CellDate < Date.Now Then
+                result += " past"
+            End If
+            Return result
+        End Function
+
         Private Sub SetReservableCell(cell As CustomTableCell, res As IResource)
             cell.CssClass = "ReservationCell"
             cell.Attributes("data-tooltip") = $"<b>Click to make reservation for {res.ResourceName}<br />on {cell.CellDate.ToLongDateString()}<br />at {cell.CellDate.ToShortTimeString()}</b>"
             cell.AutoPostBack = False
-
             SetReservationCellAttributes(cell, ReservationState.Undefined, PathInfo.Create(res))
-
             SetActionCellAttributes(cell, "NewReservation")
         End Sub
 
-        Private Sub SetReservationCellAttributes(cell As CustomTableCell, state As ReservationState, pathInfo As PathInfo)
+        Private Sub SetReservationCellAttributes(cell As CustomTableCell, state As ReservationState, path As PathInfo)
             cell.Attributes("data-command") = String.Empty
             cell.Attributes("data-reservation-id") = cell.ReservationID.ToString()
             cell.Attributes("data-date") = cell.CellDate.ToString("yyyy-MM-dd")
             cell.Attributes("data-time") = cell.CellDate.TimeOfDay.TotalMinutes.ToString()
             cell.Attributes("data-state") = state.ToString()
-            cell.Attributes("data-path") = pathInfo.ToString()
+            cell.Attributes("data-path") = path.ToString()
         End Sub
 
         Private Sub SetPastFenceCell(cell As CustomTableCell)
@@ -434,7 +459,7 @@ Namespace UserControls
         End Sub
 
         Private Sub SetInPastCell(cell As CustomTableCell)
-            cell.CssClass = "TableCell"
+            cell.CssClass = "TableCell past"
             cell.Attributes("data-tooltip") = "<b>You cannot make reservations in the past.</b>"
             cell.AutoPostBack = False
         End Sub
@@ -530,12 +555,13 @@ Namespace UserControls
                 LoadHeaders()
                 LoadEmptyCells()
             End If
+
+            Helper.AppendLog($"ReservationView.PopulateRecurringReservations: view = {View}, count = {recurringRes.Count()}, hasNewData = {hasNewData}")
         End Sub
 
         Private Sub LoadReservationCells()
-            Dim totalReservationCount As Integer = 0
-
-            Dim clientAccounts As IEnumerable(Of IClientAccount) = Provider.Data.Client.GetActiveClientAccounts()
+            Dim sw As Stopwatch = Stopwatch.StartNew()
+            Helper.AppendLog($"ReservationView.LoadReservationCells: Started...")
 
             Dim displayDefaultHours As Boolean = ContextBase.GetDisplayDefaultHours()
             Dim beginHour As Integer = Helper.GetClientSetting().GetBeginHour()
@@ -566,7 +592,7 @@ Namespace UserControls
                     ' Get number of reservation cells that lie in that cell
                     Dim beginTime As Date = rsvCell.CellDate
                     Dim endTime As Date = beginTime.AddMinutes(_minGran)
-                    Dim filteredRsv As IEnumerable(Of IReservation) = Nothing
+                    Dim filteredRsv As IEnumerable(Of IReservationItem) = Nothing
 
                     Select Case View
                         Case ViewType.DayView, ViewType.WeekView
@@ -578,7 +604,6 @@ Namespace UserControls
                     End Select
 
                     Dim reservationCount As Integer = filteredRsv.Count
-                    totalReservationCount += reservationCount
 
                     If reservationCount = 0 Then
                         lastResourceIds = String.Empty
@@ -597,11 +622,11 @@ Namespace UserControls
                             lastReservationCount = reservationCount
                             mergeStartCell = j
 
-                            Dim singleReservationCell As Boolean = reservationCount = 1 OrElse (filteredRsv(reservationCount - 1).ActualEndDateTime.HasValue = False AndAlso filteredRsv(reservationCount - 1).IsRepair = False)
+                            Dim singleReservationCell As Boolean = reservationCount = 1 OrElse (filteredRsv(reservationCount - 1).ActualEndDateTime.HasValue = False AndAlso filteredRsv(reservationCount - 1).Editable)
 
                             If reservationCount = 1 OrElse IsUnendedReservation(filteredRsv(reservationCount - 1)) Then
                                 ' Display reservation
-                                Dim rsv As IReservation
+                                Dim rsv As IReservationItem
 
                                 If reservationCount = 1 Then
                                     rsv = filteredRsv.First()
@@ -617,10 +642,15 @@ Namespace UserControls
                                 ' Reservation Cell Events
 
                                 ' Delete/modify buttons are added here if needed.
-                                Dim rci As ReservationClient = Helper.GetReservationClientItem(rsv)
-                                Dim state As ReservationState = SchedulerUtility.Create(Provider).GetReservationCell(rsvCell, rsv, rci, Date.Now)
+                                Dim invitees As IList(Of IReservationInviteeItem) = Reservations.GetInvitees().Where(Function(x) x.ReservationID = rsv.ReservationID).ToList()
+                                Dim resourceClients As IList(Of IResourceClient) = _resourceClients.Where(Function(x) x.ResourceID = rsv.ResourceID).ToList()
+                                Dim reservationProcessInfos As IList(Of IReservationProcessInfo) = Reservations.GetReservationProcessInfos().Where(Function(x) x.ReservationID = rsv.ReservationID).ToList()
+                                Dim rci As ReservationClient = Helper.GetReservationClient(rsv, CurrentUser, resourceClients, invitees)
+                                Dim locationPath As LocationPathInfo = ContextBase.Request.SelectedLocationPath()
+                                Dim state As ReservationState = SchedulerUtility.Create(Provider).GetReservationCell(rsvCell, rsv, rci, reservationProcessInfos, invitees, locationPath, Date.Now)
+                                Dim res As IResource = Provider.Scheduler.Resource.GetResource(rsv.ResourceID)
 
-                                SetReservationCellAttributes(rsvCell, state, PathInfo.Create(rsv))
+                                SetReservationCellAttributes(rsvCell, state, PathInfo.Create(res))
 
                                 If IsReservationActionState(state) Then
                                     SetActionCellAttributes(rsvCell, "ReservationAction")
@@ -649,13 +679,17 @@ Namespace UserControls
                     ShowNoDataMessage("There are no resources in this Location.")
                 End If
             ElseIf View = ViewType.UserView Then
-                If totalReservationCount = 0 Then
+                ' need to use the entire day count in case reservations fall outside default hours
+                If Reservations.Count(_sdate, _edate, False, False) = 0 Then
                     ShowNoDataMessage("You do not have any reservations made for this date.")
                 End If
             End If
+
+            Helper.AppendLog($"ReservationView.LoadReservationCells: Completed in {sw.Elapsed.TotalSeconds:0.0000} seconds")
+            sw.Stop()
         End Sub
 
-        Private Function IsUnendedReservation(rsv As IReservation) As Boolean
+        Private Function IsUnendedReservation(rsv As IReservationItem) As Boolean
             Return rsv.IsRepair = False AndAlso rsv.ActualEndDateTime.HasValue = False
         End Function
 
@@ -668,15 +702,15 @@ Namespace UserControls
 #End Region
 
 #Region "Utility"
-        Private Function FilterReservations(sd As Date, ed As Date, includeAllClients As Boolean, includeCancelled As Boolean) As IList(Of IReservation)
+        Private Function FilterReservations(sd As Date, ed As Date, includeAllClients As Boolean, includeCancelled As Boolean) As IList(Of IReservationItem)
             Return Reservations.Find(sd, ed, includeAllClients, includeCancelled).Where(Function(x) ReservationFilter(x, sd, ed)).OrderBy(Function(x) x.BeginDateTime).ToList()
         End Function
 
-        Private Function FilterReservations(resourceId As Integer, sd As Date, ed As Date, includeAllClients As Boolean, includeCancelled As Boolean) As IList(Of IReservation)
+        Private Function FilterReservations(resourceId As Integer, sd As Date, ed As Date, includeAllClients As Boolean, includeCancelled As Boolean) As IList(Of IReservationItem)
             Return Reservations.Find(sd, ed, includeAllClients, includeCancelled).Where(Function(x) x.ResourceID = resourceId AndAlso ReservationFilter(x, sd, ed)).OrderBy(Function(x) x.BeginDateTime).ToList()
         End Function
 
-        Private Function ReservationFilter(rsv As IReservation, beginTime As Date, endTime As Date) As Boolean
+        Private Function ReservationFilter(rsv As IReservationItem, beginTime As Date, endTime As Date) As Boolean
             If Not rsv.ActualEndDateTime.HasValue Then
                 Return rsv.BeginDateTime < endTime AndAlso rsv.EndDateTime > beginTime
             Else
@@ -694,12 +728,13 @@ Namespace UserControls
         End Function
 
         Private Function GetAuthorization(resourceId As Integer) As ClientAuthLevel
-            Return CacheManager.Current.GetAuthLevel(resourceId, CurrentUser.ClientID)
+            Dim rc As IEnumerable(Of IResourceClient) = _resourceClients.Where(Function(x) x.ResourceID = resourceId AndAlso x.IsClientOrEveryone(CurrentUser.ClientID)).ToList()
+            Return LNF.Scheduler.Reservations.GetAuthLevel(rc, CurrentUser)
         End Function
 
         Public Sub StartReservation(rsv As IReservationWithInvitees)
             Try
-                Dim rci As ReservationClient = Helper.GetReservationClientItem(rsv)
+                Dim rci As ReservationClient = Helper.GetReservationClient(rsv)
                 LNF.Scheduler.Reservations.Create(Provider, Date.Now).Start(rsv, rci, CurrentUser.ClientID)
             Catch ex As Exception
                 Session("ErrorMessage") = ex.Message

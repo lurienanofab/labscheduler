@@ -109,7 +109,7 @@ namespace LNF.Web.Scheduler.TreeView
                             tt += string.Format("Not Schedulable until approximately {0:M/d/yyyy h:mm tt}{2}Notes: {1}", RepairEndDateTime, RepairNotes, Environment.NewLine);
                         break;
                     case ResourceState.Offline:
-                        tt += " Offline";
+                        tt += "Offline";
                         break;
                     case ResourceState.Limited:
                         tt += string.Format("Available with limited functionality{1}Notes: {0}", StateNotes, Environment.NewLine);

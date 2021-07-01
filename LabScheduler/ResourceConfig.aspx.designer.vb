@@ -231,12 +231,12 @@ Namespace Pages
         Protected WithEvents phProcessInfoMessage As Global.System.Web.UI.WebControls.PlaceHolder
         
         '''<summary>
-        '''dgProcessInfo control.
+        '''divProcessInfo control.
         '''</summary>
         '''<remarks>
         '''Auto-generated field.
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
-        Protected WithEvents dgProcessInfo As Global.System.Web.UI.WebControls.DataGrid
+        Protected WithEvents divProcessInfo As Global.System.Web.UI.HtmlControls.HtmlGenericControl
     End Class
 End Namespace

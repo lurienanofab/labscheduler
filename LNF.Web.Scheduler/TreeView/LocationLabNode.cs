@@ -9,7 +9,7 @@ namespace LNF.Web.Scheduler.TreeView
     {
         private LocationTreeItemCollection _locationTree;
 
-        public LocationLabNode(SchedulerResourceTreeView view, LocationTreeItemCollection locationTree, ILab item) : base(view, item)
+        public LocationLabNode(SchedulerContextHelper helper, SchedulerResourceTreeView view, LocationTreeItemCollection locationTree, ILab item) : base(helper, view, item)
         {
             _locationTree = locationTree ?? throw new ArgumentNullException("locationTree");
             Load();

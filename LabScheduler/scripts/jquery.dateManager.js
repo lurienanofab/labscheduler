@@ -1,70 +1,111 @@
 ﻿(function ($) {
-    $.fn.dateManager = function () {
+    $.fn.dateManager = function (options) {
         return this.each(function () {
             var $this = $(this);
 
-            var formatDate = function (d) {
+            var opt = $.extend({}, { "onChange": null, "format": "mm/dd/yyyy" }, options);
+
+            var $datepicker = $('.datepicker', $this).datepicker({ 'autoclose': true, 'format': opt.format, 'verbose': false });
+            var $daterange = $('.daterange-select', $this);
+
+            var writeLog = function (label, obj) {
+                if (opt.verbose)
+                    console.log(label, obj);
+            };
+
+            var onChange = function () {
+                if (typeof opt.onChange === 'function') {
+                    opt.onChange({
+                        'sdate': formatDate($('.sdate', $this).datepicker('getDate'), opt.format),
+                        'edate': formatDate($('.edate', $this).datepicker('getDate'), opt.format)
+                    });
+                }
+            };
+
+            var now = new Date();
+
+            var formatDate = function (d, f) {
+                if (d === null || d === '')
+                    return '';
+
                 var dd = d.getDate();
                 var mm = d.getMonth() + 1;
                 var yy = d.getFullYear();
-                return (mm + 100).toString().substr(1, 2) + '/' + (dd + 100).toString().substr(1, 2) + '/' + yy.toString();
-            }
+                var dow = d.getDay();
 
-            var getEndDate = function (d, index) {
-                switch (index) {
-                    case 3:
-                        return '';
-                    default:
-                        return formatDate(d);
-                }
-            }
+                var monthNames = ['January', 'Februray', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+                var dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-            var getStartDate = function (d, index) {
-                switch (index) {
-                    case 3: //All
-                        return '';
-                    case 2: //1 year
-                        return formatDate(new Date(d.getFullYear() - 1, d.getMonth(), d.getDate()));
-                    case 1: //3 months
-                        return formatDate(new Date(d.getFullYear(), d.getMonth() - 3, d.getDate()));
-                    case 0: //30 days
-                        return formatDate(new Date(d.getFullYear(), d.getMonth(), d.getDate() - 30));
-                }
-            }
+                var result = f.toString()
+                    .replace('mm', (mm + 100).toString().substr(1, 2))
+                    .replace('m', mm.toString())
+                    .replace('dd', (dd + 100).toString().substr(1, 2))
+                    .replace('d', dd.toString())
+                    .replace('yyyy', yy.toString())
+                    .replace('yy', yy.toString().substr(2, 2))
+                    .replace('MM', monthNames[mm - 1])
+                    .replace('M', monthNames[mm - 1].substr(0, 3))
+                    .replace('DD', dayNames[dow])
+                    .replace('D', dayNames[dow].substr(0, 3));
+
+                return result;
+            };
+
+            var ranges = [
+                { 'text': '30 days', 'sdate': formatDate(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30), opt.format), 'edate': formatDate(now, opt.format) },
+                { 'text': '3 months', 'sdate': formatDate(new Date(now.getFullYear(), now.getMonth() - 3, now.getDate()), opt.format), 'edate': formatDate(now, opt.format) },
+                { 'text': '1 year', 'sdate': formatDate(new Date(now.getFullYear() - 1, now.getMonth(), now.getDate()), opt.format), 'edate': formatDate(now, opt.format) },
+                { 'text': 'All', 'sdate': '', 'edate': '' }
+            ];
+
+            writeLog('ranges', ranges);
 
             var checkDateRange = function () {
-                var now = new Date();
-                var r = -1;
-                for (i = 0; i < 4; i++) {
-                    if ($('.edate', $this).val() == getEndDate(now, i)) {
-                        if ($('.sdate', $this).val() == getStartDate(now, i)) {
-                            r = i;
+                var index = -1;
+
+                var sd = formatDate($('.sdate', $this).datepicker('getDate'), opt.format);
+                var ed = formatDate($('.edate', $this).datepicker('getDate'), opt.format);
+
+                for (i = 0; i < ranges.length; i++) {
+                    if (ed === ranges[i].edate) {
+                        if (sd === ranges[i].sdate) {
+                            index = i;
                             break;
                         }
                     }
                 }
-                $('.daterange-select', $this).get(0).selectedIndex = r;
-            }
+
+                writeLog('checkDateRange', { 'sd': sd, 'ed': ed, 'index': index });
+
+                $daterange.get(0).selectedIndex = index;
+            };
 
             var setDateRange = function (r) {
-                var now = new Date();
-                $('.sdate', $this).val(getStartDate(now, r));
-                $('.edate', $this).val(getEndDate(now, r));
-            }
+                $datepicker.off('changeDate');
 
-            $('.datepicker', $this).datepicker({
-                'onSelect': function (date, obj) {
-                    checkDateRange();
-                }
-            });
+                writeLog('setDateRange', { 'range': ranges[r] });
 
-            $('.daterange-select', $this).change(function () {
-                var val = $(this).val();
-                setDateRange(parseInt(val));
-                setDateRange(parseInt(val));
+                $('.sdate', $this).datepicker('setDate', ranges[r].sdate);
+                $('.edate', $this).datepicker('setDate', ranges[r].edate);
+
+                onChange();
+
+                $datepicker.on('changeDate', handleChangeDate);
+            };
+
+            var handleChangeDate = function () {
+                checkDateRange();
+                onChange();
+            };
+
+            $datepicker.on('changeDate', handleChangeDate);
+
+            $daterange.change(function () {
+                var val = parseInt($(this).val());
+                setDateRange(val);
             });
 
             checkDateRange();
         });
-    }
+    };
 }(jQuery));

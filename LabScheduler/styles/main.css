@@ -216,6 +216,14 @@ OL OL OL LI {
     background-color: White;
 }
 
+    .TableCell.past {
+        background-color: #ddd;
+    }
+
+    .TableCell.time {
+        white-space: nowrap;
+    }
+
 .ReservTableHeader {
     background-color: White;
     font-weight: bold;

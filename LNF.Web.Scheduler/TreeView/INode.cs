@@ -5,6 +5,7 @@ namespace LNF.Web.Scheduler.TreeView
 {
     public interface INode
     {
+        SchedulerContextHelper Helper { get; }
         INode Parent { get; }
         TreeViewNodeCollection Children { get; }
         int ID { get; }

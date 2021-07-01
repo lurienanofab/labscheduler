@@ -1,6 +1,7 @@
 ﻿using LNF.CommonTools;
 using LNF.Control;
 using LNF.Data;
+using LNF.DataAccess;
 using LNF.Helpdesk;
 using LNF.Impl.Repository.Data;
 using LNF.Impl.Repository.Scheduler;
@@ -38,6 +39,8 @@ namespace LNF.Web.Scheduler
             var res = provider.Scheduler.Reservation.GetResource(resourceId);
             var currentUser = context.CurrentUser(provider);
 
+            var dataSession = provider.DataAccess.Session;
+
             switch (action)
             {
                 case "SaveReservationHistory":
@@ -49,29 +52,32 @@ namespace LNF.Web.Scheduler
                     break;
                 case "add-tool-engineer":
                     gr = new GenericResult();
-                    AddToolEngineer(res, DA.Current.Single<Client>(clientId), gr);
+                    AddToolEngineer(dataSession, res, dataSession.Single<Client>(clientId), gr);
                     GetToolEngineers(provider, res, gr);
                     result = gr;
                     break;
                 case "delete-tool-engineer":
                     gr = new GenericResult();
-                    DeleteToolEngineer(res, DA.Current.Single<Client>(clientId), gr);
+                    DeleteToolEngineer(dataSession, res, dataSession.Single<Client>(clientId), gr);
                     GetToolEngineers(provider, res, gr);
                     result = gr;
                     break;
                 case "get-buildings":
-                    result = GetBuildings(DA.Current.Single<Resource>(resourceId));
+                    var buildings = dataSession.Query<Building>().Where(x => x.BuildingIsActive).ToList();
+                    result = GetBuildings(res, buildings);
                     break;
                 case "get-labs":
                     int buildingId = Utility.ConvertTo(context.Request["BuildingID"], 0);
-                    result = GetLabs(DA.Current.Single<Resource>(resourceId), DA.Current.Single<Building>(buildingId));
+                    var labs = dataSession.Query<Lab>().Where(x => x.Building.BuildingID == buildingId).ToList();
+                    result = GetLabs(res, labs);
                     break;
                 case "get-proctechs":
                     int labId = Utility.ConvertTo(context.Request["LabID"], 0);
-                    result = GetProcessTechs(DA.Current.Single<Resource>(resourceId), DA.Current.Single<Lab>(labId));
+                    var procTechs = dataSession.Query<ProcessTech>().Where(x => x.Lab.LabID == labId).ToList();
+                    result = GetProcessTechs(res, procTechs);
                     break;
                 case "add-resource":
-                    result = AddResource(context);
+                    result = AddResource(dataSession, context);
                     break;
                 case "upload-image":
                     result = UploadImage(context);
@@ -93,7 +99,8 @@ namespace LNF.Web.Scheduler
                 case "send-hardware-issue-email":
                     message = Utility.ConvertTo(context.Request["message"], string.Empty);
                     string subject = Utility.ConvertTo(context.Request["subject"], string.Empty);
-                    HelpdeskUtility.SendHardwareIssueEmail(res, currentUser.ClientID, subject, message);
+                    int sent = HelpdeskUtility.SendHardwareIssueEmail(res, currentUser.ClientID, subject, message);
+                    result = new GenericResult() { Success = sent > 0, Message = $"Emails sent: {sent}", Data = null, Log = null };
                     break;
                 case "interlock":
                     bool state = Utility.ConvertTo(context.Request["State"], false);
@@ -343,57 +350,38 @@ namespace LNF.Web.Scheduler
             return result;
         }
 
-        private static GenericResult GetBuildings(Resource r)
+        private static GenericResult GetBuildings(IResource r, IEnumerable<Building> buildings)
         {
             var result = new GenericResult() { Success = true, Message = string.Empty, Data = null };
 
-            int id = (r == null) ? 0 : r.ProcessTech.Lab.Building.BuildingID;
-            IList<Building> query = DA.Current.Query<Building>().Where(x => x.BuildingIsActive).ToList();
-            result.Data = query
+            int id = (r == null) ? 0 : r.BuildingID;
+            result.Data = buildings
                 .Select(x => new { Text = x.BuildingName, Value = x.BuildingID, Selected = x.BuildingID == id })
                 .OrderBy(x => x.Text);
 
             return result;
         }
 
-        private static GenericResult GetLabs(Resource r, Building b)
+        private static GenericResult GetLabs(IResource r, IEnumerable<Lab> labs)
         {
             var result = new GenericResult() { Success = true, Message = string.Empty, Data = null };
 
-            if (b != null)
-            {
-                int id = (r == null) ? 0 : r.ProcessTech.Lab.LabID;
-                IList<Lab> query = DA.Current.Query<Lab>().Where(x => x.Building == b).ToList();
-                result.Data = query
-                    .Select(x => new { Text = x.LabName, Value = x.LabID, Selected = x.LabID == id })
-                    .OrderBy(x => x.Text);
-            }
-            else
-            {
-                result.Success = false;
-                result.Message = "Invalid BuildingID.";
-            }
+            int id = (r == null) ? 0 : r.LabID;
+            result.Data = labs
+                .Select(x => new { Text = x.LabName, Value = x.LabID, Selected = x.LabID == id })
+                .OrderBy(x => x.Text);
 
             return result;
         }
 
-        private static GenericResult GetProcessTechs(Resource r, Lab l)
+        private static GenericResult GetProcessTechs(IResource r, IEnumerable<ProcessTech> procTechs)
         {
             var result = new GenericResult();
 
-            if (l != null)
-            {
-                int id = (r == null) ? 0 : r.ProcessTech.ProcessTechID;
-                IList<ProcessTech> query = DA.Current.Query<ProcessTech>().Where(x => x.Lab == l).ToList();
-                result.Data = query
-                    .Select(x => new { Text = x.ProcessTechName, Value = x.ProcessTechID, Selected = x.ProcessTechID == id })
-                    .OrderBy(x => x.Text);
-            }
-            else
-            {
-                result.Success = false;
-                result.Message = "Invalid LabID.";
-            }
+            int id = (r == null) ? 0 : r.ProcessTechID;
+            result.Data = procTechs
+                .Select(x => new { Text = x.ProcessTechName, Value = x.ProcessTechID, Selected = x.ProcessTechID == id })
+                .OrderBy(x => x.Text);
 
             return result;
         }
@@ -422,7 +410,7 @@ namespace LNF.Web.Scheduler
             return rc;
         }
 
-        private static void AddToolEngineer(IResource res, Client c, GenericResult result)
+        private static void AddToolEngineer(ISession session, IResource res, Client c, GenericResult result)
         {
             if (Validate(res, c, result))
             {
@@ -436,35 +424,35 @@ namespace LNF.Web.Scheduler
                     ResourceID = res.ResourceID
                 };
 
-                DA.Current.Insert(rc);
+                session.Insert(rc);
             }
         }
 
-        private static void DeleteToolEngineer(IResource res, Client c, GenericResult result)
+        private static void DeleteToolEngineer(ISession session, IResource res, Client c, GenericResult result)
         {
             if (Validate(res, c, result))
             {
-                ResourceClientInfo rci = DA.Current.Query<ResourceClientInfo>().FirstOrDefault(x => x.ClientID == c.ClientID && x.ResourceID == res.ResourceID);
+                ResourceClientInfo rci = session.Query<ResourceClientInfo>().FirstOrDefault(x => x.ClientID == c.ClientID && x.ResourceID == res.ResourceID);
                 if (Validate(rci, result))
                 {
-                    ResourceClient rc = DA.Current.Single<ResourceClient>(rci.ResourceClientID);
-                    DA.Current.Delete(rc);
+                    ResourceClient rc = session.Single<ResourceClient>(rci.ResourceClientID);
+                    session.Delete(rc);
                 }
             }
         }
 
-        private static GenericResult AddResource(HttpContextBase ctx)
+        private static GenericResult AddResource(ISession session, HttpContextBase ctx)
         {
             var result = new GenericResult();
 
-            if (Validate(ctx, result, out dynamic v))
+            if (Validate(session, ctx, result, out dynamic v))
             {
-                Lab lab = DA.Current.Single<Lab>(v.LabID);
+                Lab lab = session.Single<Lab>(v.LabID);
 
                 Resource r = new Resource()
                 {
                     ResourceID = v.EditResourceID,
-                    ProcessTech = DA.Current.Single<ProcessTech>(v.ProcessTechID),
+                    ProcessTech = session.Single<ProcessTech>(v.ProcessTechID),
                     ResourceName = v.ResourceName,
                     IsSchedulable = v.Schedulable,
                     IsActive = v.Active,
@@ -489,9 +477,9 @@ namespace LNF.Web.Scheduler
                     IsReady = false
                 };
 
-                DA.Current.Insert(r);
+                session.Insert(r);
 
-                DA.Current.Insert(new[]{
+                session.Insert(new[]{
                     new Cost()
                     {
                         ChargeTypeID = 5,
@@ -530,7 +518,7 @@ namespace LNF.Web.Scheduler
             return result;
         }
 
-        private static bool Validate(HttpContextBase ctx, GenericResult result, out object obj)
+        private static bool Validate(ISession session, HttpContextBase ctx, GenericResult result, out object obj)
         {
             int buildingId = Utility.ConvertTo(ctx.Request["BuildingID"], 0);
             int labId = Utility.ConvertTo(ctx.Request["LabID"], 0);
@@ -580,7 +568,7 @@ namespace LNF.Web.Scheduler
                 return false;
             }
 
-            if (DA.Current.Single<Resource>(editResourceId) != null && editResourceId != resourceId)
+            if (session.Single<Resource>(editResourceId) != null && editResourceId != resourceId)
             {
                 result.Success = false;
                 result.Message = $"Resource ID {editResourceId} is already in use.";

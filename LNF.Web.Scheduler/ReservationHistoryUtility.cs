@@ -1,25 +1,39 @@
 ﻿using LNF.CommonTools;
 using LNF.Data;
 using LNF.Scheduler;
+using LNF.Web.Scheduler.Models;
 using LNF.Worker;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Messaging;
 
 namespace LNF.Web.Scheduler
 {
-    public static class ReservationHistoryUtility
+    public class ReservationHistoryUtility
     {
-        public static IList<ReservationHistoryItem> GetReservationHistoryData(IProvider provider, IClient client, DateTime? sd, DateTime? ed, bool includeCanceledForModification)
+        private readonly IProvider _provider;
+
+        private ReservationHistoryUtility(IProvider provider)
+        {
+            _provider = provider;
+        }
+
+        public static ReservationHistoryUtility Create(IProvider provider)
+        {
+            return new ReservationHistoryUtility(provider);
+        }
+
+        public IList<ReservationHistoryItem> GetReservationHistoryData(IClient client, DateTime? sd, DateTime? ed, bool includeCanceledForModification)
         {
             // Select Past Reservations
-            var reservations = provider.Scheduler.Reservation.SelectHistory(client.ClientID, sd.GetValueOrDefault(Reservations.MinReservationBeginDate), ed.GetValueOrDefault(Reservations.MaxReservationEndDate));
-            var filtered = provider.Scheduler.Reservation.FilterCancelledReservations(reservations, includeCanceledForModification);
+            var reservations = _provider.Scheduler.Reservation.SelectHistory(client.ClientID, sd.GetValueOrDefault(Reservations.MinReservationBeginDate), ed.GetValueOrDefault(Reservations.MaxReservationEndDate));
+            var filtered = _provider.Scheduler.Reservation.FilterCancelledReservations(reservations, includeCanceledForModification);
             var result = ReservationHistoryItem.CreateList(filtered);
             return result;
         }
 
-        public static bool ReservationCanBeForgiven(IClient client, IReservation rsv, DateTime now, int maxForgivenDay, IEnumerable<IHoliday> holidays)
+        public bool ReservationCanBeForgiven(IClient client, IReservationItem rsv, DateTime now, int maxForgivenDay, IEnumerable<IHoliday> holidays)
         {
             // first, only admins and staff can possibly forgive
             if (!client.HasPriv(ClientPrivilege.Administrator | ClientPrivilege.Staff | ClientPrivilege.Developer))
@@ -32,7 +46,7 @@ namespace LNF.Web.Scheduler
             return IsBeforeForgiveCutoff(rsv, now, maxForgivenDay, holidays);
         }
 
-        public static bool ReservationAccountCanBeChanged(IClient client, IReservation rsv, DateTime now, IEnumerable<IHoliday> holidays)
+        public bool ReservationAccountCanBeChanged(IClient client, IReservationItem rsv, DateTime now, IEnumerable<IHoliday> holidays)
         {
             // admins can always change the account
             if (client.HasPriv(ClientPrivilege.Administrator | ClientPrivilege.Developer))
@@ -45,7 +59,7 @@ namespace LNF.Web.Scheduler
             return false;
         }
 
-        public static bool ReservationNotesCanBeChanged(IClient client, IReservation rsv)
+        public bool ReservationNotesCanBeChanged(IClient client, IReservationItem rsv)
         {
             // staff can always change notes
             if (client.HasPriv(ClientPrivilege.Staff | ClientPrivilege.Administrator | ClientPrivilege.Developer))
@@ -55,7 +69,7 @@ namespace LNF.Web.Scheduler
             return client.ClientID == rsv.ClientID;
         }
 
-        public static bool IsBeforeForgiveCutoff(IReservation rsv, DateTime now, int maxForgivenDay, IEnumerable<IHoliday> holidays)
+        public bool IsBeforeForgiveCutoff(IReservationItem rsv, DateTime now, int maxForgivenDay, IEnumerable<IHoliday> holidays)
         {
             // Normal lab users cannot forgive reservations
             // Staff can forgive a reservation on the same day it ended, and during the following 3 three business days
@@ -65,7 +79,7 @@ namespace LNF.Web.Scheduler
             return IsBeforeForgiveCutoff(now, maxDay, maxForgivenDay, rsv.Editable, holidays);
         }
 
-        public static bool IsBeforeForgiveCutoff(ReservationHistoryItem item, DateTime now, int maxForgivenDay, IEnumerable<IHoliday> holidays)
+        public bool IsBeforeForgiveCutoff(ReservationHistoryItem item, DateTime now, int maxForgivenDay, IEnumerable<IHoliday> holidays)
         {
             // Normal lab users cannot forgive reservations
             // Staff can forgive a reservation on the same day it ended, and during the following 3 three business days
@@ -75,7 +89,7 @@ namespace LNF.Web.Scheduler
             return IsBeforeForgiveCutoff(now, maxDay, maxForgivenDay, item.Editable, holidays);
         }
 
-        public static bool IsBeforeForgiveCutoff(DateTime now, DateTime maxDay, int maxForgivenDay, bool editable, IEnumerable<IHoliday> holidays)
+        public bool IsBeforeForgiveCutoff(DateTime now, DateTime maxDay, int maxForgivenDay, bool editable, IEnumerable<IHoliday> holidays)
         {
             // Normal lab users cannot forgive reservations
             // Staff can forgive a reservation on the same day it ended, and during the following 3 three business days
@@ -94,7 +108,7 @@ namespace LNF.Web.Scheduler
             return now >= maxDay && now < cutoff && editable;
         }
 
-        public static bool IsBeforeChangeAccountCutoff(IReservation rsv, DateTime now, IEnumerable<IHoliday> holidays)
+        public bool IsBeforeChangeAccountCutoff(IReservationItem rsv, DateTime now, IEnumerable<IHoliday> holidays)
         {
             // Normal lab users can modify their own reservation's account on the same day it ended through 3 business days after the 1st of the following month
             // Staff can modify any reservation's account on the same day it ended through 3 business days after the 1st of the following month
@@ -109,29 +123,32 @@ namespace LNF.Web.Scheduler
             return now >= maxDay && now < cutoff && rsv.Editable;
         }
 
-        public static DateTime GetStartDate(string input)
+        public IEnumerable<ReservationHistoryClient> SelectReservationHistoryClients(DateTime sd, DateTime ed, int clientId)
         {
-            if (string.IsNullOrEmpty(input))
-                return Reservations.MinReservationBeginDate;
+            // Dim canViewEveryone = CurrentUser.HasPriv(ClientPrivilege.Staff Or ClientPrivilege.Administrator Or ClientPrivilege.Developer)
 
-            if (DateTime.TryParse(input, out DateTime d))
-                return d.Date;
-            else
-                return DateTime.Now.Date;
+            // allow everyone to see other users history
+            bool canViewEveryone = true;
+
+            var priv = ClientPrivilege.LabUser | ClientPrivilege.Staff;
+
+            //Dim sd As Date = GetStartDate()
+            //Dim ed As Date = GetEndDate()
+
+            IEnumerable<IClient> clients = _provider.Data.Client.GetActiveClients(sd, ed, priv: priv).Where(x => canViewEveryone || x.ClientID == clientId).ToList();
+            List<ReservationHistoryClient> result = CreateReservationHistoryClients(clients);
+
+            return result;
         }
 
-        public static DateTime GetEndDate(string input)
+        public List<ReservationHistoryClient> CreateReservationHistoryClients(IEnumerable<IClient> clients)
         {
-            if (string.IsNullOrEmpty(input))
-                return Reservations.MaxReservationEndDate;
-
-            if (DateTime.TryParse(input, out DateTime d))
-                return d.Date.AddDays(1);
-            else
-                return DateTime.Now.Date.AddDays(1);
+            List<ReservationHistoryClient> list = clients.Select(x => new ReservationHistoryClient { ClientID = x.ClientID, DisplayName = x.DisplayName }).ToList();
+            List<ReservationHistoryClient> result = list.Distinct(new ReservationHistoryClientComparer()).OrderBy(x => x.DisplayName).ToList();
+            return result;
         }
 
-        private static Message GetMessage(WorkerRequest body)
+        private Message GetMessage(WorkerRequest body)
         {
             return new Message(body)
             {

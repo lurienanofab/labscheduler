@@ -1,10 +1,10 @@
 ﻿Imports LNF
+Imports LNF.Repository
 Imports LNF.Scheduler
-Imports LNF.Web
 
 Namespace DBAccess
     Public Class ResourceDB
-        Public Shared Function SelectByLab(provider As IProvider, labId As Integer) As IList(Of IResource)
+        Public Shared Function SelectByLab(labId As Integer) As IList(Of IResource)
 
             ' This method is called from ReservationFacilityDownTime.aspx when the lab select changes.
             ' when labId is -1 use "default labs" (must convert to null)
@@ -15,15 +15,30 @@ Namespace DBAccess
             ' However the select option for "Clean Room & Wet Chemistry" has a value of -1.
             ' So if -1 is passed in it should be treated as null
 
-            Dim labIdParam As Integer?
+            Dim cmd As IDataCommand = DataCommand.Create(CommandType.Text)
 
             If labId = -1 Then
-                labIdParam = Nothing
+                cmd.Param("LabID", DBNull.Value)
             Else
-                labIdParam = labId
+                cmd.Param("LabID", labId)
             End If
 
-            Dim result As IList(Of IResource) = provider.Scheduler.Resource.SelectByLab(labIdParam).ToList()
+            Dim dt As DataTable = cmd.FillDataTable("SELECT * FROM sselScheduler.dbo.v_ResourceInfo WHERE ResourceIsActive = 1 AND ISNULL(@LabID, LabID) = LabID")
+
+            Dim result As New List(Of IResource)
+
+            For Each dr As DataRow In dt.Rows
+                Dim r As New Impl.Repository.Scheduler.ResourceInfo With {
+                    .ResourceID = dr.Field(Of Integer)("ResourceID"),
+                    .LabID = dr.Field(Of Integer)("LabID"),
+                    .ProcessTechID = dr.Field(Of Integer)("ProcessTechID"),
+                    .ResourceName = dr.Field(Of String)("ResourceName"),
+                    .LabDisplayName = dr.Field(Of String)("LabDisplayName"),
+                    .ProcessTechName = dr.Field(Of String)("ProcessTechName")
+                }
+
+                result.Add(r)
+            Next
 
             Return result
         End Function
@@ -31,8 +46,7 @@ Namespace DBAccess
         Public Shared Function SelectResourceListItemsByLab(labId As Integer) As IList(Of ResourceListItem)
             ' Cannot pass IProvider as a parameter because this is used by an ObjectDataSource (odsTool) in ReservationFacilityDownTime.aspx
 
-            Dim provider As IProvider = WebApp.Current.GetInstance(Of IProvider)()
-            Dim resources As IList(Of IResource) = SelectByLab(provider, labId)
+            Dim resources As IList(Of IResource) = SelectByLab(labId)
 
             Dim result As New List(Of ResourceListItem)()
 

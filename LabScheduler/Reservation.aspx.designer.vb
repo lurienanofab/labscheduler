@@ -607,5 +607,23 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents btnConfirmNo As Global.System.Web.UI.WebControls.Button
+        
+        '''<summary>
+        '''phConfirmError control.
+        '''</summary>
+        '''<remarks>
+        '''Auto-generated field.
+        '''To modify move field declaration from designer file to code-behind file.
+        '''</remarks>
+        Protected WithEvents phConfirmError As Global.System.Web.UI.WebControls.PlaceHolder
+        
+        '''<summary>
+        '''litConfirmError control.
+        '''</summary>
+        '''<remarks>
+        '''Auto-generated field.
+        '''To modify move field declaration from designer file to code-behind file.
+        '''</remarks>
+        Protected WithEvents litConfirmError As Global.System.Web.UI.WebControls.Literal
     End Class
 End Namespace

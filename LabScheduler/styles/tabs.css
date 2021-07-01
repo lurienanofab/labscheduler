@@ -6,7 +6,7 @@
         font-weight: bold;
     }
 
-        .resource-tab-menu .tabs-title .tabs-resource-name {
+        .resource-tab-menu .tabs-title .tabs-resource-name a {
             color: #cc6633;
         }
 

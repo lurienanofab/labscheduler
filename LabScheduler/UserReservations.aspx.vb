@@ -10,6 +10,8 @@ Namespace Pages
 
         Protected Sub Page_Load(sender As Object, e As EventArgs) Handles Me.Load
             Dim sw As Stopwatch = Stopwatch.StartNew()
+            Helper.AppendLog($"UserReservations.Page_Load: Started...")
+
             If Not Page.IsPostBack Then
                 litDate.Text = ContextBase.Request.SelectedDate().ToLongDateString()
 
@@ -26,15 +28,16 @@ Namespace Pages
                 Dim clientLab = Helper.ClientLab()
                 Dim labDisplayName = If(clientLab Is Nothing, String.Empty, clientLab.LabDisplayName)
 
-                litLocation.Text = $"{If(Helper.ClientInLab(), "Inside " + labDisplayName, "Outside")}"
+                litLocation.Text = $"{If(Helper.IsInLab(), "Inside " + labDisplayName, "Outside")}"
 
-                litComputer.Text = $"IP={Request.UserHostAddress}, Browser={GetBrowser()}, Kiosk={If(Kiosks.IsKiosk(Request.UserHostAddress), "Yes", "No")}"
+                litComputer.Text = $"IP={Request.UserHostAddress}, Browser={GetBrowser()}, Kiosk={If(Helper.IsOnKiosk(), "Yes", "No")}, Https={If(Request.IsSecureConnection, "Yes", "No")}"
 
                 hypRecurringPage.NavigateUrl = String.Format("~/UserRecurringReservation.aspx?Date={0:yyyy-MM-dd}", ContextBase.Request.SelectedDate())
             End If
 
             SetCurrentView(ViewType.UserView)
-            'litTimer.Text = $"<div>UserReservations.Page_Load: {sw.Elapsed.ToString()}</div>"
+
+            Helper.AppendLog($"UserReservations.Page_Load: Completed in {sw.Elapsed.TotalSeconds:0.0000} seconds")
             sw.Stop()
         End Sub
 

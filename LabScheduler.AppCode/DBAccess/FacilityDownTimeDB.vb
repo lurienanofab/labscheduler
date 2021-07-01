@@ -11,12 +11,12 @@ Namespace DBAccess
 
     Public Class FacilityDownTimeDB
         Public Shared Function GetFacilityDownTimeRes() As DataTable
-            Return DA.Command().Param(New With {.Action = "GetActiveFacilityDownTime"}).FillDataTable("sselScheduler.dbo.procReservationGroupSelect")
+            Return DataCommand.Create().Param(New With {.Action = "GetActiveFacilityDownTime"}).FillDataTable("sselScheduler.dbo.procReservationGroupSelect")
         End Function
 
         Public Shared Function GetFacilityDownTimeByGroupID(GroupID As Integer) As FacilityDownTimeRes
             Dim result As New FacilityDownTimeRes
-            Using reader As ExecuteReaderResult = DA.Command().Param(New With {.Action = "ByGroupID", GroupID}).ExecuteReader("sselScheduler.dbo.procReservationGroupSelect")
+            Using reader As ExecuteReaderResult = DataCommand.Create().Param(New With {.Action = "ByGroupID", GroupID}).ExecuteReader("sselScheduler.dbo.procReservationGroupSelect")
                 If reader.Read() Then
                     result.DisplayName = reader("DisplayName").ToString()
                     result.ClientID = Convert.ToInt32(reader("ClientID"))
@@ -34,7 +34,7 @@ Namespace DBAccess
         Public Shared Function CreateNew(clientId As Integer, beginDateTime As Date, endDateTime As Date) As Integer
             Dim groupId As Integer
 
-            groupId = DA.Command() _
+            groupId = DataCommand.Create() _
                 .Param("Action", "InsertNew") _
                 .Param("GroupID", groupId, ParameterDirection.Output) _
                 .Param("ClientID", clientId) _
@@ -52,11 +52,11 @@ Namespace DBAccess
 
         ' Deletes a series of reservations starting from the start date
         Public Shared Sub DeleteGroupReservations(GroupID As Integer)
-            DA.Command().Param(New With {.Action = "ByGroupID", GroupID}).ExecuteNonQuery("sselScheduler.dbo.procReservationGroupDelete")
+            DataCommand.Create().Param(New With {.Action = "ByGroupID", GroupID}).ExecuteNonQuery("sselScheduler.dbo.procReservationGroupDelete")
         End Sub
 
         Public Shared Sub UpdateByGroupID(groupId As Integer, beginDateTime As Date, endDateTime As Date)
-            DA.Command() _
+            DataCommand.Create() _
                 .Param("Action", "ByGroupID") _
                 .Param("GroupID", groupId) _
                 .Param("BeginDateTime", beginDateTime) _

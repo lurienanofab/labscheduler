@@ -1,6 +1,7 @@
 ﻿Imports LabScheduler.AppCode
 Imports LabScheduler.AppCode.DBAccess
 Imports LNF.Data
+Imports LNF.DataAccess
 Imports LNF.Repository
 Imports LNF.Scheduler
 Imports LNF.Web.Scheduler
@@ -18,7 +19,7 @@ Namespace Pages
         Public ReadOnly Property Activities As IEnumerable(Of Scheduler.Activity)
             Get
                 If _Activities Is Nothing Then
-                    _Activities = DA.Current.Query(Of Scheduler.Activity)().ToList()
+                    _Activities = DataSession.Query(Of Scheduler.Activity)().ToList()
                 End If
                 Return _Activities
             End Get
@@ -27,7 +28,7 @@ Namespace Pages
         Public ReadOnly Property AuthLevels As IList(Of Scheduler.AuthLevel)
             Get
                 If _AuthLevels Is Nothing Then
-                    _AuthLevels = DA.Current.Query(Of Scheduler.AuthLevel)().ToList()
+                    _AuthLevels = DataSession.Query(Of Scheduler.AuthLevel)().ToList()
                 End If
                 Return _AuthLevels
             End Get
@@ -93,7 +94,7 @@ Namespace Pages
                 .Add(New ListItem(GetInviteeTypeName(ActivityInviteeType.Required), Convert.ToInt32(ActivityInviteeType.Required).ToString()))
                 .Add(New ListItem(GetInviteeTypeName(ActivityInviteeType.Single), Convert.ToInt32(ActivityInviteeType.Single).ToString()))
             End With
-            ddlInviteeType_SelectedIndexChanged(ddlInviteeType, Nothing)
+            DdlInviteeType_SelectedIndexChanged(ddlInviteeType, Nothing)
         End Sub
 
         Private Sub DdlInviteeType_SelectedIndexChanged(ByVal sender As Object, ByVal e As System.EventArgs) Handles ddlInviteeType.SelectedIndexChanged
@@ -132,7 +133,7 @@ Namespace Pages
                 'Dim auths As IList(Of Scheduler.GlobalActivityAuth)
                 If Insert Then
                     activity = New Scheduler.Activity()
-                    DA.Current.Insert(activity)
+                    DataSession.Insert(activity)
                     'auths = CreateGlobalActivityAuths().ToList()
                     'DA.Current.Insert(auths)
                 Else
@@ -215,7 +216,7 @@ Namespace Pages
                     txtDescription.Text = activity.Description
                 Case "delete"
                     Dim activity As Scheduler.Activity = Activities.First(Function(x) x.ActivityID = Convert.ToInt32(e.CommandArgument))
-                    DA.Current.Delete(activity)
+                    DataSession.Delete(activity)
                     LoadActivities()
             End Select
         End Sub

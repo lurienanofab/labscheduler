@@ -1,4 +1,5 @@
 ﻿Imports LNF.Data
+Imports LNF.DataAccess
 Imports LNF.Impl.Repository.Scheduler
 Imports LNF.Repository
 Imports LNF.Scheduler
@@ -46,7 +47,7 @@ Namespace Pages
         End Sub
 
         Public Sub DeleteResource()
-            Dim res As Resource = DA.Current.Single(Of Resource)(ResourceID)
+            Dim res As Resource = DataSession.Single(Of Resource)(ResourceID)
             res.IsActive = False
             res.IsSchedulable = False
         End Sub
@@ -109,12 +110,24 @@ Namespace Pages
             Dim start As Date = Date.Now
             Dim query As IEnumerable(Of IResourceTree) = Helper.GetResourceTreeItemCollection().Resources()
             Dim secondsTaken As Double = (Date.Now - start).TotalSeconds
-            Dim items As IList(Of ResourceTableItem) = ResourceTableItem.CreateList(query)
+            Dim items As IList(Of ResourceTableItem) = CreateResourceTableItemList(query)
             rptResources.DataSource = items
             rptResources.DataBind()
             pEditResource.Visible = False
             pListResource.Visible = True
         End Sub
+
+        Private Function CreateResourceTableItemList(source As IEnumerable(Of IResource)) As IList(Of ResourceTableItem)
+            Dim result As New List(Of ResourceTableItem)
+            result = source.Select(Function(x) New ResourceTableItem(x, GetToolEngineers(x.ResourceID))).ToList()
+            Return result
+        End Function
+
+        Private Function GetToolEngineers(resourceId As Integer) As IEnumerable(Of IResourceClient)
+            Return DataSession.Query(Of ResourceClientInfo)() _
+                .Where(Function(x) x.ResourceID = resourceId).ToList() _
+                .Where(Function(x) x.HasAuth(ClientAuthLevel.ToolEngineer)).ToList()
+        End Function
 
         Private Class ResourceTableItem
 
@@ -138,7 +151,10 @@ Namespace Pages
 
             Public ReadOnly Property Picture As String
 
-            Public Sub New(r As IResource)
+            Private ReadOnly _toolEngineers As IEnumerable(Of IResourceClient)
+
+            Public Sub New(r As IResource, toolEngineers As IEnumerable(Of IResourceClient))
+                _toolEngineers = toolEngineers
                 Resource = r
                 ActionLinks = GetActionLinks()
                 BuildingName = r.BuildingName
@@ -161,8 +177,7 @@ Namespace Pages
 
             Private Function GetToolEngineer() As String
                 Dim result As String = String.Empty
-                Dim toolEngineers As IList(Of ResourceClientInfo) = DA.Current.Query(Of ResourceClientInfo)().Where(Function(x) x.ResourceID = Resource.ResourceID).ToList().Where(Function(x) x.HasAuth(ClientAuthLevel.ToolEngineer)).ToList()
-                For Each te As ResourceClientInfo In toolEngineers
+                For Each te As ResourceClientInfo In _toolEngineers
                     result += String.Format("<div>{0}</div>", te.DisplayName)
                 Next
                 Return result
@@ -171,13 +186,6 @@ Namespace Pages
             Private Function GetPicture() As String
                 Return String.Format("<img src=""{0}/images/Resource/Resource{1}_icon.png"" alt="""" />", VirtualPathUtility.ToAbsolute("~"), GetResourceID())
             End Function
-
-            Public Shared Function CreateList(source As IEnumerable(Of IResource)) As IList(Of ResourceTableItem)
-                Dim result As New List(Of ResourceTableItem)
-                result = source.Select(Function(x) New ResourceTableItem(x)).ToList()
-                Return result
-            End Function
         End Class
-
     End Class
 End Namespace

@@ -1,0 +1,3 @@
+[Info ] 2020-11-11 00:06:55 Logger initialized.
+[Trace] 2020-11-11 00:06:55 New Relic .NET Agent
+[Error] 2020-11-11 00:06:55 .NET Framework 4.5 is required.  Detaching New Relic profiler.
