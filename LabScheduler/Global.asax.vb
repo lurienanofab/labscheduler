@@ -79,8 +79,4 @@ Public Class [Global]
     Sub Application_EndRequest(ByVal sender As Object, ByVal e As EventArgs)
 
     End Sub
-
-    Public Shared Sub InitializeHandler(handler As IHttpHandler)
-        webapp.InitializeHandler(handler)
-    End Sub
 End Class

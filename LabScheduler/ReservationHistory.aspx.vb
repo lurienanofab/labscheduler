@@ -5,7 +5,6 @@ Imports LNF.Data
 Imports LNF.Scheduler
 Imports LNF.Web.Scheduler
 Imports LNF.Web.Scheduler.Content
-Imports LNF.Web.Scheduler.Models
 
 Namespace Pages
     Public Class ReservationHistory

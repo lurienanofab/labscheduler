@@ -446,7 +446,7 @@
       <DependentUpon>LabLocation.aspx</DependentUpon>
       <SubType>ASPXCodebehind</SubType>
     </Compile>
-    <Compile Include="SchedulerPageInitializerModule.vb" />
+    <Compile Include="PageInitializer.vb" />
     <Compile Include="PerfomanceTest.aspx.designer.vb">
       <DependentUpon>PerfomanceTest.aspx</DependentUpon>
     </Compile>
