@@ -1,10 +1,9 @@
 ﻿using LNF.Web.Content;
 using System;
-using System.Web;
 
 namespace LNF.Web.Scheduler.Content
 {
-    public class SchedulerUserControl : LNFUserControl
+    public class SchedulerUserControl : OnlineServicesUserControl
     {
         public SchedulerContextHelper Helper => SchedulerPage.Helper;
         public SchedulerMasterPage SchedulerMaster => SchedulerPage.SchedulerMaster;

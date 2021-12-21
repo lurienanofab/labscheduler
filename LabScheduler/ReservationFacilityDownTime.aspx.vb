@@ -96,7 +96,7 @@ Namespace Pages
             End If
 
             'Get the selected indices and find out their corresponding tool IDs
-            Dim toolIdList As List(Of Integer) = New List(Of Integer)()
+            Dim toolIdList As New List(Of Integer)()
 
             Dim indices As Integer() = lboxTools.GetSelectedIndices()
 
@@ -121,7 +121,7 @@ Namespace Pages
             'Loop through each selected tool and make reservation and delete other people's reservation
             For Each resourceId As Integer In toolIdList
                 ' Find and Remove any un-started reservations made during time of repair
-                Dim query As IEnumerable(Of IReservationItem) = reservations.Where(Function(x) x.ReservationID = resourceId).ToList()
+                Dim query As IEnumerable(Of IReservationItem) = reservations.Where(Function(x) x.ResourceID = resourceId).ToList()
 
                 For Each existing As IReservationItem In query
                     If existing.ActualBeginDateTime Is Nothing Then

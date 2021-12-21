@@ -3,18 +3,19 @@ Imports System.Security.Principal
 Imports System.Web.Compilation
 Imports LabScheduler.AppCode
 Imports LNF
+Imports LNF.DependencyInjection
 Imports LNF.Impl
+Imports LNF.Impl.DependencyInjection
 Imports LNF.Web
-Imports SimpleInjector
 
 Public Class [Global]
     Inherits HttpApplication
 
     Private Shared webapp As WebApp
 
-    Public Shared ReadOnly Property Container As Container
+    Public Shared ReadOnly Property ContainerContext As IContainerContext
         Get
-            Return webapp.Container
+            Return webapp.Context
         End Get
     End Property
 
@@ -24,8 +25,8 @@ Public Class [Global]
         webapp = New WebApp()
 
         ' setup up dependency injection container
-        Dim wcc As New WebContainerConfiguration(webapp.Container)
-        wcc.EnablePropertyInjection()
+        Dim wcc As WebContainerConfiguration = webapp.GetConfiguration()
+        wcc.Context.EnablePropertyInjection()
         wcc.RegisterAllTypes()
 
         ' setup web dependency injection
@@ -53,7 +54,7 @@ Public Class [Global]
         Dim lastEx As Exception = Server.GetLastError()
         If lastEx IsNot Nothing Then
             Dim baseEx As Exception = lastEx.GetBaseException()
-            Dim util As New ErrorUtility(New HttpContextWrapper(Context), Container.GetInstance(Of IProvider)())
+            Dim util As New ErrorUtility(New HttpContextWrapper(Context), ContainerContext.GetInstance(Of IProvider)())
             If baseEx IsNot Nothing Then
                 errors = util.GetErrorData(baseEx)
             Else

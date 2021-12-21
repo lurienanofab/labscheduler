@@ -6,16 +6,16 @@
             var opt = $.extend({}, { date: null, month: null, returnto: "default", headers: "S,M,T,W,T,F,S" }, options, $this.data());
 
             var getFirstOfMonth = function (date) {
-                return moment(moment(date).format("YYYY-MM-01"));
+                return dayjs(dayjs(date).format("YYYY-MM-01"));
             }
 
             var selectedDate;
             var selectedMonth;
 
             if (opt.date == null)
-                selectedDate = moment();
+                selectedDate = dayjs();
             else
-                selectedDate = moment(opt.date, "YYYY-MM-DD");
+                selectedDate = dayjs(opt.date, "YYYY-MM-DD");
 
             if (opt.month == null)
                 selectedMonth = getFirstOfMonth(selectedDate);
@@ -140,14 +140,14 @@
             var createDayCell = function (date) {
                 var cell = $("<td/>");
 
-                var d = moment(moment(date).format("YYYY-MM-DD"));
+                var d = dayjs(dayjs(date).format("YYYY-MM-DD"));
 
                 if (d.isBefore(selectedMonth))
                     cell.addClass("date-prev-month");
                 else if (d.isSameOrAfter(getNextMonth(selectedMonth)))
                     cell.addClass("date-next-month");
 
-                if (d.isSame(moment().format("YYYY-MM-DD")))
+                if (d.isSame(dayjs().format("YYYY-MM-DD")))
                     cell.addClass("date-today");
 
                 if (d.isSame(selectedDate.format("YYYY-MM-DD")))

@@ -1,4 +1,5 @@
-﻿using LNF.Data;
+﻿using LNF.Cache;
+using LNF.Data;
 using LNF.Impl.Repository.Data;
 using LNF.Impl.Repository.Scheduler;
 using LNF.Repository;
@@ -162,7 +163,9 @@ namespace LNF.Web.Scheduler.Pages
                 ClientID = x.ClientID,
                 UserName = x.UserName,
                 Privs = x.Privs,
-                DisplayName = x.DisplayName,
+                LName = x.LName,
+                MName = x.MName,
+                FName = x.FName,
                 Email = x.Email,
                 ContactUrl = GetContactUrl(x.ClientID),
                 AuthLevel = x.AuthLevel,
@@ -290,13 +293,25 @@ namespace LNF.Web.Scheduler.Pages
                     SetExpiration(rc);
 
                     DataSession.Insert(rc);
+                    ClearResourceClientsCache();
+
+                    var lname = string.Empty;
+                    var fname = string.Empty;
+                    var splitter = ClientsDropDownList.SelectedItem.Text.Split(',');
+                    
+                    if (splitter.Length > 0)
+                        lname = splitter[0].Trim();
+                    
+                    if (splitter.Length > 1)
+                        fname = splitter[1].Trim();
 
                     CurrentClients.Add(new ResourceClientItem()
                     {
                         ResourceClientID = rc.ResourceClientID,
                         ClientID = clientId,
                         AuthLevel = selectedAuthLevel,
-                        DisplayName = ClientsDropDownList.SelectedItem.Text,
+                        LName = lname,
+                        FName = fname,
                         Expiration = rc.Expiration,
                         ContactUrl = GetContactUrl(clientId),
                         AuthDuration = GetCurrentResource().AuthDuration,
@@ -314,7 +329,9 @@ namespace LNF.Web.Scheduler.Pages
                         var rc = DataSession.Single<ResourceClient>(cc.ResourceClientID);
                         rc.AuthLevel = selectedAuthLevel;
                         SetExpiration(rc);
+
                         DataSession.SaveOrUpdate(rc);
+                        ClearResourceClientsCache();
 
                         cc.AuthLevel = selectedAuthLevel;
                         cc.Expiration = rc.Expiration;
@@ -372,7 +389,10 @@ namespace LNF.Web.Scheduler.Pages
             if (cc != null)
             {
                 var rc = DataSession.Single<ResourceClient>(cc.ResourceClientID);
+
                 DataSession.Delete(rc);
+                ClearResourceClientsCache();
+
                 CurrentClients.Remove(cc);
             }
 
@@ -391,10 +411,17 @@ namespace LNF.Web.Scheduler.Pages
                 var rc = DataSession.Single<ResourceClient>(cc.ResourceClientID);
                 rc.Expiration = DateTime.Now.AddMonths(GetCurrentResource().AuthDuration);
                 DataSession.SaveOrUpdate(rc);
+                ClearResourceClientsCache();
             }
 
             Fill(authLevel);
             FillClients();
+        }
+
+        protected void ClearResourceClientsCache()
+        {
+            var resourceId = GetCurrentResource().ResourceID;
+            CacheManager.Current.ClearResourceClients(resourceId);
         }
     }
 
@@ -407,7 +434,10 @@ namespace LNF.Web.Scheduler.Pages
         public ClientPrivilege Privs { get; set; }
         public ClientAuthLevel AuthLevel { get; set; }
         public DateTime? Expiration { get; set; }
-        public string DisplayName { get; set; }
+        public string LName { get; set; }
+        public string MName { get; set; }
+        public string FName { get; set; }
+        public string DisplayName => Clients.GetDisplayName(LName, FName);
         public string ContactUrl { get; set; }
         public int AuthDuration { get; set; }
         public bool IsEveryone() => LNF.Scheduler.ResourceClients.IsEveryone(ClientID);

@@ -401,16 +401,17 @@
     </form>
     
     <script src="//ssel-apps.eecs.umich.edu/static/lib/jquery/jquery.min.js"></script>
-    <script src="//ssel-apps.eecs.umich.edu/static/lib/moment/moment.min.js"></script>
+    <%--<script src="//ssel-apps.eecs.umich.edu/static/lib/moment/moment.min.js"></script>--%>
+    <script src="//ssel-apps.eecs.umich.edu/static/lib/dayjs/dayjs.min.js"></script>
     
     <script>
         function runTest(url){
-            var start = moment();
+            var start = dayjs();
             console.log('started test at ' + start.format('YYYY-MM-DD HH:mm:ss') + ' [url: ' + url + ']');
             $.ajax({
                 'url': url
             }).done(function(data){
-                var end = moment();
+                var end = dayjs();
                 var diff = end.diff(start, 'milliseconds');
                 console.log('completed at ' + end.format('YYYY-MM-DD HH:mm:ss') + ' [time taken: ' + diff + ' ms]');
             }).fail(function(err){

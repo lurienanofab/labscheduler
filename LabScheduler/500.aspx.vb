@@ -10,7 +10,7 @@ Public Class _500
     Inherits Page
 
     ' For some reason property injection isn't working on this page. Maybe because it's part of the error handling process?
-    Public ReadOnly Property Provider As IProvider = [Global].Container.GetInstance(Of IProvider)()
+    Public ReadOnly Property Provider As IProvider = [Global].ContainerContext.GetInstance(Of IProvider)()
 
     Public Property ContextBase As HttpContextBase
 

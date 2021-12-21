@@ -13,7 +13,7 @@ Namespace Pages
         Private _EditReservation As IReservation
 
         Private _holidays As IEnumerable(Of IHoliday)
-        Private _maxForgivenDay As Integer = Integer.Parse(Utility.GetRequiredAppSetting("MaxForgivenDay"))
+        Private ReadOnly _maxForgivenDay As Integer = Integer.Parse(Utility.GetRequiredAppSetting("MaxForgivenDay"))
 
         Public _utility As ReservationHistoryUtility
 
@@ -66,19 +66,23 @@ Namespace Pages
         End Property
 
         Protected Sub Page_Load(sender As Object, e As EventArgs) Handles Me.Load
-            If Not Page.IsPostBack Then
-                hidAjaxUrl.Value = VirtualPathUtility.ToAbsolute("~/ajax/reservation.ashx")
-                hidClientID.Value = CurrentUser.ClientID.ToString()
+            Try
+                If Not Page.IsPostBack Then
+                    hidAjaxUrl.Value = VirtualPathUtility.ToAbsolute("~/ajax/reservation.ashx")
+                    hidClientID.Value = CurrentUser.ClientID.ToString()
 
-                LoadDateRange()
-                LoadClients()
+                    LoadDateRange()
+                    LoadClients()
 
-                If EditReservationID = 0 Then
-                    LoadReservationHistory()
-                Else
-                    LoadEditForm()
+                    If EditReservationID = 0 Then
+                        LoadReservationHistory()
+                    Else
+                        LoadEditForm()
+                    End If
                 End If
-            End If
+            Catch ex As Exception
+                BootstrapAlert1.Show(ex.Message)
+            End Try
         End Sub
 
         Private Sub LoadDateRange()
@@ -130,8 +134,8 @@ Namespace Pages
             End If
 
             Session("SelectedRange") = Integer.Parse(ddlRange.SelectedValue)
-            Session("SelectedStartDate") = Date.Parse(txtStartDate.Text)
-            Session("SelectedEndDate") = Date.Parse(txtEndDate.Text)
+            Session("SelectedStartDate") = txtStartDate.Text
+            Session("SelectedEndDate") = txtEndDate.Text
         End Sub
 
         Private Sub LoadClients()
@@ -161,26 +165,21 @@ Namespace Pages
         Private Sub LoadReservationHistory()
             Dim includeCanceledForModification = CacheManager.Current.ShowCanceledForModification() AndAlso CurrentUser.HasPriv(ClientPrivilege.Staff)
 
-            Dim sd, ed As Date
+            Dim startDateText As String = txtStartDate.Text
+            Dim endDateText As String = txtEndDate.Text
 
-            If Date.TryParse(txtStartDate.Text, sd) Then
-                Session("SelectedStartDate") = sd
-            Else
-                Throw New Exception("Invalid date value for Start Date.")
-            End If
-
-            If Date.TryParse(txtEndDate.Text, ed) Then
-                Session("SelectedEndDate") = ed
-            Else
-                Throw New Exception("Invalid date value for End Date.")
-            End If
+            Session("SelectedStartDate") = startDateText
+            Session("SelectedEndDate") = endDateText
 
             Dim client As IClient = GetClient()
 
             Session("SelectedClientID") = client.ClientID
 
+            Dim sd As Date? = Utility.StringToNullableDate(startDateText)
+            Dim ed As Date? = Utility.StringToNullableDate(endDateText)
+
             ' In the UI the end date is inclusive, but we should use an exclusive end date when calling GetReservationHistoryData - so add one day.
-            rptHistory.DataSource = ReservationHistoryUtility.GetReservationHistoryData(client, sd, ed.AddDays(1), includeCanceledForModification).OrderByDescending(Function(x) x.BeginDateTime).ToList()
+            rptHistory.DataSource = ReservationHistoryUtility.GetReservationHistoryData(client, sd, Utility.AddDays(ed, 1), includeCanceledForModification).OrderByDescending(Function(x) x.BeginDateTime).ToList()
             rptHistory.DataBind()
 
             ' Display datagrid
@@ -210,18 +209,6 @@ Namespace Pages
             phEditHistory.Visible = False
         End Sub
 
-        Private Function GetNotes(obj As Object) As String
-            Dim defval As String = "None"
-            If obj Is DBNull.Value Then Return defval
-            If obj Is Nothing Then Return defval
-            If String.IsNullOrEmpty(obj.ToString()) Then Return defval
-            Return obj.ToString()
-        End Function
-
-        Private Sub ShowAlert(message As String)
-            Page.ClientScript.RegisterStartupScript([GetType](), "alert_" + Guid.NewGuid().ToString(), $"alert('{message}');", True)
-        End Sub
-
         Private Sub LoadEditForm()
             Session("SelectedClientID") = EditReservation.ClientID
 
@@ -242,7 +229,7 @@ Namespace Pages
 
             '2012-10-23 It's possible that there are no available accounts. For example
             'a remote processing run where no one was ever invited.
-            Dim availAccts As List(Of IClientAccount) = Provider.Scheduler.Reservation.AvailableAccounts(EditReservation).ToList()
+            Dim availAccts As List(Of IClientAccount) = Provider.Scheduler.Reservation.AvailableAccounts(EditReservation.ReservationID, EditReservation.ActivityAccountType).ToList()
             Dim accts As IEnumerable(Of IAccount) = Nothing
 
             If availAccts IsNot Nothing Then
@@ -325,17 +312,25 @@ Namespace Pages
         End Function
 
         Protected Sub BtnSearchHistory_Click(sender As Object, e As EventArgs)
-            LoadReservationHistory()
+            Try
+                LoadReservationHistory()
+            Catch ex As Exception
+                BootstrapAlert1.Show(ex.Message)
+            End Try
         End Sub
 
         Protected Sub ReservationHistory_Command(sender As Object, e As CommandEventArgs)
-            litEditMessage.Text = String.Empty
-            Select Case e.CommandName
-                Case "cancel"
-                    EditReservationCancel()
-                Case "save"
-                    EditReservationSave()
-            End Select
+            Try
+                litEditMessage.Text = String.Empty
+                Select Case e.CommandName
+                    Case "cancel"
+                        EditReservationCancel()
+                    Case "save"
+                        EditReservationSave()
+                End Select
+            Catch ex As Exception
+                BootstrapAlert1.Show(ex.Message)
+            End Try
         End Sub
 
         Private Sub EditReservationCancel()

@@ -4,6 +4,7 @@ obj/
 packages/
 TestResults/
 PublishProfiles/
+newrelic/
 *.suo
 *.user
 LabScheduler/Web.config

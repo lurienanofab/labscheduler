@@ -5,7 +5,7 @@ using System;
 
 namespace LNF.Web.Scheduler.Content
 {
-    public abstract class SchedulerPage : LNFPage
+    public abstract class SchedulerPage : OnlineServicesPage
     {
         public new SchedulerContextHelper Helper => NewHelper();
 

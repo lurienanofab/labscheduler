@@ -148,7 +148,7 @@ namespace LNF.Web.Scheduler
             return result;
         }
 
-        private Message GetMessage(WorkerRequest body)
+        public Message GetMessage(WorkerRequest body)
         {
             return new Message(body)
             {

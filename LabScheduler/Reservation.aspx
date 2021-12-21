@@ -1,5 +1,7 @@
 ﻿<%@ Page Title="Reservation" Language="vb" AutoEventWireup="false" MasterPageFile="~/MasterPageScheduler.Master" CodeBehind="Reservation.aspx.vb" Inherits="LabScheduler.Pages.Reservation" %>
 
+<%@ Register Namespace="LNF.Web.Controls" Assembly="LNF.Web" TagPrefix="lnf" %>
+
 <asp:Content ID="Content1" ContentPlaceHolderID="head" runat="server">
     <link rel="stylesheet" href="//ssel-apps.eecs.umich.edu/static/lib/bootstrap/plugins/bootstrap-datepicker/css/bootstrap-datepicker.min.css" />
 
@@ -50,6 +52,8 @@
             <asp:Literal runat="server" ID="litReservationAlert"></asp:Literal>
         </div>
     </asp:PlaceHolder>
+
+    <lnf:BootstrapAlert runat="server" ID="BootstrapAlert1" Dismissable="true" />
 
     <asp:PlaceHolder runat="server" ID="phReservation">
         <div class="reservation">

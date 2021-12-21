@@ -1,8 +1,5 @@
 ﻿using LNF.Cache;
-using LNF.CommonTools;
 using LNF.Data;
-using LNF.Impl.Repository.Data;
-using LNF.Repository;
 using LNF.Scheduler;
 using System;
 using System.Collections.Generic;
@@ -25,14 +22,16 @@ namespace LNF.Web.Scheduler.Controllers
 
             string command = GetCommand(ctx);
 
-            string redirectUrl;
+            ViewType currentView = GetView(ctx);
+            ctx.SetCurrentViewType(currentView);
 
-            var currentView = ctx.GetCurrentViewType();
-            var currentUser = helper.CurrentUser();
+            IClient currentUser = helper.CurrentUser();
+
+            string redirectUrl;
 
             var util = SchedulerUtility.Create(Provider);
 
-            helper.AppendLog($"ReservationController.ProcessRequest: command = {command}");
+            helper.AppendLog($"ReservationController.ProcessRequest: url = {ctx.Request.Url}");
 
             try
             {
@@ -123,6 +122,16 @@ namespace LNF.Web.Scheduler.Controllers
             return context.Request.QueryString["Command"];
         }
 
+        private ViewType GetView(HttpContextBase context)
+        {
+            if (string.IsNullOrEmpty(context.Request.QueryString["View"]))
+                throw new InvalidOperationException("Required parameter missing: View");
+
+            var result = (ViewType)Enum.Parse(typeof(ViewType), context.Request.QueryString["View"], true);
+
+            return result;
+        }
+
         private TimeSpan GetReservationTime(HttpContextBase context)
         {
             if (int.TryParse(context.Request.QueryString["Time"], out int result))
@@ -157,7 +166,7 @@ namespace LNF.Web.Scheduler.Controllers
             var client = helper.GetReservationClient(rsv);
             var args = ReservationStateArgs.Create(rsv, client, now);
             var state = ReservationStateUtility.Create(now).GetReservationState(args);
-            var currentView = context.GetCurrentViewType();
+            var currentView = GetView(context);
             var currentUser = context.CurrentUser(Provider);
 
             bool confirm = false;

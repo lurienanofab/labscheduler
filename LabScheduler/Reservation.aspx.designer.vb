@@ -87,6 +87,15 @@ Namespace Pages
         Protected WithEvents litReservationAlert As Global.System.Web.UI.WebControls.Literal
         
         '''<summary>
+        '''BootstrapAlert1 control.
+        '''</summary>
+        '''<remarks>
+        '''Auto-generated field.
+        '''To modify move field declaration from designer file to code-behind file.
+        '''</remarks>
+        Protected WithEvents BootstrapAlert1 As Global.LNF.Web.Controls.BootstrapAlert
+        
+        '''<summary>
         '''phReservation control.
         '''</summary>
         '''<remarks>

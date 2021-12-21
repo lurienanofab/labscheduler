@@ -33,6 +33,15 @@ Namespace Pages
         Protected WithEvents hidClientID As Global.System.Web.UI.HtmlControls.HtmlInputHidden
         
         '''<summary>
+        '''BootstrapAlert1 control.
+        '''</summary>
+        '''<remarks>
+        '''Auto-generated field.
+        '''To modify move field declaration from designer file to code-behind file.
+        '''</remarks>
+        Protected WithEvents BootstrapAlert1 As Global.LNF.Web.Controls.BootstrapAlert
+        
+        '''<summary>
         '''ddlClients control.
         '''</summary>
         '''<remarks>

@@ -4,7 +4,7 @@ Imports LNF.Web.Content
 Imports LNF.Web.Scheduler
 
 Public Class MasterPageBootstrap
-    Inherits LNFMasterPage
+    Inherits OnlineServicesMasterPage
 
     'Private _menuItems As IList(Of repo.Menu)
     Private _menu As SiteMenu
@@ -80,7 +80,7 @@ Public Class MasterPageBootstrap
             Return "#"
         End If
 
-        Dim appServer As String = String.Empty
+        Dim appServer As String
 
         If Request.IsSecureConnection Then
             appServer = "//" + ConfigurationManager.AppSettings("AppServer")

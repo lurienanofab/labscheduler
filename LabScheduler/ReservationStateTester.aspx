@@ -139,7 +139,8 @@
     </form>
 
     <script src="//ssel-apps.eecs.umich.edu/static/lib/jquery/jquery.min.js"></script>
-    <script src="//ssel-apps.eecs.umich.edu/static/lib/moment/moment.min.js"></script>
+    <%--<script src="//ssel-apps.eecs.umich.edu/static/lib/moment/moment.min.js"></script>--%>
+    <script src="//ssel-apps.eecs.umich.edu/static/lib/dayjs/dayjs.min.js"></script>
 
     <script>
         function getReservationState(args, command) {
@@ -264,7 +265,7 @@
         var url = new URL(window.location);
 
         var defArgs = {
-            now: moment().format('YYYY-MM-DD HH:mm:ss'),
+            now: dayjs().format('YYYY-MM-DD HH:mm:ss'),
             clientId: null,
             reservationId: null,
             inlab: false,

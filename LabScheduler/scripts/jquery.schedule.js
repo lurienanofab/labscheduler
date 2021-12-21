@@ -139,15 +139,15 @@
                 time: null,
                 row: null,
                 header: null,
-                moment: function () {
+                time: function () {
                     if (this.header === null)
-                        return moment("invalid");
+                        return dayjs("invalid");
 
                     if (this.time === null)
-                        return moment("invalid");
+                        return dayjs("invalid");
 
-                    var m1 = moment(this.header.text(), "ddd M/D");
-                    var m2 = this.time.indexOf(":") === -1 ? moment(this.time, "ha") : moment(this.time, "h:mma");
+                    var m1 = dayjs(this.header.text(), "ddd M/D");
+                    var m2 = this.time.indexOf(":") === -1 ? dayjs(this.time, "ha") : dayjs(this.time, "h:mma");
 
                     return m1.add(m2);
                 }
@@ -195,8 +195,8 @@
                     hideTooltip();
                 else {
                     mouse.header = h;
-                    if (mouse.moment().isValid()) {
-                        if (mouse.moment().isBefore(moment())) {
+                    if (mouse.time().isValid()) {
+                        if (mouse.time().isBefore(dayjs())) {
                             showTooltip({
                                 "x": e.pageX + 15,
                                 "y": e.pageY + 5,

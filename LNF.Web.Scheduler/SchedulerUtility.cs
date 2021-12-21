@@ -28,7 +28,7 @@ namespace LNF.Web.Scheduler
             return new SchedulerUtility(provider);
         }
 
-        public ReservationState GetReservationCell(CustomTableCell rsvCell, IReservationItem rsv, ReservationClient client, IEnumerable<IReservationProcessInfo> reservationProcessInfos, IEnumerable<IReservationInviteeItem> invitees, LocationPathInfo locationPath, DateTime now)
+        public ReservationState GetReservationCell(CustomTableCell rsvCell, IReservationItem rsv, ReservationClient client, IEnumerable<IReservationProcessInfo> reservationProcessInfos, IEnumerable<IReservationInviteeItem> invitees, LocationPathInfo locationPath, ViewType view, DateTime now)
         {
             int reservationId = rsv.ReservationID;
             int resourceId = rsv.ResourceID;
@@ -77,7 +77,7 @@ namespace LNF.Web.Scheduler
             // [2020-09-18 jg] StartOnly should not allow delete and NotInLab should allow delete
             if (CanDeleteReservation(state, args, now))
             {
-                navurl = $"~/ReservationController.ashx?Command=DeleteReservation&ReservationID={rsv.ReservationID}&Date={rsvCell.CellDate:yyyy-MM-dd}&Time={rsvCell.CellDate.TimeOfDay.TotalMinutes}&State={state}";
+                navurl = UrlUtility.GetDeleteReservationUrl(rsv.ReservationID, rsvCell.CellDate, state, view);
                 var hypDelete = new HyperLink
                 {
                     NavigateUrl = NavigateUrl(navurl, path, locationPath),
@@ -99,7 +99,7 @@ namespace LNF.Web.Scheduler
             //if (state == ReservationState.Editable || state == ReservationState.StartOrDelete || state == ReservationState.StartOnly)
             if (CanModifyReservation(state, args, now))
             {
-                navurl = $"~/ReservationController.ashx?Command=ModifyReservation&ReservationID={rsv.ReservationID}&Date={rsvCell.CellDate:yyyy-MM-dd}&Time={rsvCell.CellDate.TimeOfDay.TotalMinutes}&State={state}";
+                navurl = UrlUtility.GetModifyReservationUrl(rsv.ReservationID, rsvCell.CellDate, state, view);
                 var hypModify = new HyperLink
                 {
                     NavigateUrl = NavigateUrl(navurl, path, locationPath),

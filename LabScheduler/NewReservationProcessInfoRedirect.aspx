@@ -12,8 +12,8 @@
         <input type="hidden" runat="server" id="hidReservationID" class="reservation-id" value="-1" />
         <input type="hidden" runat="server" id="hidRedirectPath" class="hidRedirectPath" value="" />
     </form>
-    <script src="http://lnf-dev.eecs.umich.edu/static/lib/jquery/jquery.min.js"></script>
-    <script src="http://lnf-dev.eecs.umich.edu/static/lib/underscore/underscore-min.js"></script>
+    <script src="//ssel-apps.eecs.umich.edu/static/lib/jquery/jquery.min.js"></script>
+    <script src="//ssel-apps.eecs.umich.edu/static/lib/underscore/underscore-min.js"></script>
 
     <script src="scripts/underscore-min.js"></script>
     <script src="scripts/processinfo.js"></script>

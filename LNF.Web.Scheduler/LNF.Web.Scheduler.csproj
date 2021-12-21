@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>LNF.Web.Scheduler</RootNamespace>
     <AssemblyName>LNF.Web.Scheduler</AssemblyName>
-    <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
     <NuGetPackageImportStamp>
@@ -64,7 +64,7 @@
       <HintPath>..\packages\Newtonsoft.Json.13.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="NHibernate, Version=5.3.0.0, Culture=neutral, PublicKeyToken=aa95f207798dfdb4, processorArchitecture=MSIL">
-      <HintPath>..\packages\NHibernate.5.3.8\lib\net461\NHibernate.dll</HintPath>
+      <HintPath>..\packages\NHibernate.5.3.10\lib\net461\NHibernate.dll</HintPath>
     </Reference>
     <Reference Include="NHibernate.Glimpse, Version=3.3.3.4001, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\NHibernate.Glimpse.3.3.3.40011\lib\net35\NHibernate.Glimpse.dll</HintPath>
@@ -78,8 +78,8 @@
     <Reference Include="Remotion.Linq.EagerFetching, Version=2.2.0.0, Culture=neutral, PublicKeyToken=fee00910d6e5f53b, processorArchitecture=MSIL">
       <HintPath>..\packages\Remotion.Linq.EagerFetching.2.2.0\lib\net45\Remotion.Linq.EagerFetching.dll</HintPath>
     </Reference>
-    <Reference Include="RestSharp, Version=106.11.7.0, Culture=neutral, PublicKeyToken=598062e77f915f75, processorArchitecture=MSIL">
-      <HintPath>..\packages\RestSharp.106.11.7\lib\net452\RestSharp.dll</HintPath>
+    <Reference Include="RestSharp, Version=106.15.0.0, Culture=neutral, PublicKeyToken=598062e77f915f75, processorArchitecture=MSIL">
+      <HintPath>..\packages\RestSharp.106.15.0\lib\net452\RestSharp.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />
@@ -126,7 +126,15 @@
     <Compile Include="Controls\Calendar.cs" />
     <Compile Include="CostEstimator.cs" />
     <Compile Include="Extensions.cs" />
+    <Compile Include="FacilityDownTime\FacilityDownTimeGroup.cs" />
+    <Compile Include="FacilityDownTime\FacilityDownTimeLab.cs" />
+    <Compile Include="FacilityDownTime\FacilityDownTimeRepository.cs" />
+    <Compile Include="FacilityDownTime\FacilityDownTimeReservation.cs" />
+    <Compile Include="FacilityDownTime\FacilityDownTimeResource.cs" />
+    <Compile Include="FacilityDownTime\InsertReservationArgs.cs" />
+    <Compile Include="FacilityDownTime\UpdateReservationArgs.cs" />
     <Compile Include="Handlers\AuthHandler.cs" />
+    <Compile Include="Handlers\FacilityDowntimeHandler.cs" />
     <Compile Include="Handlers\HelpdeskHandler.cs" />
     <Compile Include="Handlers\ReservationHandler.cs" />
     <Compile Include="Handlers\ResourceHandler.cs" />
@@ -151,10 +159,13 @@
     <Compile Include="Controls\ResourceTreeView.cs" />
     <Compile Include="DataUtility.cs" />
     <Compile Include="FacilityDownTimeUtility.cs" />
+    <Compile Include="Repository\Models\Scheduler\AutoEndLog.cs" />
+    <Compile Include="Repository\Models\Data\ClientAccount.cs" />
     <Compile Include="Models\Enums.cs" />
     <Compile Include="Models\LabCleanConfiguration.cs" />
     <Compile Include="Models\LabCleanItem.cs" />
     <Compile Include="Models\ReservationHistoryClient.cs" />
+    <Compile Include="Repository\Models\Scheduler\ReservationInviteeItem.cs" />
     <Compile Include="Models\ReservationModel.cs" />
     <Compile Include="Pages\CacheUtility.cs">
       <SubType>ASPXCodeBehind</SubType>
@@ -168,6 +179,8 @@
     <Compile Include="PathInfo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RepairUtility.cs" />
+    <Compile Include="Repository\RepositoryBase.cs" />
+    <Compile Include="Repository\ReservationRepository.cs" />
     <Compile Include="ReservationHistoryUtility.cs" />
     <Compile Include="ResourceTreeManager.cs" />
     <Compile Include="SchedulerUtility.cs" />
@@ -182,6 +195,7 @@
     <Compile Include="TreeView\TreeViewNode.cs" />
     <Compile Include="TreeView\TreeViewNodeCollection.cs" />
     <Compile Include="TreeView\TreeViewUtility.cs" />
+    <Compile Include="UrlUtility.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Content\SortablePage.cs">
@@ -202,10 +216,6 @@
     <ProjectReference Include="..\..\lnf\LNF.Impl\LNF.Impl.csproj">
       <Project>{7a6cd165-0c48-4680-9a49-281688eb1cd8}</Project>
       <Name>LNF.Impl</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\lnf\LNF.WebApi\LNF.WebApi.csproj">
-      <Project>{85be7662-47c8-4e82-8090-3f2bd61cc0f7}</Project>
-      <Name>LNF.WebApi</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\lnf\LNF.Web\LNF.Web.csproj">
       <Project>{f79683ff-e524-4107-a6e1-29579ee544e1}</Project>

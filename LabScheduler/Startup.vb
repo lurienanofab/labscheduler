@@ -1,5 +1,4 @@
-﻿Imports LNF
-Imports LNF.Web
+﻿Imports LNF.Web
 Imports Microsoft.Owin
 Imports Owin
 
@@ -7,6 +6,6 @@ Imports Owin
 
 Public Class Startup
     Public Sub Configuration(app As IAppBuilder)
-        app.UseDataAccess([Global].Container)
+        app.UseDataAccess([Global].ContainerContext)
     End Sub
 End Class

@@ -56,7 +56,7 @@
                 if (isNaN(minutes))
                     return null;
 
-                var m = moment();
+                var m = dayjs();
                 m.subtract(minutes, 'minutes');
 
                 return m;
@@ -68,7 +68,7 @@
                 if (isNaN(minutes))
                     return null;
 
-                var m = moment();
+                var m = dayjs();
                 m.add(minutes, 'minutes');
 
                 return m;

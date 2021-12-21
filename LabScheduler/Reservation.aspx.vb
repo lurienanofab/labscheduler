@@ -3,6 +3,7 @@ Imports LNF.CommonTools
 Imports LNF.Data
 Imports LNF.Scheduler
 Imports LNF.Web
+Imports LNF.Web.Controls
 Imports LNF.Web.Scheduler
 Imports LNF.Web.Scheduler.Content
 Imports LNF.Web.Scheduler.Models
@@ -13,9 +14,8 @@ Namespace Pages
 
         Private _resource As IResource
         Private _reservation As IReservation
-        Private _selectedDate As Date?
         Private _selectedTime As TimeSpan?
-        Private _overwriteReservations As IEnumerable(Of IReservation)
+        Private ReadOnly _overwriteReservations As IEnumerable(Of IReservation)
 
         Public ReadOnly Property SchedulerUtility As SchedulerUtility
 
@@ -293,7 +293,12 @@ Namespace Pages
             If ReservationID = 0 Then
                 act = GetCurrentActivity()
                 client = CurrentUser
-                selectedAccountId = -1
+                ' [2021-12-21 jg] This is needed to make sure the same account is selected after postbacks, for example if an invitee is added.
+                If String.IsNullOrEmpty(ddlAccount.SelectedValue) Then
+                    selectedAccountId = -1
+                Else
+                    selectedAccountId = Integer.Parse(ddlAccount.SelectedValue)
+                End If
             Else
                 act = CacheManager.Current.GetActivity(Reservation.ActivityID)
                 client = Provider.Data.Client.GetClient(Reservation.ClientID)
@@ -469,15 +474,14 @@ Namespace Pages
 
             For i As Integer = 0 To grans.Count - 1
                 If grans(i) >= minTime.Hours Then
-                    Dim hourText As String = String.Empty
-                    hourText = If((grans(i) Mod 12) = 0, "12 ", (grans(i) Mod 12).ToString() + " ")
+                    Dim hourText As String = If((grans(i) Mod 12) = 0, "12 ", (grans(i) Mod 12).ToString() + " ")
                     hourText += If(grans(i) < 12, "am", "pm")
                     ddlStartTimeHour.Items.Add(New ListItem(hourText, grans(i).ToString()))
                 End If
             Next
 
-            Dim startTimeHour As Integer = 0
-            Dim startTimeMin As Integer = 0
+            Dim startTimeHour As Integer
+            Dim startTimeMin As Integer
 
             ' Select Preselected Time
             If ReservationID = 0 Then
@@ -549,10 +553,23 @@ Namespace Pages
             dgInvitees.DataBind()
         End Sub
 
+        Private Function ToTimeString(minutes As Integer) As String
+            Dim ts As TimeSpan = TimeSpan.FromMinutes(minutes)
+            Return Utility.ToHumanReadableTimeString(ts)
+        End Function
+
         Private Sub ShowDurationDropDown()
             Dim showLimitMessage As Boolean = False
 
-            Dim maxDuration As Double = Provider.Scheduler.Reservation.GetTimeUntilNextReservation(Resource, ReservationID, GetCurrentClientID(), GetSelectedDateTime()).TotalMinutes
+            Dim resourceId As Integer = Resource.ResourceID
+            Dim clientId As Integer = GetCurrentClientID()
+            Dim beginDateTime As Date = GetSelectedDateTime()
+            Dim fence As TimeSpan = TimeSpan.FromMinutes(Resource.ReservFence)
+            Dim maxalloc As TimeSpan = TimeSpan.FromMinutes(Resource.MaxAlloc)
+
+            Dim availableRsvMin As AvailableReservationMinutesResult = Provider.Scheduler.Reservation.GetAvailableReservationMinutes(Resource, ReservationID, clientId, beginDateTime)
+
+            Dim maxDuration As Double = availableRsvMin.GetMaxDuration().TotalMinutes
 
             If maxDuration <= 0 Then ' this means that the reservable time is limited by max schedulable
                 showLimitMessage = True
@@ -577,7 +594,37 @@ Namespace Pages
 
             'Duration affect user's eligibility to make reservation.
             If ddlDuration.Items.Count = 0 Then
-                ServerJScript.JSAlert(Page, "Another reservation already been made for this time. Please select a different start time.")
+                Dim alertMsg As String
+
+                'ReasonB and ReasonC should both result in ddlDuration.Items.Count > 0
+
+                Dim availableMsg As String = $"You have {ToTimeString(availableRsvMin.AvailableReservationMinutes)} available because you may reserve up to {ToTimeString(Resource.MaxAlloc)} on this tool, and you currently have {ToTimeString(availableRsvMin.ReservedMinutes)} reserved."
+
+                If availableRsvMin.Reason = AvailableReservationMinutesResult.ReasonA Then
+                    alertMsg = $"<strong>Your total reserved time exceeds the limit set for this tool.</strong><br><br>{availableMsg}"
+                ElseIf availableRsvMin.Reason = AvailableReservationMinutesResult.ReasonD Then
+                    If maxDuration > 0 AndAlso maxDuration < Resource.MinReservTime Then
+                        alertMsg = $"<strong>You do not have enough available time to meet the minimum reservation requirement of {ToTimeString(Resource.MinReservTime)}.</strong><br><br>{availableMsg}"
+                    Else
+                        alertMsg = $"<strong>You do not have enough available time to make another reservation.</strong><br><br>{availableMsg}"
+                    End If
+                Else
+                    Dim nextRsv As IReservation = Provider.Scheduler.Reservation.GetNextReservation(Resource.ResourceID, ReservationID)
+
+                    Dim rsvInfo As String
+
+                    If nextRsv IsNot Nothing Then
+                        Dim fullName As String = $"{nextRsv.FName} {nextRsv.LName}"
+                        rsvInfo = $"Next reservation: from {nextRsv.BeginDateTime:M/d/yyyy h:mm tt} to {nextRsv.EndDateTime:M/d/yyyy h:mm tt}, created by {fullName}."
+                    Else
+                        rsvInfo = "Unable to find next reservation."
+                    End If
+
+                    alertMsg = $"<strong>Another reservation has already been made for this time. Please select a different start time.</strong><br><br>{rsvInfo}"
+                End If
+
+                BootstrapAlert1.Show(alertMsg, AlertType.Danger)
+
                 btnSubmit.Enabled = False
             Else
                 If ReservationID > 0 Then
@@ -626,9 +673,10 @@ Namespace Pages
         End Function
 
         Private Function GetSelectedDuration() As Integer
-            Dim val As String = String.Empty
             Dim mrt As Integer = 0
             Dim result As Integer = 0
+
+            Dim val As String
 
             If phDurationText.Visible Then
                 val = txtDuration.Text
@@ -773,7 +821,7 @@ Namespace Pages
         Private Function GetReservationDuration() As ReservationDuration
             Dim beginDateTime As Date = ContextBase.Request.SelectedDate().AddHours(Convert.ToInt32(ddlStartTimeHour.SelectedValue)).AddMinutes(Convert.ToInt32(ddlStartTimeMin.SelectedValue))
             Dim currentDurationMinutes As Integer = GetCurrentDurationMinutes()
-            Dim result As ReservationDuration = New ReservationDuration(beginDateTime, TimeSpan.FromMinutes(currentDurationMinutes))
+            Dim result As New ReservationDuration(beginDateTime, TimeSpan.FromMinutes(currentDurationMinutes))
             Return result
         End Function
 
@@ -891,7 +939,7 @@ Namespace Pages
 
                         If rpi Is Nothing Then
                             ' The ProcessInfoID was not found. Must be a new reservation, or maybe a new ProcessInfo was added since the reservation was first created? (unlikely but possible)
-                            infos.Add(CreateReservationProcessInfoItem(processInfoLineId, value, special, pil, pi))
+                            infos.Add(CreateReservationProcessInfoItem(processInfoLineId, value, special, pi))
                         Else
                             ' Modify the existing ReservationProcessInfo. At some point the database must be updated.
                             rpi.ProcessInfoLineID = pil.ProcessInfoLineID
@@ -914,7 +962,7 @@ Namespace Pages
             Return True
         End Function
 
-        Private Function CreateReservationProcessInfoItem(processInfoLineId As Integer, value As Integer, special As Boolean, pil As IProcessInfoLine, pi As IProcessInfo) As ReservationProcessInfoItem
+        Private Function CreateReservationProcessInfoItem(processInfoLineId As Integer, value As Integer, special As Boolean, pi As IProcessInfo) As ReservationProcessInfoItem
             Return New ReservationProcessInfoItem With {
                 .ReservationID = ReservationID,
                 .ProcessInfoLineID = processInfoLineId,
@@ -930,7 +978,7 @@ Namespace Pages
             '.ProcessInfoName = pi.ProcessInfoName,
         End Function
 
-        Private Sub InviteeModification(action As String, ddlInvitees As DropDownList, lblInviteeID As Label, lblInviteeName As Label)
+        Private Sub InviteeModification(action As String, ddlInvitees As DropDownList, lblInviteeID As Label)
             Dim model As ReservationModel = CreateReservationModel(Date.Now)
 
             Dim invitees As List(Of Invitee) = model.GetInvitees()
@@ -941,14 +989,6 @@ Namespace Pages
             If action = "Insert" Then
                 ' Insert invitee into ReservInvitee list
                 If ddlInvitees.Items.Count = 0 Then Return
-
-                Dim activityId As Integer
-
-                If ReservationID > 0 Then
-                    activityId = Reservation.ActivityID
-                Else
-                    activityId = Integer.Parse(ddlActivity.SelectedValue)
-                End If
 
                 Dim clientId As Integer = Integer.Parse(ddlInvitees.SelectedValue)
                 Dim avail = available.FirstOrDefault(Function(x) x.ClientID = clientId)
@@ -1254,7 +1294,7 @@ Namespace Pages
             Dim ddlInvitees As DropDownList = CType(e.Item.FindControl("ddlInvitees"), DropDownList)
             Dim lblInviteeID As Label = CType(e.Item.FindControl("lblInviteeID"), Label)
             Dim lblInviteeName As Label = CType(e.Item.FindControl("lblInviteeName"), Label)
-            InviteeModification(e.CommandName, ddlInvitees, lblInviteeID, lblInviteeName)
+            InviteeModification(e.CommandName, ddlInvitees, lblInviteeID)
             LoadAccounts()
         End Sub
 
@@ -1290,7 +1330,7 @@ Namespace Pages
         End Sub
 
         Protected Sub BtnSubmit_Click(sender As Object, e As EventArgs)
-            Helper.AppendLog($"Reservation.BtnSubmit_Click: ReservationID = {ReservationID}, QueryString = ""{Request.QueryString}"", CurrentView = {GetCurrentView().ToString()}")
+            Helper.AppendLog($"Reservation.BtnSubmit_Click: ReservationID = {ReservationID}, QueryString = ""{Request.QueryString}"", CurrentView = {GetCurrentView()}")
 
             Dim client As IClient
             Dim activity As IActivity
@@ -1344,8 +1384,7 @@ Namespace Pages
             'despite the row state
 
             'the # of rows that are not "deleted"
-            Dim activeRowCount As Integer = 0
-            activeRowCount = model.GetInvitees().Count
+            Dim activeRowCount = model.GetInvitees().Count
 
             ' Proxy activities are activities for reservations that our made by staff on behalf of someone else.
             ' Currently Future Practice (21) and Remote Processing (22) are the only two proxy activities.
@@ -1442,7 +1481,7 @@ Namespace Pages
             'Dim mCompile As New Compile()
             Dim estimator As New CostEstimator(Provider)
             Dim dblCost As Double = -1
-            Dim dblCostStr As String = String.Empty
+            Dim dblCostStr As String
             Dim acct As IAccount = Provider.Data.Account.GetAccount(Convert.ToInt32(ddlAccount.SelectedValue))
 
             Try
@@ -1456,7 +1495,7 @@ Namespace Pages
             ' Display Submit Confirmation
             lblConfirm.Text = $"You are about to reserve resource {Resource.ResourceName}<br/>from {rd.BeginDateTime} to {rd.EndDateTime}."
 
-            If Not _overwriteReservations Is Nothing Then
+            If _overwriteReservations IsNot Nothing Then
                 lblConfirm.Text += "<br/><br/><b>There are other reservations made during this time.<br/>By accepting this confirmation, you will overwrite the other reservations.</b>"
             End If
 
@@ -1512,7 +1551,7 @@ Namespace Pages
         End Sub
 
         Protected Sub BtnCancel_Click(sender As Object, e As EventArgs)
-            Helper.AppendLog($"Reservation.BtnCancel_Click: QueryString = ""{Request.QueryString}"", CurrentView = {GetCurrentView().ToString()}")
+            Helper.AppendLog($"Reservation.BtnCancel_Click: QueryString = ""{Request.QueryString}"", CurrentView = {GetCurrentView()}")
             ReturnToResourceDayWeek()
         End Sub
 
@@ -1520,7 +1559,7 @@ Namespace Pages
             Dim rsv As IReservationItem = Nothing
 
             Try
-                Helper.AppendLog($"Reservation.BtnConfirmYesAndStart_Click: QueryString = ""{Request.QueryString}"", CurrentView = {GetCurrentView().ToString()}")
+                Helper.AppendLog($"Reservation.BtnConfirmYesAndStart_Click: QueryString = ""{Request.QueryString}"", CurrentView = {GetCurrentView()}")
 
                 ShowConfirmError(Nothing)
 
@@ -1562,7 +1601,7 @@ Namespace Pages
             Dim rsv As IReservationItem = Nothing
 
             Try
-                Helper.AppendLog($"Reservation.BtnConfirmYes_Click: QueryString = ""{Request.QueryString}"", CurrentView = {GetCurrentView().ToString()}")
+                Helper.AppendLog($"Reservation.BtnConfirmYes_Click: QueryString = ""{Request.QueryString}"", CurrentView = {GetCurrentView()}")
 
                 ShowConfirmError(Nothing)
 
@@ -1600,7 +1639,7 @@ Namespace Pages
         End Sub
 
         Protected Sub BtnConfirmNo_Click(sender As Object, e As EventArgs)
-            Helper.AppendLog($"Reservation.BtnConfirmNo_Click: QueryString = ""{Request.QueryString}"", CurrentView = {GetCurrentView().ToString()}")
+            Helper.AppendLog($"Reservation.BtnConfirmNo_Click: QueryString = ""{Request.QueryString}"", CurrentView = {GetCurrentView()}")
             phConfirm.Visible = False
             phReservation.Visible = True
         End Sub

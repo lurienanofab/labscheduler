@@ -1,5 +1,7 @@
 ﻿<%@ Page Title="Reservation History" Language="vb" AutoEventWireup="false" MasterPageFile="~/MasterPageScheduler.Master" CodeBehind="~/ReservationHistory.aspx.vb" Inherits="LabScheduler.Pages.ReservationHistory" %>
 
+<%@ Register TagPrefix="lnf" Assembly="LNF.Web" Namespace="LNF.Web.Controls" %>
+
 <asp:Content ID="Content1" ContentPlaceHolderID="head" runat="server">
     <style>
         .reservation-item {
@@ -107,6 +109,8 @@
 
     <input type="hidden" class="ajax-url" id="hidAjaxUrl" runat="server" />
     <input type="hidden" class="client-id" id="hidClientID" runat="server" />
+
+    <lnf:BootstrapAlert runat="server" ID="BootstrapAlert1" />
 
     <div class="form-inline" style="margin-bottom: 10px;">
         <div class="form-group">
@@ -429,7 +433,7 @@
 
                 clients.prop('disabled', true);
                 clients.html('<option>Loading...</option>');
-                
+
                 var search = $(".search-button");
                 search.prop("disabled", true);
 
@@ -461,14 +465,14 @@
         });
 
         $.extend($.fn.dataTableExt.oSort, {
-            'moment-pre': function (a) {
-                var m = moment(a, 'M/D/YYYY[<br/>]h:mm:ss A');
+            'dayjs-pre': function (a) {
+                var m = dayjs(a, 'M/D/YYYY[<br/>]h:mm:ss A');
                 return m;
             },
-            'moment-asc': function (a, b) {
+            'dayjs-asc': function (a, b) {
                 return a.isBefore(b) ? -1 : (a.isAfter(b) ? 1 : 0);
             },
-            'moment-desc': function (a, b) {
+            'dayjs-desc': function (a, b) {
                 return a.isBefore(b) ? 1 : (a.isAfter(b) ? -1 : 0);
             }
         });
@@ -484,7 +488,7 @@
             'order': [[1, 'desc']],
             'columnDefs': [
                 { 'orderable': false, 'searchable': false, 'targets': [9] },
-                { 'type': 'moment', 'targets': [1, 2] }
+                { 'type': 'dayjs', 'targets': [1, 2] }
             ],
             'language': {
                 'emptyTable': 'No past reservations were found'

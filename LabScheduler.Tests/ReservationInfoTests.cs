@@ -1,8 +1,7 @@
 ﻿using LNF;
-using LNF.Impl;
 using LNF.Impl.DataAccess;
+using LNF.Impl.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using SimpleInjector;
 using System;
 
 namespace LabScheduler.Tests
@@ -13,11 +12,11 @@ namespace LabScheduler.Tests
         [TestMethod]
         public void CanSelectByDateRange()
         {
-            var container = new Container();
-            var config = new ThreadStaticContainerConfiguration(container);
+            var context = ContainerContextFactory.Current.NewThreadScopedContext();
+            var config = new ThreadStaticContainerConfiguration(context);
             config.RegisterAllTypes();
-            var mgr = container.GetInstance<ISessionManager>();
-            var provider = container.GetInstance<IProvider>();
+            var mgr = context.GetInstance<ISessionManager>();
+            var provider = context.GetInstance<IProvider>();
             ServiceProvider.Setup(provider);
 
             using (var uow = new NHibernateUnitOfWork(mgr))

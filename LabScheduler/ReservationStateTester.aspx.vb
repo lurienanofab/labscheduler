@@ -79,7 +79,7 @@ Public Class ReservationStateTester
             Dim request As GetReservationStateRequest = JsonConvert.DeserializeObject(Of GetReservationStateRequest)(body)
             Dim util As ReservationStateUtility = ReservationStateUtility.Create(request.Now)
 
-            Dim provider As IProvider = [Global].Container.GetInstance(Of IProvider)()
+            Dim provider As IProvider = [Global].ContainerContext.GetInstance(Of IProvider)()
 
             Dim rsv As IReservationWithInvitees = provider.Scheduler.Reservation.GetReservationWithInvitees(request.ReservationID)
 

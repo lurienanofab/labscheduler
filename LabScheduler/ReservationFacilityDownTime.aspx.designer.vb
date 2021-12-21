@@ -11,9 +11,9 @@ Option Strict On
 Option Explicit On
 
 Namespace Pages
-    
+
     Partial Public Class ReservationFacilityDownTime
-        
+
         '''<summary>
         '''hidSelectedTabIndex control.
         '''</summary>
@@ -22,7 +22,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents hidSelectedTabIndex As Global.System.Web.UI.HtmlControls.HtmlInputHidden
-        
+
         '''<summary>
         '''litAlert1 control.
         '''</summary>
@@ -31,7 +31,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents litAlert1 As Global.System.Web.UI.WebControls.Literal
-        
+
         '''<summary>
         '''ddlLabs control.
         '''</summary>
@@ -40,7 +40,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents ddlLabs As Global.System.Web.UI.WebControls.DropDownList
-        
+
         '''<summary>
         '''odsLabs control.
         '''</summary>
@@ -49,7 +49,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents odsLabs As Global.System.Web.UI.WebControls.ObjectDataSource
-        
+
         '''<summary>
         '''lboxTools control.
         '''</summary>
@@ -58,7 +58,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents lboxTools As Global.System.Web.UI.WebControls.ListBox
-        
+
         '''<summary>
         '''odsTool control.
         '''</summary>
@@ -67,7 +67,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents odsTool As Global.System.Web.UI.WebControls.ObjectDataSource
-        
+
         '''<summary>
         '''txtStartDate control.
         '''</summary>
@@ -76,7 +76,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents txtStartDate As Global.System.Web.UI.WebControls.TextBox
-        
+
         '''<summary>
         '''ddlHour control.
         '''</summary>
@@ -85,7 +85,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents ddlHour As Global.System.Web.UI.WebControls.DropDownList
-        
+
         '''<summary>
         '''ddlMin control.
         '''</summary>
@@ -94,7 +94,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents ddlMin As Global.System.Web.UI.WebControls.DropDownList
-        
+
         '''<summary>
         '''ddlAMPM control.
         '''</summary>
@@ -103,7 +103,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents ddlAMPM As Global.System.Web.UI.WebControls.DropDownList
-        
+
         '''<summary>
         '''txtEndDate control.
         '''</summary>
@@ -112,7 +112,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents txtEndDate As Global.System.Web.UI.WebControls.TextBox
-        
+
         '''<summary>
         '''ddlHourEnd control.
         '''</summary>
@@ -121,7 +121,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents ddlHourEnd As Global.System.Web.UI.WebControls.DropDownList
-        
+
         '''<summary>
         '''ddlMinEnd control.
         '''</summary>
@@ -130,7 +130,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents ddlMinEnd As Global.System.Web.UI.WebControls.DropDownList
-        
+
         '''<summary>
         '''ddlAMPMEnd control.
         '''</summary>
@@ -139,7 +139,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents ddlAMPMEnd As Global.System.Web.UI.WebControls.DropDownList
-        
+
         '''<summary>
         '''txtNotes control.
         '''</summary>
@@ -148,7 +148,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents txtNotes As Global.System.Web.UI.WebControls.TextBox
-        
+
         '''<summary>
         '''phNotesWarning control.
         '''</summary>
@@ -157,7 +157,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents phNotesWarning As Global.System.Web.UI.WebControls.PlaceHolder
-        
+
         '''<summary>
         '''btnReserve control.
         '''</summary>
@@ -166,7 +166,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents btnReserve As Global.System.Web.UI.WebControls.Button
-        
+
         '''<summary>
         '''btnBack control.
         '''</summary>
@@ -175,7 +175,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents btnBack As Global.System.Web.UI.WebControls.Button
-        
+
         '''<summary>
         '''phGrid control.
         '''</summary>
@@ -184,7 +184,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents phGrid As Global.System.Web.UI.WebControls.PlaceHolder
-        
+
         '''<summary>
         '''rptFDT control.
         '''</summary>
@@ -193,7 +193,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents rptFDT As Global.System.Web.UI.WebControls.Repeater
-        
+
         '''<summary>
         '''hidDeleteGroupID control.
         '''</summary>
@@ -202,7 +202,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents hidDeleteGroupID As Global.System.Web.UI.HtmlControls.HtmlInputHidden
-        
+
         '''<summary>
         '''btnConfirmDelete control.
         '''</summary>
@@ -211,7 +211,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents btnConfirmDelete As Global.System.Web.UI.WebControls.Button
-        
+
         '''<summary>
         '''phNoData control.
         '''</summary>
@@ -220,7 +220,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents phNoData As Global.System.Web.UI.WebControls.PlaceHolder
-        
+
         '''<summary>
         '''phModify control.
         '''</summary>
@@ -229,7 +229,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents phModify As Global.System.Web.UI.WebControls.PlaceHolder
-        
+
         '''<summary>
         '''hidGroupID control.
         '''</summary>
@@ -238,7 +238,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents hidGroupID As Global.System.Web.UI.WebControls.HiddenField
-        
+
         '''<summary>
         '''litName control.
         '''</summary>
@@ -247,7 +247,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents litName As Global.System.Web.UI.WebControls.Literal
-        
+
         '''<summary>
         '''lboxModify control.
         '''</summary>
@@ -256,7 +256,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents lboxModify As Global.System.Web.UI.WebControls.ListBox
-        
+
         '''<summary>
         '''txtStartDateModify control.
         '''</summary>
@@ -265,7 +265,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents txtStartDateModify As Global.System.Web.UI.WebControls.TextBox
-        
+
         '''<summary>
         '''ddlHourModify control.
         '''</summary>
@@ -274,7 +274,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents ddlHourModify As Global.System.Web.UI.WebControls.DropDownList
-        
+
         '''<summary>
         '''ddlMinModify control.
         '''</summary>
@@ -283,7 +283,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents ddlMinModify As Global.System.Web.UI.WebControls.DropDownList
-        
+
         '''<summary>
         '''ddlAMPMModify control.
         '''</summary>
@@ -292,7 +292,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents ddlAMPMModify As Global.System.Web.UI.WebControls.DropDownList
-        
+
         '''<summary>
         '''txtEndDateModify control.
         '''</summary>
@@ -301,7 +301,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents txtEndDateModify As Global.System.Web.UI.WebControls.TextBox
-        
+
         '''<summary>
         '''ddlHourEndModify control.
         '''</summary>
@@ -310,7 +310,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents ddlHourEndModify As Global.System.Web.UI.WebControls.DropDownList
-        
+
         '''<summary>
         '''ddlMinEndModify control.
         '''</summary>
@@ -319,7 +319,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents ddlMinEndModify As Global.System.Web.UI.WebControls.DropDownList
-        
+
         '''<summary>
         '''ddlAMPMEndModify control.
         '''</summary>
@@ -328,7 +328,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents ddlAMPMEndModify As Global.System.Web.UI.WebControls.DropDownList
-        
+
         '''<summary>
         '''txtNotesModify control.
         '''</summary>
@@ -337,7 +337,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents txtNotesModify As Global.System.Web.UI.WebControls.TextBox
-        
+
         '''<summary>
         '''btnUpdateModify control.
         '''</summary>
@@ -346,7 +346,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents btnUpdateModify As Global.System.Web.UI.WebControls.Button
-        
+
         '''<summary>
         '''btnBackModify control.
         '''</summary>
@@ -355,7 +355,7 @@ Namespace Pages
         '''To modify move field declaration from designer file to code-behind file.
         '''</remarks>
         Protected WithEvents btnBackModify As Global.System.Web.UI.WebControls.Button
-        
+
         '''<summary>
         '''litAlert2 control.
         '''</summary>

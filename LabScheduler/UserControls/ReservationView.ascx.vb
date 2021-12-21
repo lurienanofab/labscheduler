@@ -56,21 +56,23 @@ Namespace UserControls
             Dim linkUrl As String
             Dim locationPath As LocationPathInfo = ContextBase.Request.SelectedLocationPath()
 
+            divReservationView.Attributes.Add("data-controller", UrlUtility.GetReservationControllerUrl())
+            divReservationView.Attributes.Add("data-view", View.ToString())
             divReservationView.Attributes.Add("data-location-path", locationPath.ToString())
 
             If ContextBase.GetDisplayDefaultHours() Then
                 linkText = "Full<br>Day"
                 If View = ViewType.LocationView Then
-                    linkUrl = $"~/ReservationController.ashx?Command=ChangeHourRange&Range=FullDay&LocationPath={locationPath.UrlEncode()}&Date={ContextBase.Request.SelectedDate():yyyy-MM-dd}"
+                    linkUrl = UrlUtility.GetChangeHourRangeUrl("FullDay", locationPath, ContextBase.Request.SelectedDate(), View)
                 Else
-                    linkUrl = $"~/ReservationController.ashx?Command=ChangeHourRange&Range=FullDay&Path={ContextBase.Request.SelectedPath().UrlEncode()}&Date={ContextBase.Request.SelectedDate():yyyy-MM-dd}"
+                    linkUrl = UrlUtility.GetChangeHourRangeUrl("FullDay", ContextBase.Request.SelectedPath(), ContextBase.Request.SelectedDate(), View)
                 End If
             Else
                 linkText = "Default<br>Hours"
                 If View = ViewType.LocationView Then
-                    linkUrl = $"~/ReservationController.ashx?Command=ChangeHourRange&Range=DefaultHours&LocationPath={locationPath.UrlEncode()}&Date={ContextBase.Request.SelectedDate():yyyy-MM-dd}"
+                    linkUrl = UrlUtility.GetChangeHourRangeUrl("DefaultHours", locationPath, ContextBase.Request.SelectedDate(), View)
                 Else
-                    linkUrl = $"~/ReservationController.ashx?Command=ChangeHourRange&Range=DefaultHours&Path={ContextBase.Request.SelectedPath().UrlEncode()}&Date={ContextBase.Request.SelectedDate():yyyy-MM-dd}"
+                    linkUrl = UrlUtility.GetChangeHourRangeUrl("DefaultHours", ContextBase.Request.SelectedPath(), ContextBase.Request.SelectedDate(), View)
                 End If
             End If
 
@@ -471,18 +473,8 @@ Namespace UserControls
         End Sub
 
         Private Sub SetActionCellAttributes(cell As CustomTableCell, command As String) ', state As ReservationState, Optional res As IResource = Nothing
-            'If res Is Nothing Then
-            '    res = CacheManager.Current.ResourceTree().GetResource(cell.ResourceID)
-            'End If
-
             cell.CssClass = (cell.CssClass + " reservation-action").Trim()
             cell.Attributes("data-command") = command
-
-            'cell.Attributes.Add("data-reservation-id", cell.ReservationID.ToString())
-            'cell.Attributes.Add("data-date", cell.CellDate.ToString("yyyy-MM-dd"))
-            'cell.Attributes.Add("data-time", cell.CellDate.TimeOfDay.TotalMinutes.ToString())
-            'cell.Attributes.Add("data-state", state.ToString())
-            'cell.Attributes.Add("data-path", PathInfo.Create(res).ToString())
         End Sub
 
         ''' <summary>
@@ -647,7 +639,7 @@ Namespace UserControls
                                 Dim reservationProcessInfos As IList(Of IReservationProcessInfo) = Reservations.GetReservationProcessInfos().Where(Function(x) x.ReservationID = rsv.ReservationID).ToList()
                                 Dim rci As ReservationClient = Helper.GetReservationClient(rsv, CurrentUser, resourceClients, invitees)
                                 Dim locationPath As LocationPathInfo = ContextBase.Request.SelectedLocationPath()
-                                Dim state As ReservationState = SchedulerUtility.Create(Provider).GetReservationCell(rsvCell, rsv, rci, reservationProcessInfos, invitees, locationPath, Date.Now)
+                                Dim state As ReservationState = SchedulerUtility.Create(Provider).GetReservationCell(rsvCell, rsv, rci, reservationProcessInfos, invitees, locationPath, View, Date.Now)
                                 Dim res As IResource = Provider.Scheduler.Resource.GetResource(rsv.ResourceID)
 
                                 SetReservationCellAttributes(rsvCell, state, PathInfo.Create(res))

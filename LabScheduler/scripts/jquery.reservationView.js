@@ -1,12 +1,14 @@
-﻿(function ($) {
+﻿// this is currently called once on MasterPageScheduler.Master
+
+(function ($) {
     $.fn.reservationView = function (options) {
         return this.each(function () {
             var $this = $(this);
 
-            var opts = $.extend({}, { "onClick": null, "path": null, "locationPath": null }, options, $this.data());
+            var opts = $.extend({}, { "onClick": null, controller: null, "path": null, "locationPath": null, "view": null }, options, $this.data());
 
             var getRedirectUrl = function (args) {
-                var uri = URI("ReservationController.ashx");
+                var uri = URI(opts.controller);
                 var result = uri.query(args).toString();
                 return result;
             };
@@ -27,6 +29,7 @@
                     Time: cell.data("time"),
                     State: cell.data("state"),
                     Path: cell.data("path") || opts.path,
+                    View: opts.view,
                     LocationPath: opts.locationPath
                 };
 
@@ -42,18 +45,23 @@
                     valid = false;
                 }
 
-                if (!moment(args.Date, "YYYY-MM-DD").isValid()) {
+                if (!dayjs(args.Date, "YYYY-MM-DD").isValid()) {
                     console.log("ReservationView Error: clickable cell with invalid Date", args);
                     valid = false;
                 }
 
-                if (!moment(args.Date, "HH:mm:ss").isValid()) {
+                if (!dayjs(args.Date, "HH:mm:ss").isValid()) {
                     console.log("ReservationView Error: clickable cell with invalid Time", args);
                     valid = false;
                 }
 
                 if (!args.State) {
                     console.log("ReservationView Error: clickable cell with no State", args);
+                    valid = false;
+                }
+
+                if (!args.View) {
+                    console.log("ReservationView Error: clickable cell with no View", args);
                     valid = false;
                 }
 

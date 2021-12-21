@@ -1,13 +1,13 @@
 ﻿using LNF;
 using LNF.DataAccess;
-using LNF.Impl;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using SimpleInjector;
-using Moq;
-using System.Web;
+using LNF.Impl.DependencyInjection;
 using LNF.Web.Scheduler;
-using System.Collections.Generic;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
+using SimpleInjector;
 using System.Collections;
+using System.Collections.Generic;
+using System.Web;
 
 namespace LabScheduler.Tests
 {
@@ -33,8 +33,9 @@ namespace LabScheduler.Tests
             _contextMock.Setup(x => x.Items).Returns(_items);
             Context = _contextMock.Object;
 
-            Container = new Container();
-            var config = new ThreadStaticContainerConfiguration(Container);
+            var containerContext = ContainerContextFactory.Current.NewThreadScopedContext();
+            Container = containerContext.Container;
+            var config = new ThreadStaticContainerConfiguration(containerContext);
             config.RegisterAllTypes();
             ServiceProvider.Setup(Provider);
 

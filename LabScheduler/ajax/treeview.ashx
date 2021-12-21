@@ -33,12 +33,12 @@ namespace LabScheduler.Api
         }
     }
 
-    public class TreeViewPartial : LNFPage
+    public class TreeViewPartial : OnlineServicesPage
     {
         public TreeViewPartial()
         {
             ResourceTreeView treeview = (ResourceTreeView)LoadControl("~/UserControls/ResourceTreeView.ascx");
-            treeview.SelectedPath = Request.SelectedPath();
+            treeview.SelectedPath = ContextBase.Request.SelectedPath().ToString();
             Controls.Add(treeview);
         }
     }

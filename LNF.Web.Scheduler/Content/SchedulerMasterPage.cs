@@ -3,7 +3,7 @@ using System;
 
 namespace LNF.Web.Scheduler.Content
 {
-    public class SchedulerMasterPage : LNFMasterPage
+    public class SchedulerMasterPage : OnlineServicesMasterPage
     {
         public override bool ShowMenu
         {

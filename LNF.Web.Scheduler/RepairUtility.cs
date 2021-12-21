@@ -160,7 +160,7 @@ namespace LNF.Web.Scheduler
             var unstartedReservations = Provider.Scheduler.Reservation.SelectUnstarted(repair.ResourceID, repair.BeginDateTime, repair.EndDateTime);
             foreach (var unstarted in unstartedReservations)
             {
-                Provider.Scheduler.Reservation.CancelReservation(unstarted.ReservationID, "Cancelled for repair.", CurrentUser.ClientID);
+                Provider.Scheduler.Reservation.CancelReservation(unstarted.ReservationID, "Cancelled and forgiven for repair.", CurrentUser.ClientID);
                 Provider.Scheduler.Email.EmailOnCanceledByRepair(unstarted.ReservationID, true, "Offline", repair.Notes, repair.EndDateTime, CurrentUser.ClientID);
                 // Don't send forgiveness email yet, this will happen below...
             }
@@ -189,8 +189,8 @@ namespace LNF.Web.Scheduler
                 // Avoid resending the email if the reservation was already forgiven
                 if (rsv.ChargeMultiplier > 0)
                 {
-                    // Set charge multiplier to zero
-                    Provider.Scheduler.Reservation.UpdateCharges(rsv.ReservationID, "Forgiven for repair.", 0, true, CurrentUser.ClientID);
+                    // Set charge multiplier to zero, notes have already been appended
+                    Provider.Scheduler.Reservation.UpdateCharges(rsv.ReservationID, string.Empty, 0, true, CurrentUser.ClientID);
 
                     // Email User after everything is done.
                     Provider.Scheduler.Email.EmailOnForgiveCharge(rsv.ReservationID, 100, true, CurrentUser.ClientID);

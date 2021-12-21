@@ -1,4 +1,4 @@
-<%@ Page Title="Utility" Language="C#" Async="true" Inherits="LNF.Web.Content.LNFPage" %>
+<%@ Page Title="Utility" Language="C#" Async="true" Inherits="LNF.Web.Content.OnlineServicesPage" %>
 
 <%@ Import Namespace="System.Linq" %>
 <%@ Import Namespace="System.Net" %>

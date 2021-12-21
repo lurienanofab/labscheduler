@@ -121,26 +121,29 @@
                     case "Process Issue":
                         pri = TicketPriorty.ProcessIssue;
                         break;
+                    case "Checkout/Training":
+                        pri = TicketPriorty.GeneralQuestion;
+                        break;
                 }
                 return pri;
             }
 
             var getMessageHeader = function (resource, client, reservationText, ticketType) {
-                var result = "Resource ID: " + resource.id + "\r\n"
-                    + "Resource Name: " + resource.name + "\r\n"
-                    + "Created By: " + client + "\r\n"
-                    + "Reservation: " + reservationText + "\r\n"
+                var result = "Resource ID: " + resource.id + "\n"
+                    + "Resource Name: " + resource.name + "\n"
+                    + "Created By: " + client + "\n"
+                    + "Reservation: " + reservationText + "\n"
                     + "Type: " + ticketType;
                 return result;
             }
 
             var getMessageBody = function (resource, reservationId, client, reservationText, messageText, ticketType) {
-                var result = getMessageHeader(resource, client, reservationText, ticketType) + "\r\n";
+                var result = getMessageHeader(resource, client, reservationText, ticketType) + "\n";
                 var host = window.location.protocol + "//" + window.location.host;
                 if (reservationId)
-                    result += "Reservation History: " + host + "/scheduler/history/" + reservationId + "\r\n";
-                result += "--------------------------------------------------" + "\r\n";
-                result += messageText + "\r\n";
+                    result += "Reservation History: " + host + "/scheduler/history/" + reservationId + "\n";
+                result += "--------------------------------------------------\n";
+                result += messageText + "\n";
                 return result;
             }
 
@@ -148,14 +151,17 @@
                 if (typeof callback != "function")
                     callback = function () { console.log("createTicket"); };
 
+                var typeOption = $(".type", $this).find("option:selected");
+                var type = typeOption.text();
+                var ticketType = typeOption.val();
+                if (ticketType == -1)
+                    return createTicketError("Please select a ticket type.", callback);
+                var pri = getTicketPriorty(type);
+
                 var subject = $(".subject", $this).val();
                 if (subject == "")
                     return createTicketError("Please enter a subject.", callback);
                 subject = "[" + options.resource.id + ":" + options.resource.name + "] " + subject;
-
-                var typeOption = $(".type", $this).find("option:selected");
-                var type = typeOption.text();
-                var pri = getTicketPriorty(type);
 
                 var message = $(".message", $this).val();
                 if (message == "")
@@ -177,6 +183,7 @@
                         "subject": subject,
                         "message": message,
                         "pri": pri,
+                        "ticket_type": ticketType,
                         "search": "by-resource"
                     },
                     dataType: 'json',

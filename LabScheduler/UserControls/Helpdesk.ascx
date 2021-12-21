@@ -52,8 +52,10 @@
                     <div class="form-group">
                         <label class="col-sm-2 control-label">Type</label>
                         <div class="col-sm-2">
-                            <asp:DropDownList runat="server" ID="ddlTicketType" CssClass="form-control type">
-                                <asp:ListItem Text="General Question" Value="0"></asp:ListItem>
+                            <asp:DropDownList runat="server" ID="ddlHelpTopic" CssClass="form-control type">
+                                <asp:ListItem Text="-- Select --" Value="-1"></asp:ListItem>
+                                <asp:ListItem Text="Training/Checkout" Value="3"></asp:ListItem>
+                                <asp:ListItem Text="General Questions" Value="0"></asp:ListItem>
                                 <asp:ListItem Text="Process Issue" Value="1"></asp:ListItem>
                                 <asp:ListItem Text="Hardware Issue" Value="2"></asp:ListItem>
                             </asp:DropDownList>

@@ -9,7 +9,7 @@ using System.Web.UI.WebControls;
 
 namespace LNF.Web.Scheduler.Pages
 {
-    public class CacheUtility : LNFPage
+    public class CacheUtility : OnlineServicesPage
     {
         #region Controls
         protected Label lblClientCount;
