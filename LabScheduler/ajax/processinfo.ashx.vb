@@ -11,13 +11,13 @@ Namespace Ajax
         <Inject()>
         Public Property Provider As IProvider
 
-        Sub ProcessRequest(ByVal context As HttpContext) Implements IHttpHandler.ProcessRequest
+        Sub ProcessRequest(context As HttpContext) Implements IHttpHandler.ProcessRequest
 
             Dim statusCode As Integer = 200
-            Dim result As Object = Nothing
+            Dim result As Object
 
             Try
-                Dim util As ProcessInfos = New ProcessInfos(Provider)
+                Dim util As New ProcessInfos(Provider)
                 Dim command As String
 
                 If context.Request.HttpMethod = "GET" Then
@@ -46,10 +46,10 @@ Namespace Ajax
                             Dim resourceId As Integer = jobj("resourceId").Value(Of Integer)
                             result = util.GetProcessInfos(resourceId)
                         Case "add-process-info"
-                            Dim model As IProcessInfo = jobj("model").ToObject(Of ProcessInfoModel)()
+                            Dim model As IProcessInfo = jobj("model").ToObject(Of ProcessInfoItem)()
                             result = util.AddProcessInfo(model)
                         Case "update-process-info"
-                            Dim model As IProcessInfo = jobj("model").ToObject(Of ProcessInfoModel)()
+                            Dim model As IProcessInfo = jobj("model").ToObject(Of ProcessInfoItem)()
                             result = util.UpdateProcessInfo(model)
                         Case "move-up"
                             Dim resourceId As Integer = jobj("resourceId").Value(Of Integer)
@@ -65,11 +65,11 @@ Namespace Ajax
                             result = util.DeleteProcessInfo(resourceId, processInfoId)
                         Case "add-process-info-line"
                             Dim resourceId As Integer = jobj("resourceId").Value(Of Integer)
-                            Dim model As IProcessInfoLine = jobj("model").ToObject(Of ProcessInfoLineModel)()
+                            Dim model As IProcessInfoLine = jobj("model").ToObject(Of ProcessInfoLineItem)()
                             result = util.AddProcessInfoLine(resourceId, model)
                         Case "update-process-info-line"
                             Dim resourceId As Integer = jobj("resourceId").Value(Of Integer)
-                            Dim model As IProcessInfoLine = jobj("model").ToObject(Of ProcessInfoLineModel)()
+                            Dim model As IProcessInfoLine = jobj("model").ToObject(Of ProcessInfoLineItem)()
                             result = util.UpdateProcessInfoLine(resourceId, model)
                         Case "delete-process-info-line"
                             Dim resourceId As Integer = jobj("resourceId").Value(Of Integer)

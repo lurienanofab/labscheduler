@@ -189,7 +189,7 @@ namespace LNF.Web.Scheduler.Pages
                     case "update":
                         repairActualBeginDateTime = GetRepairActualBeginDateTime(res.State);
                         repairActualEndDateTime = GetRepairActualEndDateTime(res.State);
-                        repair = util.UpdateRepair(repairActualBeginDateTime, repairActualEndDateTime, notes);
+                        repair = util.UpdateRepair(repairActualEndDateTime, notes);
                         break;
                     case "end":
                         repair = util.EndRepair(DateTime.Now);

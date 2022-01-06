@@ -2,7 +2,6 @@ Imports LNF
 Imports LNF.Cache
 Imports LNF.Data
 Imports LNF.DataAccess
-Imports LNF.Impl
 Imports LNF.Impl.Repository.Scheduler
 Imports LNF.PhysicalAccess
 Imports LNF.Repository
@@ -10,24 +9,20 @@ Imports LNF.Scheduler
 
 Public Class OnTheFlyImpl
 
-    Private ReadOnly key As Integer = 0
-    Private ReadOnly cardswipedata As String = Nothing
     Private ReadOnly cardNum As String = Nothing
-    Private otfresource As OnTheFlyResource = Nothing
+    Private ReadOnly otfresource As OnTheFlyResource = Nothing
     Private guid As Guid
     Private cardSwipeTime As Date
     Private clientWhoSwipedTheCard As IClient = Nothing
-    Private ReadOnly reservationID As Integer = -1  ' this may not be available in cases like first time request
     Private allReservationListAtTimeOfSwipe As IEnumerable(Of IReservationItem) = Nothing
     Private currentlyRunningReservationByUser As IReservationItem = Nothing
     Private currentlyRunningReservationMayNotBeUsers As IReservationItem = Nothing
     Private nextReservationInMinTime As IReservationItem = Nothing
-    Private rreq As ResRequest = New ResRequest()
-    Private logArray As List(Of OnTheFlyLog) = New List(Of OnTheFlyLog)
+    Private ReadOnly rreq As New ResRequest()
+    Private ReadOnly logArray As New List(Of OnTheFlyLog)
     Private returnMessage As String = ""
-    Private isProcessFail As Boolean = False
-    Private otfActivity As IActivity
-    Private physicalAccessUtil As PhysicalAccess.PhysicalAccessUtility
+    Private ReadOnly otfActivity As IActivity
+    Private ReadOnly physicalAccessUtil As PhysicalAccessUtility
     Private ReadOnly resourceItem As IResource = Nothing
 
     Public Property Now As Date = Date.Now
@@ -63,7 +58,6 @@ Public Class OnTheFlyImpl
         otfActivity = provider.Scheduler.Activity.GetActivity(6)
         otfresource = potfResource
         resourceItem = provider.Scheduler.Resource.GetResource(otfresource.ResourceID)
-        cardswipedata = pcardswipedata
         cardNum = ReservationOnTheFlyUtil.GetCardNumber(pcardswipedata)
         rreq.CardNum = cardNum
         rreq.IPAddress = ipAddr
@@ -120,11 +114,11 @@ Public Class OnTheFlyImpl
     End Sub
 
     '---------------------------_condition _Functions --------------------
-    Public Function _IsCabinet() As Boolean
+    Public Function IsCabinet() As Boolean
         Return otfresource.IsCabinet()
     End Function
 
-    Public Function _ExistingReservation() As Boolean  'is there currently any reservation(which ever state, running or not activated) at this time on this tool ?
+    Public Function ExistingReservation() As Boolean  'is there currently any reservation(which ever state, running or not activated) at this time on this tool ?
         If allReservationListAtTimeOfSwipe Is Nothing Then
             allReservationListAtTimeOfSwipe = ReservationRepository.SelectExisting(GetResourceItem().ResourceID)
             If (allReservationListAtTimeOfSwipe.Count > 1) Then
@@ -143,12 +137,12 @@ Public Class OnTheFlyImpl
         Return False
     End Function
 
-    Public Function _Running() As Boolean ' is that reservation activated or still need to be activated(this is the scheduler reservation)
+    Public Function Running() As Boolean ' is that reservation activated or still need to be activated(this is the scheduler reservation)
         If allReservationListAtTimeOfSwipe IsNot Nothing Then
-            Dim running As IReservationItem = allReservationListAtTimeOfSwipe.FirstOrDefault(Function(x) x.IsRunning())
-            If running IsNot Nothing Then
+            Dim rsvRunning As IReservationItem = allReservationListAtTimeOfSwipe.FirstOrDefault(Function(x) x.IsRunning())
+            If rsvRunning IsNot Nothing Then
                 Log("_[2]Running", True)
-                currentlyRunningReservationMayNotBeUsers = running
+                currentlyRunningReservationMayNotBeUsers = rsvRunning
                 Return True
             End If
         End If
@@ -157,7 +151,7 @@ Public Class OnTheFlyImpl
         Return False
     End Function
 
-    Public Function _IsExistingAnOTFReservation() As Boolean
+    Public Function IsExistingAnOTFReservation() As Boolean
         If currentlyRunningReservationMayNotBeUsers IsNot Nothing Then
             Dim ronf As ReservationOnTheFly = DataSession.Query(Of ReservationOnTheFly)().FirstOrDefault(Function(x) x.Reservation.ReservationID = currentlyRunningReservationMayNotBeUsers.ReservationID)
             If ronf IsNot Nothing Then
@@ -167,7 +161,7 @@ Public Class OnTheFlyImpl
         Return False
     End Function
 
-    Public Function _IsAnotherReservationStartInMinimumTime() As Boolean
+    Public Function IsAnotherReservationStartInMinimumTime() As Boolean
         Dim reservationsInMinimumTime As IEnumerable(Of IReservation) = ReservationRepository.ReservationsInGranularityWindow(GetResourceItem())
         If reservationsInMinimumTime IsNot Nothing Then
             If reservationsInMinimumTime.Count > 0 Then
@@ -187,7 +181,7 @@ Public Class OnTheFlyImpl
     '	EndExisitingIfExistsAndStartNextReservation()
     'End Sub
 
-    Public Function _InGroupExisitingReservation() As Boolean ' scheduler path
+    Public Function InGroupExisitingReservation() As Boolean ' scheduler path
         ' is current user in group of an exisiting and running reservation ?
         ' get the list of group who are belong to the current reservation
         If allReservationListAtTimeOfSwipe IsNot Nothing Then
@@ -204,11 +198,11 @@ Public Class OnTheFlyImpl
         Return False
     End Function
 
-    Public Function _IsCreateAndStart() As Boolean
+    Public Function IsCreateAndStart() As Boolean
         Return otfresource.IsCreateAndStart()
     End Function
 
-    Public Function _DoesAnotherReservationStartWithInGranularity() As Boolean
+    Public Function DoesAnotherReservationStartWithInGranularity() As Boolean
         Dim reservationsInGranularityPeriod As IEnumerable(Of IReservation) = ReservationRepository.ReservationsInGranularityWindow(GetResourceItem())
 
         If reservationsInGranularityPeriod IsNot Nothing Then
@@ -240,7 +234,7 @@ Public Class OnTheFlyImpl
         Return Nothing
     End Function
 
-    Public Function _DoesAnotherReservationStartWithInMinReservationTime() As Boolean
+    Public Function DoesAnotherReservationStartWithInMinReservationTime() As Boolean
         Dim nexRestInMinTime = GetReservationWhichStartsInMinReservationTime()
         If nexRestInMinTime IsNot Nothing Then
             Log("_[2.2]DoesAnotherReservationStartWithInMinReservationTime", "True")
@@ -251,7 +245,7 @@ Public Class OnTheFlyImpl
         Return False
     End Function
 
-    Public Function _InGroupOfNextReservation() As Boolean
+    Public Function InGroupOfNextReservation() As Boolean
         ' there is next reservation. this is already checked, 
         ' who are all(group) there in the next reservation ?
         ' is current user(who swiped the card) is in the next reservation ?
@@ -265,7 +259,7 @@ Public Class OnTheFlyImpl
         Return result
     End Function
 
-    Public Function _AfterGracePeriod() As Boolean
+    Public Function AfterGracePeriod() As Boolean
         ' is it after the next reservation  and in the graceperiod ?
         Dim result As Boolean = False
         Dim currentReseration As IReservationItem = GetCurrentReservationIfExists()
@@ -279,7 +273,7 @@ Public Class OnTheFlyImpl
         Return result
     End Function
 
-    Public Function _KeepAlive() As Boolean
+    Public Function KeepAlive() As Boolean
         ' is KeepAlive True for the current reservation ?
         Dim result As Boolean = False
         Dim currentReseration As IReservationItem = GetCurrentReservationIfExists()
@@ -291,7 +285,7 @@ Public Class OnTheFlyImpl
         Return result
     End Function
 
-    Public Function _IsUserAuthorizedOnTool() As Boolean
+    Public Function IsUserAuthorizedOnTool() As Boolean
         If IsNothing(clientWhoSwipedTheCard) Then
             Return False
         End If
@@ -389,7 +383,7 @@ Public Class OnTheFlyImpl
 
     Private Function CreateAndStartReservation() As Integer
         'create and start reservation  ------------
-        Dim args As InsertReservationArgs = New InsertReservationArgs()
+        Dim args As New InsertReservationArgs()
 
         Dim res As IResource = GetResourceItem()
         Dim rr As ResRequest = GetResRequest()
@@ -460,7 +454,7 @@ Public Class OnTheFlyImpl
         End If
 
         ' also create a reservation row in the ReservationOnTheFly table
-        Dim ronfly As ReservationOnTheFly = New ReservationOnTheFly With {
+        Dim ronfly As New ReservationOnTheFly With {
             .Reservation = DataSession.Single(Of Reservation)(rsv.ReservationID)
         }
 
@@ -497,7 +491,7 @@ Public Class OnTheFlyImpl
     Public Sub EndExistingReservation()
         Dim currentReservation As IReservationItem = GetCurrentReservationIfExists()
         If currentReservation IsNot Nothing Then
-            Reservations.Create(Provider, Now).End(Provider.Scheduler.Reservation.GetReservation(currentReservation.ReservationID), Now, GetSwipedByClientID(), GetSwipedByClientID())
+            Reservations.Create(Provider, Now).End(Provider.Scheduler.Reservation.GetReservation(currentReservation.ReservationID), Now, GetSwipedByClientID())
         End If
     End Sub
 
@@ -538,7 +532,6 @@ Public Class OnTheFlyImpl
     End Sub
 
     Public Sub Fail(func As String, Optional msg As String = "")
-        isProcessFail = True
         Log("Fail-" + func, msg)
     End Sub
 
@@ -546,7 +539,7 @@ Public Class OnTheFlyImpl
 
         'Try
         Log("--SwipeStart--", cardNum)
-        If _IsUserAuthorizedOnTool() Then
+        If IsUserAuthorizedOnTool() Then
             OnTheFlyRules.Apply(Me)
         Else
             Fail("Swipe", "User not authorized on the tool")
@@ -584,7 +577,7 @@ Public Class OnTheFlyImpl
     Public Function EndReservation() As Integer
         Log("--SwipeStart-ForEnd--", cardNum)
         Dim result As Integer = 0
-        If _IsUserAuthorizedOnTool() Then
+        If IsUserAuthorizedOnTool() Then
             OnTheFlyRules.EndReservation(Me)
         Else
             result = -1
@@ -597,7 +590,7 @@ End Class
 
 Public Class OnTheFlyRules   '-------------------------------------------------------------------------------
     Private Shared Sub Check_KeepAlive(ByVal oi As OnTheFlyImpl)
-        If oi._KeepAlive() Then
+        If oi.KeepAlive() Then
             oi.Fail("_KeepAlive")
         Else
             oi.CreateAndStartNewReservation()
@@ -605,8 +598,8 @@ Public Class OnTheFlyRules   '--------------------------------------------------
     End Sub
 
     Private Shared Sub Check_InGroupOfNextReservation(ByVal oi As OnTheFlyImpl)
-        If oi._InGroupOfNextReservation() Then
-            If oi._ExistingReservation() Then
+        If oi.InGroupOfNextReservation() Then
+            If oi.ExistingReservation() Then
                 oi.EndExisitingIfExistsAndStartNextReservation()
             Else
                 oi.StartNextReservation()
@@ -617,7 +610,7 @@ Public Class OnTheFlyRules   '--------------------------------------------------
     End Sub
 
     Private Shared Sub Check_DoesAnotherReservationStartWithInMinimumTime(ByVal oi As OnTheFlyImpl)
-        If oi._IsAnotherReservationStartInMinimumTime() Then
+        If oi.IsAnotherReservationStartInMinimumTime() Then
             'In group of Next reservation ?
             Check_InGroupOfNextReservation(oi)  ' is this same behaviour or different ?
         Else
@@ -627,7 +620,7 @@ Public Class OnTheFlyRules   '--------------------------------------------------
     End Sub
 
     Private Shared Sub Check_OTF_Reservation(ByVal oi As OnTheFlyImpl)
-        If oi._IsExistingAnOTFReservation() Then
+        If oi.IsExistingAnOTFReservation() Then
             Check_DoesAnotherReservationStartWithInMinimumTime(oi)
         Else
             oi.Fail("Check_OTF_Reservation")
@@ -635,7 +628,7 @@ Public Class OnTheFlyRules   '--------------------------------------------------
     End Sub
 
     Private Shared Sub Check_InGroupExistingReservation_WhileRunning(ByVal oi As OnTheFlyImpl)
-        If oi._InGroupExisitingReservation() Then
+        If oi.InGroupExisitingReservation() Then
             Check_DoesAnotherReservationStartWithInGranularity(oi)
         Else
             Check_OTF_Reservation(oi) '   ------------------------- new flow 'is existing OTF
@@ -643,14 +636,14 @@ Public Class OnTheFlyRules   '--------------------------------------------------
     End Sub
 
     Private Shared Sub Check_DoesAnotherReservationStartWithInGranularity(ByVal oi As OnTheFlyImpl)
-        If oi._DoesAnotherReservationStartWithInGranularity() Then
+        If oi.DoesAnotherReservationStartWithInGranularity() Then
             Check_InGroupOfNextReservation(oi)
         Else
             oi.ExtendExistingReservation()
         End If
     End Sub
     Private Shared Sub Check_AfterGracePeriod(ByVal oi As OnTheFlyImpl)
-        If oi._AfterGracePeriod() Then
+        If oi.AfterGracePeriod() Then
             Check_KeepAlive(oi)
         Else
             oi.Fail("Check_AfterGracePeriod")
@@ -658,7 +651,7 @@ Public Class OnTheFlyRules   '--------------------------------------------------
     End Sub
 
     Private Shared Sub Check_InGroupExistingReservation_NotRunning(ByVal oi As OnTheFlyImpl)
-        If oi._InGroupExisitingReservation() Then
+        If oi.InGroupExisitingReservation() Then
             oi.StartExistingReservation()
         Else
             Check_AfterGracePeriod(oi)
@@ -666,7 +659,7 @@ Public Class OnTheFlyRules   '--------------------------------------------------
     End Sub
 
     Private Shared Sub ApplyIsCreateAndStart(ByVal oi As OnTheFlyImpl)
-        If oi._IsCreateAndStart() Then
+        If oi.IsCreateAndStart() Then
             ApplyNonExistingReservation(oi)
         Else
             ' reservation_start_only is already handled in earlier step
@@ -675,7 +668,7 @@ Public Class OnTheFlyRules   '--------------------------------------------------
     End Sub
 
     Private Shared Sub ApplyNonExistingReservation(ByVal oi As OnTheFlyImpl)
-        If oi._DoesAnotherReservationStartWithInMinReservationTime() Then
+        If oi.DoesAnotherReservationStartWithInMinReservationTime() Then
             Check_InGroupOfNextReservation(oi)
         Else
             oi.CreateAndStartNewReservation()
@@ -683,7 +676,7 @@ Public Class OnTheFlyRules   '--------------------------------------------------
     End Sub
 
     Private Shared Sub ApplyExistingReservation(ByVal oi As OnTheFlyImpl)
-        If oi._Running() Then
+        If oi.Running() Then
             Check_InGroupExistingReservation_WhileRunning(oi)
         Else
             Check_InGroupExistingReservation_NotRunning(oi)
@@ -695,7 +688,7 @@ Public Class OnTheFlyRules   '--------------------------------------------------
     End Sub
 
     Private Shared Sub ApplyTool(ByVal oi As OnTheFlyImpl)
-        If oi._ExistingReservation() Then
+        If oi.ExistingReservation() Then
             ApplyExistingReservation(oi)
         Else
             ApplyIsCreateAndStart(oi) 'ApplyNonExistingReservation(oi)
@@ -703,7 +696,7 @@ Public Class OnTheFlyRules   '--------------------------------------------------
     End Sub
 
     Public Shared Sub Apply(ByVal oi As OnTheFlyImpl)
-        If oi._IsCabinet() Then
+        If oi.IsCabinet() Then
             ApplyCabinet(oi)
         Else
             ApplyTool(oi)
@@ -711,7 +704,7 @@ Public Class OnTheFlyRules   '--------------------------------------------------
     End Sub
 
     Public Shared Function EndReservation(ByVal oi As OnTheFlyImpl) As Integer
-        If oi._ExistingReservation() Then ' is there an existing reservation?
+        If oi.ExistingReservation() Then ' is there an existing reservation?
             Return EndUserExistingReservation(oi)
         End If
 
@@ -719,7 +712,7 @@ Public Class OnTheFlyRules   '--------------------------------------------------
     End Function
 
     Public Shared Function EndUserExistingReservation(ByVal oi As OnTheFlyImpl) As Integer
-        If oi._InGroupExisitingReservation() Then
+        If oi.InGroupExisitingReservation() Then
             oi.EndExistingReservation()
             Return 1
         End If

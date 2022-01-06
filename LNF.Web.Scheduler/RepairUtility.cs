@@ -63,9 +63,8 @@ namespace LNF.Web.Scheduler
             return repair;
         }
 
-        public IReservation UpdateRepair(DateTime actualBeginDateTime, DateTime actualEndDateTime, string notes)
+        public IReservation UpdateRepair(DateTime actualEndDateTime, string notes)
         {
-            IReservation repair = null;
             IReservation result = null;
 
             if (Resource.HasState(ResourceState.Offline))
@@ -77,7 +76,7 @@ namespace LNF.Web.Scheduler
 
                 if (rip != null)
                 {
-                    repair = Provider.Scheduler.Reservation.GetReservation(rip.ReservationID);
+                    IReservation repair = Provider.Scheduler.Reservation.GetReservation(rip.ReservationID);
 
                     if (repair != null)
                     {
@@ -124,7 +123,7 @@ namespace LNF.Web.Scheduler
 
                             // End the repair reservation now
                             var util = Reservations.Create(Provider, now);
-                            util.End(repair, now, CurrentUser.ClientID, CurrentUser.ClientID);
+                            util.End(repair, now, CurrentUser.ClientID);
 
                             UpdateAffectedReservations(repair);
                         }

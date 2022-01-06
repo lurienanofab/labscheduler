@@ -137,7 +137,7 @@ namespace LNF.Web.Scheduler.Controllers
             if (int.TryParse(context.Request.QueryString["Time"], out int result))
                 return TimeSpan.FromMinutes(result);
 
-            throw new Exception($"Missing required querystring parameter: Time [{context.Request.QueryString.ToString()}]");
+            throw new Exception($"Missing required querystring parameter: Time [{context.Request.QueryString}]");
         }
 
         /// <summary>
@@ -197,7 +197,7 @@ namespace LNF.Web.Scheduler.Controllers
                     // End reservation
                     if (state == ReservationState.Endable)
                     {
-                        util.End(rsv, DateTime.Now, currentUser.ClientID, currentUser.ClientID);
+                        util.End(rsv, DateTime.Now, currentUser.ClientID);
                     }
                     else
                     {
