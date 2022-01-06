@@ -25,17 +25,17 @@ namespace LNF.Web.Scheduler.Handlers
 
             string command = ctx.Request["Command"];
 
-            object result = null;
-
             int clientId = Utility.ConvertTo(ctx.Request["ClientID"], 0);
 
             DateTime period;
+
+            object result;
 
             if (command == "update-billing")
             {
                 period = Convert.ToDateTime(ctx.Request["Period"]);
 
-                var logs = Provider.Billing.Process.UpdateBilling(new UpdateBillingArgs
+                Provider.Billing.Process.UpdateBilling(new UpdateBillingArgs
                 {
                     BillingCategory = BillingCategory.Tool | BillingCategory.Room,
                     ClientID = clientId,
@@ -51,6 +51,8 @@ namespace LNF.Web.Scheduler.Handlers
                 DataCleanResult dataCleanResult = null;
                 DataResult dataResult = null;
                 Step1Result step1Result = null;
+                PopulateSubsidyBillingResult step4Result = null;
+
                 bool isTemp;
 
                 try
@@ -85,12 +87,42 @@ namespace LNF.Web.Scheduler.Handlers
                         IsTemp = isTemp
                     });
 
-                    var errorCheck =
-                        dataResult.WriteToolDataProcessResult.RowsLoaded >= dataCleanResult.WriteToolDataCleanProcessResult.RowsLoaded
-                        && step1Result.PopulateToolBillingProcessResult.RowsLoaded >= dataResult.WriteToolDataProcessResult.RowsLoaded;
+                    // [2022-01-06 jg] Adding subsidy calculation, not sure why this wasn't already being done. Definitely need to recalculate in case account is changed from
+                    //      internal to external or vice versa.
 
-                    if (!errorCheck)
-                        throw new Exception($"A problem occurred when trying to load billing data. Period: {period:yyyy-MM-dd:HH:mm:ss}, ClientID: {clientId}, Rows Loaded: DataClean = {dataCleanResult.WriteToolDataCleanProcessResult.RowsLoaded}, Data = {dataResult.WriteToolDataProcessResult.RowsLoaded}, Step1 = {step1Result.PopulateToolBillingProcessResult.RowsLoaded}");
+                    step4Result = Provider.Billing.Process.Step4(new Step4Command
+                    {
+                        ClientID = clientId,
+                        Period = period,
+                        Command = "subsidy"
+                    });
+
+                    // [2022-01-06 jg] This error check does not work for staff because repair reservations exist in ToolDataClean
+                    //      but are not added to ToolData (and subsequently ToolBilling), so ToolDataClean rows loaded
+                    //      can be greater than ToolData rows loaded. So now it will be skipped if the client is staff.
+
+                    var c = Provider.Data.Client.GetClient(clientId);
+                    if (!c.HasPriv(ClientPrivilege.Staff))
+                    {
+                        var toolDataRowsLoaded = dataResult.WriteToolDataProcessResult.RowsLoaded;
+                        var toolDataCleanRowsLoaded = dataCleanResult.WriteToolDataCleanProcessResult.RowsLoaded;
+                        var step1RowsLoaded = step1Result.PopulateToolBillingProcessResult.RowsLoaded;
+
+                        string errmsg = string.Empty;
+
+                        if (toolDataRowsLoaded < toolDataCleanRowsLoaded)
+                            errmsg += $" Tool data row count ({toolDataRowsLoaded}) is less than tool data clean row count ({toolDataCleanRowsLoaded}).";
+
+                        if (step1RowsLoaded < toolDataRowsLoaded)
+                            errmsg += $" Step1 row count ({step1RowsLoaded}) is less than tool data row count ({toolDataRowsLoaded}).";
+
+                        var errorCheck =
+                            toolDataRowsLoaded >= toolDataCleanRowsLoaded
+                            && step1RowsLoaded >= toolDataRowsLoaded;
+
+                        if (!errorCheck)
+                            throw new Exception($"A problem occurred when trying to update billing data. {errmsg} Period: {period:yyyy-MM-dd:HH:mm:ss}, ClientID: {clientId}, Rows Loaded: DataClean = {dataCleanResult.WriteToolDataCleanProcessResult.RowsLoaded}, Data = {dataResult.WriteToolDataProcessResult.RowsLoaded}, Step1 = {step1Result.PopulateToolBillingProcessResult.RowsLoaded}");
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -99,7 +131,7 @@ namespace LNF.Web.Scheduler.Handlers
                     SendEmail.SendDebugEmail(clientId, "LNF.Web.Scheduler.Handlers.ReservationHandler.ProcessRequest", $"[DEBUG:{DateTime.Now:yyyy-MM-dd HH:mm:ss}] An error occurred while updating billing from the Reservation History page.", msg);
                 }
 
-                result = new { Error = error, Message = msg, DataCleanResult = dataCleanResult, DataResult = dataResult, Step1Result = step1Result };
+                result = new { Error = error, Message = msg, DataCleanResult = dataCleanResult, DataResult = dataResult, Step1Result = step1Result, Step4Result = step4Result };
             }
             else if (command == "get-clients-for-reservation-history")
             {
@@ -109,12 +141,12 @@ namespace LNF.Web.Scheduler.Handlers
                 if (string.IsNullOrEmpty(ctx.Request.Form["StartDate"]))
                     sd = Reservations.MinReservationBeginDate;
                 else
-                    isok = isok & DateTime.TryParse(ctx.Request.Form["StartDate"], out sd);
+                    isok &= DateTime.TryParse(ctx.Request.Form["StartDate"], out sd);
 
                 if (string.IsNullOrEmpty(ctx.Request.Form["EndDate"]))
                     ed = Reservations.MaxReservationEndDate;
                 else
-                    isok = isok & DateTime.TryParse(ctx.Request.Form["EndDate"], out ed);
+                    isok &= DateTime.TryParse(ctx.Request.Form["EndDate"], out ed);
 
                 IEnumerable<ReservationHistoryClient> clients = null;
 
@@ -130,8 +162,6 @@ namespace LNF.Web.Scheduler.Handlers
             }
             else if (int.TryParse(ctx.Request["ReservationID"], out int reservationId))
             {
-                var rsv = Provider.Scheduler.Reservation.GetReservation(reservationId);
-
                 switch (command)
                 {
                     case "start-reservation":
@@ -231,7 +261,6 @@ namespace LNF.Web.Scheduler.Handlers
         public static StartReservationItem CreateStartReservationItem(HttpContextBase context, IProvider provider, IReservationItem rsv, IClient client)
         {
             var now = DateTime.Now;
-            var util = Reservations.Create(provider, now);
 
             var item = new StartReservationItem
             {
