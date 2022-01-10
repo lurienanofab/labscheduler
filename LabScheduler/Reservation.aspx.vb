@@ -1384,7 +1384,7 @@ Namespace Pages
             'despite the row state
 
             'the # of rows that are not "deleted"
-            Dim activeRowCount = model.GetInvitees().Count
+            Dim activeRowCount = model.GetInvitees().Where(Function(x) Not x.Removed).ToArray().Length
 
             ' Proxy activities are activities for reservations that our made by staff on behalf of someone else.
             ' Currently Future Practice (21) and Remote Processing (22) are the only two proxy activities.

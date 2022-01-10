@@ -250,15 +250,14 @@ namespace LNF.Web.Scheduler.Handlers
         public static object GetReservation(HttpContextBase context, IProvider provider, int reservationId)
         {
             var rsv = provider.Scheduler.Reservation.GetReservation(reservationId);
-            var client = context.CurrentUser(provider);
 
             if (rsv != null)
-                return CreateStartReservationItem(context, provider, rsv, client);
+                return CreateStartReservationItem(context, provider, rsv);
             else
                 return new { Error = true, Message = string.Format("Cannot find record for ReservationID {0}", reservationId) };
         }
 
-        public static StartReservationItem CreateStartReservationItem(HttpContextBase context, IProvider provider, IReservationItem rsv, IClient client)
+        public static StartReservationItem CreateStartReservationItem(HttpContextBase context, IProvider provider, IReservationItem rsv)
         {
             var now = DateTime.Now;
 
