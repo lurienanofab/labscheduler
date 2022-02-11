@@ -105,7 +105,7 @@
                                 <label class="control-label col-sm-2">Duration *</label>
                                 <asp:PlaceHolder runat="server" ID="phDurationSelect" Visible="false">
                                     <div class="col-sm-2">
-                                        <asp:DropDownList runat="server" ID="ddlDuration" CssClass="form-control">
+                                        <asp:DropDownList runat="server" ID="ddlDuration" CssClass="form-control" AutoPostBack="true" OnSelectedIndexChanged="DdlDuration_SelectedIndexChanged">
                                         </asp:DropDownList>
                                         <asp:Label runat="server" ID="lblMaxSchedLimit" Visible="false" ForeColor="#FF0000"></asp:Label>
                                     </div>

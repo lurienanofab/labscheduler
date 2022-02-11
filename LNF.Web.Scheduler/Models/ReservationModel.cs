@@ -83,14 +83,14 @@ namespace LNF.Web.Scheduler.Models
 
             Helper.Context.Session["ReservationProcessInfoJsonData"] = ReservationProcessInfoJson;
 
-            // this will be the result reservation - either a true new reservation when creating, a new reservation for modification, or the existing rsv when modifying non-duration data
-            IReservationItem result = null;
-
             // Overwrite other reservations
             OverwriteReservations();
 
             var data = GetReservationData(duration);
             var util = Reservations.Create(Helper.Provider, Now);
+
+            // this will be the result reservation - either a true new reservation when creating, a new reservation for modification, or the existing rsv when modifying non-duration data
+            IReservationItem result;
 
             if (isCreating)
                 result = util.CreateReservation(data);

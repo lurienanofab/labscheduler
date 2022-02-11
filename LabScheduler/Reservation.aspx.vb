@@ -1213,6 +1213,10 @@ Namespace Pages
             ValidateInviteeReservations(CreateReservationModel(Date.Now).GetInvitees())
         End Sub
 
+        Protected Sub DdlDuration_SelectedIndexChanged(sender As Object, e As EventArgs)
+            ValidateInviteeReservations(CreateReservationModel(Date.Now).GetInvitees())
+        End Sub
+
         Protected Sub ChkIsRecurring_CheckedChanged(sender As Object, e As EventArgs)
             LoadAccounts()
             LoadRecurring()
