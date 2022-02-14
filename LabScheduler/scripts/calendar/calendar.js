@@ -47,16 +47,16 @@
                 if (sd.isSame(fom))
                     sd.subtract(7, 'days');
 
-                var prevMonth = getPrevMonth(fom);
+                //var prevMonth = getPrevMonth(fom);
                 var nextMonth = getNextMonth(fom);
 
-                console.log({ 'fom': fom.format("YYYY-MM-DD"), 'prevMonth': prevMonth.format("YYYY-MM-DD"), 'nextMonth': nextMonth.format("YYYY-MM-DD") });
+                //console.log({ 'fom': fom.format("YYYY-MM-DD"), 'prevMonth': prevMonth.format("YYYY-MM-DD"), 'nextMonth': nextMonth.format("YYYY-MM-DD") });
 
                 while (sd.isBefore(nextMonth))
                 {
                     var cw = createCalendarWeek(sd);
                     result.push(cw);
-                    sd.add(7, 'days');
+                    sd = sd.add(7, 'days');
                 }
 
                 //check if the last day of the month is a saturday, if so add another row for the 1st week of the next month
@@ -114,7 +114,7 @@
 
                 var weeks = generateWeeks(selectedMonth);
 
-                $.each(weeks, function (index, value) {
+                $.each(weeks, function (_, value) {
                     row = $("<tr/>");
                     row.append(createDayCell(value.sunday));
                     row.append(createDayCell(value.monday));
@@ -141,10 +141,11 @@
                 var cell = $("<td/>");
 
                 var d = dayjs(dayjs(date).format("YYYY-MM-DD"));
+                var nextMonth = getNextMonth(selectedMonth);
 
                 if (d.isBefore(selectedMonth))
                     cell.addClass("date-prev-month");
-                else if (d.isSameOrAfter(getNextMonth(selectedMonth)))
+                else if (d.isSame(nextMonth) || d.isAfter(nextMonth))
                     cell.addClass("date-next-month");
 
                 if (d.isSame(dayjs().format("YYYY-MM-DD")))
@@ -170,11 +171,11 @@
 
             $this.on("click", ".month-prev", function (e) {
                 e.preventDefault();
-                selectedMonth.subtract(1, 'months');
+                selectedMonth = selectedMonth.subtract(1, 'months');
                 draw();
             }).on("click", ".month-next", function (e) {
                 e.preventDefault();
-                selectedMonth.add(1, 'months');
+                selectedMonth = selectedMonth.add(1, 'months');
                 draw();
             });
         });
