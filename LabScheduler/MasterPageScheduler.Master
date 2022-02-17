@@ -202,7 +202,7 @@
     <script src="scripts/jquery.reservationView.js?v=20210707"></script>
     <script src="scripts/jquery.schedule.js"></script>
     <script src="scripts/jquery.treeview.js"></script>
-    <script src="scripts/calendar/calendar.js"></script>
+    <script src="scripts/calendar/calendar.js?v=20220214"></script>
     <script src="scripts/JScriptUI.js"></script>
     <script src="scripts/master.js?v=20170505"></script>
     <script src="scripts/processinfo.js"></script>

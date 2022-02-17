@@ -291,7 +291,7 @@
     <script src="scripts/jquery.reservation.js?v=20161202"></script>
     <script src="scripts/jquery.schedule.js"></script>
     <script src="scripts/jquery.treeview.js"></script>
-    <script src="scripts/calendar/calendar.js"></script>
+    <script src="scripts/calendar/calendar.js?v=20220214"></script>
     <script src="scripts/JScriptUI.js"></script>
     <script src="scripts/overlib.js"></script>
     <script src="scripts/master.js"></script>
