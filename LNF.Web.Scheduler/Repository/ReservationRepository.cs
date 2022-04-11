@@ -462,6 +462,11 @@ namespace LNF.Web.Scheduler.Repository
             throw new NotImplementedException();
         }
 
+        public IEnumerable<FutureReservation> SelectFutureReservations()
+        {
+            throw new NotImplementedException();
+        }
+
         public IEnumerable<IReservation> SelectEndableReservations(int resourceId)
         {
             throw new NotImplementedException();

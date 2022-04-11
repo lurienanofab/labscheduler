@@ -19,7 +19,7 @@ Public Class [Global]
         End Get
     End Property
 
-    Sub Application_Start(ByVal sender As Object, ByVal e As EventArgs)
+    Sub Application_Start(sender As Object, e As EventArgs)
         Dim assemblies As Assembly() = BuildManager.GetReferencedAssemblies().Cast(Of Assembly)().ToArray()
 
         webapp = New WebApp()
@@ -37,7 +37,7 @@ Public Class [Global]
         Application("DocServer") = ConfigurationManager.AppSettings("DocServer")
     End Sub
 
-    Sub Application_AuthenticateRequest(ByVal sender As Object, ByVal e As EventArgs)
+    Sub Application_AuthenticateRequest(sender As Object, e As EventArgs)
         If Request.IsAuthenticated Then
             Dim ident As FormsIdentity = CType(User.Identity, FormsIdentity)
             Dim roles As String() = ident.Ticket.UserData.Split("|"c)
@@ -45,7 +45,7 @@ Public Class [Global]
         End If
     End Sub
 
-    Sub Application_Error(ByVal sender As Object, ByVal e As EventArgs)
+    Sub Application_Error(sender As Object, e As EventArgs)
         Dim enabled As Boolean = Boolean.Parse(ConfigurationManager.AppSettings("HandleErrors"))
         If Not enabled Then Return
 
@@ -69,15 +69,15 @@ Public Class [Global]
         End If
     End Sub
 
-    Sub Session_Start(ByVal sender As Object, ByVal e As EventArgs)
+    Sub Session_Start(sender As Object, e As EventArgs)
         Dim sessionId As String = Session.SessionID  ' this is needed as a bug fix for the session id flushed error.
     End Sub
 
-    Sub Application_BeginRequest(ByVal sender As Object, ByVal e As EventArgs)
+    Sub Application_BeginRequest(sender As Object, e As EventArgs)
 
     End Sub
 
-    Sub Application_EndRequest(ByVal sender As Object, ByVal e As EventArgs)
+    Sub Application_EndRequest(sender As Object, e As EventArgs)
 
     End Sub
 End Class

@@ -12,7 +12,8 @@ namespace LabScheduler.Tests
         [TestMethod]
         public void CanSelectByDateRange()
         {
-            var context = ContainerContextFactory.Current.NewThreadScopedContext();
+            ContainerContextFactory.Current.NewThreadScopedContext();
+            var context = ContainerContextFactory.Current.GetContext();
             var config = new ThreadStaticContainerConfiguration(context);
             config.RegisterAllTypes();
             var mgr = context.GetInstance<ISessionManager>();

@@ -33,7 +33,8 @@ namespace LabScheduler.Tests
             _contextMock.Setup(x => x.Items).Returns(_items);
             Context = _contextMock.Object;
 
-            var containerContext = ContainerContextFactory.Current.NewThreadScopedContext();
+            ContainerContextFactory.Current.NewThreadScopedContext();
+            var containerContext = ContainerContextFactory.Current.GetContext();
             Container = containerContext.Container;
             var config = new ThreadStaticContainerConfiguration(containerContext);
             config.RegisterAllTypes();
